@@ -1,19 +1,25 @@
 # Makefile
 
-TF_INC = `python -c "import tensorflow; print(tensorflow.sysconfig.get_include())"`
+TF_INC = $(shell python -c 'import tensorflow as tf; print(tf.sysconfig.get_include())')
+#TF_NSYNC = $(TF_INC)/external/nsync/public
+TF_LIB = $(shell python -c 'import tensorflow as tf; print(tf.sysconfig.get_lib())')
 
 ifndef CUDA_HOME
     CUDA_HOME := /usr/local/cuda
 endif
 
+
 CC        = gcc -O2 -pthread
 CXX       = g++
-GPUCC     = nvcc
-CFLAGS    = -std=c++11 -I$(TF_INC) -I"$(CUDA_HOME)/include" -DGOOGLE_CUDA=1
-GPUCFLAGS = -c
+GPUCC     = nvcc -c --expt-relaxed-constexpr
+CFLAGS = -std=c++11 -DNDEBUG -I$(TF_INC) -I"$(CUDA_HOME)/include" -DGOOGLE_CUDA=1
+#CFLAGS = -std=c++11  -I$(TF_INC) -I"$(CUDA_HOME)/include" -DGOOGLE_CUDA=1
+#GPUFLAGS = -c --expt-relaxed-constexpr
+
 LFLAGS    = -pthread -shared -fPIC
 GPULFLAGS = -x cu -Xcompiler -fPIC
-CGPUFLAGS = -L$(CUDA_HOME)/lib -L$(CUDA_HOME)/lib64 -lcudart
+CGPUFLAGS = -L$(CUDA_HOME)/lib -L$(CUDA_HOME)/lib64 -lcudart -L$(TF_LIB) -ltensorflow_framework
+
 
 OUT_DIR   = src/ops/build
 PREPROCESSING_SRC = "src/ops/preprocessing/preprocessing.cc" "src/ops/preprocessing/kernels/flow_augmentation.cc" "src/ops/preprocessing/kernels/augmentation_base.cc" "src/ops/preprocessing/kernels/data_augmentation.cc"

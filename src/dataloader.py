@@ -73,10 +73,11 @@ class Image(slim.tfexample_decoder.ItemHandler):
 
         return image
 
-
+# TODO: add the input parameter 'input_type' to deal with image+matches instead of two consecutive images
+# actual changes: 'items_to_handlers', different input_b definition
 def __get_dataset(dataset_config, split_name):
     """
-    dataset_config: A dataset_config defined in datasets.py
+    dataset_config: A dataset_config defined in dataset_configs.py
     split_name: 'train'/'validate'
     """
     with tf.name_scope('__get_dataset'):
