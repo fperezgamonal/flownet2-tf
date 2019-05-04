@@ -66,13 +66,15 @@ class Net(object):
         if input_b.max() > 1.0:
             input_b = input_b / 255.0
 
-        height_a, width_a, channels_a = input_a.shape
-        height_b, width_b, channels_b = input_b.shape
+        height_a, width_a, channels_a = input_a.shape[-3:-1]  # temporal hack so it works with any size (batch or not)
+        # Reading a black/white png image yields a height x width array not height x width x 1 (ignore channels_b)
+        if not input_a.shape[-1] == input_b.shape[-1]:
+            height_b, width_b = input_b.shape[-2:]
+        else:
+            assert(channels_a == input_b.shape[-1])  # images in the same colourspace!
+            height_b, width_b = input_b.shape[-3:-1]
         # Assert matching sizes
         assert (height_a == height_b and width_a == width_b)
-
-        if not(input_b.shape[-1] == input_a.shape[-1]):
-            assert (channels_b == 1)  # assert it is a valid mask (black/white)
 
         if height_a % divisor != 0 or width_a % divisor != 0:
             new_height = int(ceil(height_a / divisor) * divisor)
@@ -103,7 +105,7 @@ class Net(object):
         """
         # Assert it is a valid flow
         assert(flow.shape[-1] == 2)
-        height = flow.shape[-3]  # temporally as this to account for batch/no batch tensor dimensions
+        height = flow.shape[-3]  # temporally as this to account for batch/no batch tensor dimensions (also in adapt_x)
         width = flow.shape[-2]
 
         if height % divisor != 0 or width % divisor != 0:
@@ -132,7 +134,10 @@ class Net(object):
         :param adapt_info: None if input image is multiple of 'divisor', original size otherwise
         :return: postprocessed flow (cropped to original size if need be)
         """
+        print("len(y_hat): {0}".format(len(y_hat)))
+        print("type(y_hat): {0}".format(type(y_hat)))
         pred_flows = y_hat[0]
+        print("pred_flows.shape: {0}".format(pred_flows.shape))
         if adapt_info is not None:  # must define it when padding!
             pred_flows = pred_flows[:, 0:adapt_info[1], 0:adapt_info[2], :]  # batch!
 
