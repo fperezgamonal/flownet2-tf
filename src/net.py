@@ -66,7 +66,7 @@ class Net(object):
         if input_b.max() > 1.0:
             input_b = input_b / 255.0
 
-        height_a, width_a, channels_a = input_a.shape[-3:-1]  # temporal hack so it works with any size (batch or not)
+        height_a, width_a, channels_a = input_a.shape  # temporal hack so it works with any size (batch or not)
         # Reading a black/white png image yields a height x width array not height x width x 1 (ignore channels_b)
         if not input_a.shape[-1] == input_b.shape[-1]:
             height_b, width_b = input_b.shape[-2:]
