@@ -40,6 +40,8 @@ class Net(object):
         """
         return
 
+    # based on github.com/philferriere/tfoptflow/blob/33e8a701e34c8ce061f17297d40619afbd459ade/tfoptflow/model_pwcnet.py
+    # functions: adapt_x, adapt_y, postproc_y_hat (crop)
     def adapt_x(self, input_a, input_b, divisor=64):
         """
         Adapts the input images/matches to the required network dimensions
@@ -83,11 +85,14 @@ class Net(object):
             elif self.mode == Mode.TEST:  # working with pair of images (for now there is no inference on whole batches)
                 # TODO: modify test.py so we can predict batches (much quicker for whole datasets) and simplify this!
                 padding = [(0, pad_height), (0, pad_width), (0, 0)]
+            else:
+                padding = []
 
+            x_adapt_info = input_a.shape  # Save original shape
             input_a = np.pad(input_a, padding, mode='constant', constant_values=0.)
             input_b = np.pad(input_b, padding, mode='constant', constant_values=0.)
 
-            return input_a, input_b
+            return input_a, input_b, x_adapt_info
 
     def adapt_y(self, flow, divisor=64):
         """
@@ -112,10 +117,13 @@ class Net(object):
             elif self.mode == Mode.TEST:  # working with pair of images (for now there is no inference on whole batches)
                 # TODO: modify test.py so we can predict batches (much quicker for whole datasets) and simplify this!
                 padding = [(0, pad_height), (0, pad_width), (0, 0)]
+            else:
+                padding = []
 
+            y_adapt_info = flow.shape  # Save original size
             flow = np.pad(flow, padding, mode='constant', constant_values=0.)
 
-            return flow
+            return flow, y_adapt_info
 
     def postproc_y_hat_test(self, y_hat, adapt_info=None):
         """
@@ -140,20 +148,17 @@ class Net(object):
 
         return y_hat[0], y_hat[1]
 
-    # TODO: embed size adaption to new net function and include the changes to work in train (batch_size, channels,...)
-    # based on github.com/philferriere/tfoptflow/blob/33e8a701e34c8ce061f17297d40619afbd459ade/tfoptflow/model_pwcnet.py
-    # functions: adapt_x, adapt_y, postproc_y_hat (crop)
-    def test(self, checkpoint, input_a_path, input_b_path, out_path, save_image=True, save_flo=True):
+    def test(self, checkpoint, input_a_path, input_b_path, out_path, input_type='image_pair', save_image=True,
+             save_flo=True):
         input_a = imread(input_a_path)
         input_b = imread(input_b_path)
 
-        input_a, input_b = self.adapt_x(input_a, input_b)
+        input_a, input_b, x_adapt_info = self.adapt_x(input_a, input_b)
 
         # TODO: This is a hack, we should get rid of this
         # the author probably means that it should be chosen as an input parameter not hardcoded!
         training_schedule = LONG_SCHEDULE
 
-        # TODO: to work "in batches", re-define inputs as placeholders and read in for loop from folder
         inputs = {
             'input_a': tf.expand_dims(tf.constant(input_a, dtype=tf.float32), 0),
             # leave it like that for mask? uint8 may cause mismatch format when concatenating (after normalisation we
@@ -169,7 +174,7 @@ class Net(object):
             saver.restore(sess, checkpoint)
             pred_flow = sess.run(pred_flow)[0, :, :, :]
 
-            pred_flow = self.postproc_y_hat_test(pred_flow)
+            pred_flow = self.postproc_y_hat_test(pred_flow, adapt_info=x_adapt_info)
 
             # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
             unique_name = input_a_path.split('/')[-1][:-4]
@@ -231,17 +236,20 @@ class Net(object):
                 else:
                     frame_1 = imread(img_list[img_idx + 1])
 
-                frame_0, frame_1 = self.adapt_x(frame_0, frame_1)
+                frame_0, frame_1, x_adapt_info = self.adapt_x(frame_0, frame_1)
 
                 flow = sess.run(pred_flow, feed_dict={
                     input_a: frame_0,
                     input_b: frame_1,
                 })[0, :, :, :]
 
-                pred_flow = self.postproc_y_hat_test(flow)
+                pred_flow = self.postproc_y_hat_test(flow, adapt_info=x_adapt_info)
 
                 # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
+                # TODO: modify to keep the folder structure (at least parent folder of the image)
+                parent_folder_name = img_list[img_idx].split('/')[-2]
                 unique_name = img_list[img_idx].split('/')[-1][:-4]
+                out_path = os.path.join(out_path, parent_folder_name)
 
                 if save_image or save_flo:
                     if not os.path.isdir(out_path):
