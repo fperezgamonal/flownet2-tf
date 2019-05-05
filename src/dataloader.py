@@ -232,8 +232,8 @@ def load_batch(dataset_config, split_name, global_step):
         data_provider = slim.dataset_data_provider.DatasetDataProvider(
             dataset,
             num_readers=num_threads,
-            common_queue_capacity=2048,  # this may also break training, lower it if so
-            common_queue_min=1024,  # this may also break training, lower it if so
+            common_queue_capacity=512,  # this also broke training, we lowered it (og. value = 2048)
+            common_queue_min=256,  # this also broke training, we lowered it (og. value = 1024)
             reader_kwargs=reader_kwargs)
         image_a, image_b, flow = data_provider.get(['image_a', 'image_b', 'flow'])
         image_a, image_b, flow = map(tf.to_float, [image_a, image_b, flow])
