@@ -228,6 +228,8 @@ def load_batch(dataset_config, split_name, global_step):
         tf.python_io.TFRecordCompressionType.ZLIB)}
 
     with tf.name_scope('load_batch'):
+        print("type(dataset_config)".format(type(dataset_config)))
+        print("dataset_config\n{0}".format(dataset_config))
         dataset = __get_dataset(dataset_config, split_name)
         data_provider = slim.dataset_data_provider.DatasetDataProvider(
             dataset,
