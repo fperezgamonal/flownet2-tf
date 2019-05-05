@@ -150,4 +150,68 @@ FLYING_CHAIRS_DATASET_CONFIG = {
             },
         }
     },
+},
+FLYING_CHAIRS_INTERP_DATASET_CONFIG = {
+    'IMAGE_HEIGHT': 384,
+    'IMAGE_WIDTH': 512,
+    'ITEMS_TO_DESCRIPTIONS': {
+        'image_a': 'A 3-channel image.',
+        'image_b': 'A 1-channel matching mask (1s pixels matched, 0s not matched).',
+        'flow': 'A 2-channel optical flow field',
+    },
+    'SIZES': {
+        'train': 22232,
+        'validate': 640,
+        'sample': 8,
+    },
+    'BATCH_SIZE': 8,
+    'PATHS': {
+        'train': './data/tfrecords/fc_train_interp.tfrecords',
+        'validate': './data/tfrecords/fc_val_interp.tfrecords',
+        'sample': './data/tfrecords/fc_sample_interp.tfrecords',
+    },
+    'PREPROCESS': {
+        'scale': False,
+        'crop_height': 320,
+        'crop_width': 448,
+        'image_a': {
+            'translate': {
+                'rand_type': "uniform_bernoulli",
+                'exp': False,
+                'mean': 0,
+                'spread': 0.4,
+                'prob': 1.0,
+            },
+            'rotate': {
+                'rand_type': "uniform_bernoulli",
+                'exp': False,
+                'mean': 0,
+                'spread': 0.4,
+                'prob': 1.0,
+            },
+            'zoom': {
+                'rand_type': "uniform_bernoulli",
+                'exp': True,
+                'mean': 0.2,
+                'spread': 0.4,
+                'prob': 1.0,
+            },
+            'squeeze': {
+                'rand_type': "uniform_bernoulli",
+                'exp': True,
+                'mean': 0,
+                'spread': 0.3,
+                'prob': 1.0,
+            },
+            'noise': {
+                'rand_type': "uniform_bernoulli",
+                'exp': False,
+                'mean': 0.03,
+                'spread': 0.03,
+                'prob': 1.0,
+            },
+        },
+        # Do no transformation to the matches mask (in principle as it contains very few info)
+    },
 }
+# Add here configs for other datasets. For instance, sintel/clean, sintel/final, slowflow, etc.

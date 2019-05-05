@@ -177,7 +177,6 @@ class Net(object):
         with tf.Session() as sess:
             saver.restore(sess, checkpoint)
             pred_flow = sess.run(pred_flow)[0, :, :, :]
-            print("pred_flow.shape: {0}".format(pred_flow.shape))
             if x_adapt_info is not None:
                 y_adapt_info = (x_adapt_info[-3], x_adapt_info[-2], 2)
             else:
@@ -248,11 +247,14 @@ class Net(object):
                 frame_0, frame_1, x_adapt_info = self.adapt_x(frame_0, frame_1)
 
                 flow = sess.run(pred_flow, feed_dict={
-                    input_a: frame_0,
-                    input_b: frame_1,
+                    input_a: frame_0, input_b: frame_1,
                 })[0, :, :, :]
 
-                pred_flow = self.postproc_y_hat_test(flow, adapt_info=x_adapt_info)
+                if x_adapt_info is not None:
+                    y_adapt_info = (x_adapt_info[-3], x_adapt_info[-2], 2)
+                else:
+                    y_adapt_info = None
+                pred_flow = self.postproc_y_hat_test(flow, adapt_info=y_adapt_info)
 
                 # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
                 # TODO: modify to keep the folder structure (at least parent folder of the image) ==> test!
@@ -273,6 +275,8 @@ class Net(object):
                     full_out_path = os.path.join(out_path, unique_name + '.flo')
                     write_flow(pred_flow, full_out_path)
 
+    # TODO: add the option to resume training from checkpoint (saver)
+    # TODO: actively save checkpoint every once in a while (each X iters)
     def train(self, log_dir, training_schedule, input_a, input_b, flow, checkpoints=None):
         tf.summary.image("image_a", input_a, max_outputs=2)
         tf.summary.image("image_b", input_b, max_outputs=2)
@@ -281,7 +285,6 @@ class Net(object):
             self.global_step,
             [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
             training_schedule['learning_rates'])
-
         optimizer = tf.train.AdamOptimizer(
             self.learning_rate,
             training_schedule['momentum'],
