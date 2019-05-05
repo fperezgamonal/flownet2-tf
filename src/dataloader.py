@@ -250,7 +250,8 @@ def load_batch(dataset_config, split_name, global_step):
         image_as, image_bs, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b, flow])
 
         # Perform data augmentation on GPU
-        with tf.device('/cpu:0'):
+        with tf.device('/gpu:0'):
+        #with tf.device('/cpu:0'):
             image_as, image_bs, transforms_from_a, transforms_from_b = \
                 _preprocessing_ops.data_augmentation(image_as,
                                                      image_bs,
