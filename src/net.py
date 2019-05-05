@@ -142,6 +142,7 @@ class Net(object):
         pred_flows = y_hat[0]
         print("pred_flows.shape: {0}".format(pred_flows.shape))
         if adapt_info is not None:  # must define it when padding!
+            print("adapt_info: {0}".format(adapt_info))
             # pred_flows = pred_flows[:, 0:adapt_info[1], 0:adapt_info[2], :]  # batch!
             pred_flows = pred_flows[0:adapt_info[-3], 0:adapt_info[-2], :]  # one sample
         return pred_flows
@@ -183,10 +184,9 @@ class Net(object):
             pred_flow = sess.run(pred_flow)[0, :, :, :]
             print("pred_flow.shape: {0}".format(pred_flow.shape))
             if x_adapt_info is not None:
-                y_adapt_info = [x_adapt_info[-3], x_adapt_info[-2], 2]
+                y_adapt_info = (x_adapt_info[-3], x_adapt_info[-2], 2)
             else:
                 y_adapt_info = None
-            print("adapt_info: {0}".format(y_adapt_info))
             pred_flow = self.postproc_y_hat_test(pred_flow, adapt_info=y_adapt_info)
 
             # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
