@@ -97,7 +97,6 @@ class Net(object):
             # else:
             #    input_b = np.pad(input_b, padding, mode='constant', constant_values=0.)
 
-            print("Shapes after padding:\n input_a: {0}, input_b: {1}".format(input_a.shape, input_b.shape))
             return input_a, input_b, x_adapt_info
 
     def adapt_y(self, flow, divisor=64):
@@ -182,7 +181,6 @@ class Net(object):
         with tf.Session() as sess:
             saver.restore(sess, checkpoint)
             pred_flow = sess.run(pred_flow)[0, :, :, :]
-
             pred_flow = self.postproc_y_hat_test(pred_flow, adapt_info=x_adapt_info)
 
             # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
@@ -225,6 +223,7 @@ class Net(object):
 
         with tf.Session() as sess:
             saver.restore(sess, checkpoint)
+            # TODO: input two txt files with the filepaths instead (more robust to other supported image types, etc.)
             # Get image list
             img_types = ('*.png', '*.PNG', '*.jpg', '*.JPG', '*.ppm', '*.PPM')  # add any other necessary (??)
             img_list = []
@@ -255,7 +254,7 @@ class Net(object):
                 pred_flow = self.postproc_y_hat_test(flow, adapt_info=x_adapt_info)
 
                 # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
-                # TODO: modify to keep the folder structure (at least parent folder of the image)
+                # TODO: modify to keep the folder structure (at least parent folder of the image) ==> test!
                 parent_folder_name = img_list[img_idx].split('/')[-2]
                 unique_name = img_list[img_idx].split('/')[-1][:-4]
                 out_path = os.path.join(out_path, parent_folder_name)

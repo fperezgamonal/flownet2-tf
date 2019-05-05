@@ -16,7 +16,7 @@ class FlowNetS_interp(Net):
     def model(self, inputs, training_schedule, trainable=True):
         _, height, width, _ = inputs['input_a'].shape.as_list()
         stacked = False
-        with tf.variable_scope('FlowNetS_interp'):
+        with tf.variable_scope('FlowNetS'):  # MUST NOT change the scope, otherwise the checkpoint won't load!
             # used only to create "stacked" CNNs! (FlowNetCSS etc)
             if 'warped' in inputs and 'flow' in inputs and 'brightness_error' in inputs:
                 stacked = True
@@ -27,7 +27,6 @@ class FlowNetS_interp(Net):
                                            inputs['brightness_error']], axis=3)
             else:
                 # must define matches for first image (a)
-                print("'inputs' dictionary has entries:\n{0}".format(inputs))
                 concat_inputs = tf.concat([inputs['input_a'], inputs['input_b']], axis=3)
             with slim.arg_scope([slim.conv2d, slim.conv2d_transpose],
                                 # Only backprop this network if trainable
