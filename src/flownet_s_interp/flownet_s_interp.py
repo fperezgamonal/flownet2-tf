@@ -11,7 +11,8 @@ class FlowNetS_interp(Net):
 
     def __init__(self, mode=Mode.TRAIN, debug=False):
         super(FlowNetS_interp, self).__init__(mode=mode, debug=debug)
-
+        
+    # TODO: see where we can output the OF confidence map (based off last conv layer => heat map like?)
     def model(self, inputs, training_schedule, trainable=True):
         _, height, width, _ = inputs['input_a'].shape.as_list()
         stacked = False
@@ -26,7 +27,8 @@ class FlowNetS_interp(Net):
                                            inputs['brightness_error']], axis=3)
             else:
                 # must define matches for first image (a)
-                concat_inputs = tf.concat([inputs['input_a'], inputs['matches_a']], axis=3)
+                print("'inputs' dictionary has entries:\n{0}".format(inputs))
+                concat_inputs = tf.concat([inputs['input_a'], inputs['input_b']], axis=3)
             with slim.arg_scope([slim.conv2d, slim.conv2d_transpose],
                                 # Only backprop this network if trainable
                                 trainable=trainable,

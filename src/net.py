@@ -91,13 +91,13 @@ class Net(object):
                 padding = []
 
             x_adapt_info = input_a.shape  # Save original shape
-            print(input_a.shape)
             input_a = np.pad(input_a, padding, mode='constant', constant_values=0.)
             if not input_a.shape[-1] == input_b.shape[-1]:
                 input_b = np.pad(input_b, padding[:-1], mode='constant', constant_values=0.)
             else:
                 input_b = np.pad(input_b, padding, mode='constant', constant_values=0.)
 
+            print("Shapes after padding:\n input_a: {0}, input_b: {1}".format(input_a.shape, input_b.shape))
             return input_a, input_b, x_adapt_info
 
     def adapt_y(self, flow, divisor=64):
