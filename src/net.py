@@ -181,6 +181,8 @@ class Net(object):
         with tf.Session() as sess:
             saver.restore(sess, checkpoint)
             pred_flow = sess.run(pred_flow)[0, :, :, :]
+            print("pred_flow.shape: {0}".format(pred_flow.shape))
+            print("adapt_info: {0}".format(x_adapt_info))
             pred_flow = self.postproc_y_hat_test(pred_flow, adapt_info=x_adapt_info)
 
             # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
