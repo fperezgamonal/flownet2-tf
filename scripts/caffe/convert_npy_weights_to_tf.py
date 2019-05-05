@@ -16,7 +16,7 @@ def main():
     #  unpack the dictionary since serializing to .npy stored it in an array
     parameters = parameters[()]
 
-    for (name, param) in parameters.iteritems():
+    for (name, param) in parameters.items():
         tf.Variable(param, name=name)
         print("Saving variable `" + name + "` of shape ", param.shape)
 
