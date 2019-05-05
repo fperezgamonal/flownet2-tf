@@ -142,8 +142,8 @@ class Net(object):
         pred_flows = y_hat[0]
         print("pred_flows.shape: {0}".format(pred_flows.shape))
         if adapt_info is not None:  # must define it when padding!
-            pred_flows = pred_flows[:, 0:adapt_info[1], 0:adapt_info[2], :]  # batch!
-
+            # pred_flows = pred_flows[:, 0:adapt_info[1], 0:adapt_info[2], :]  # batch!
+            pred_flows = pred_flows[0:adapt_info[-3], 0:adapt_info[-2], :]  # one sample
         return pred_flows
 
     def postproc_y_hat_train(self, y_hat):
@@ -182,8 +182,12 @@ class Net(object):
             saver.restore(sess, checkpoint)
             pred_flow = sess.run(pred_flow)[0, :, :, :]
             print("pred_flow.shape: {0}".format(pred_flow.shape))
-            print("adapt_info: {0}".format(x_adapt_info))
-            pred_flow = self.postproc_y_hat_test(pred_flow, adapt_info=x_adapt_info)
+            if x_adapt_info is not None:
+                y_adapt_info = [x_adapt_info[-3], x_adapt_info[-2], 2]
+            else:
+                y_adapt_info = None
+            print("adapt_info: {0}".format(y_adapt_info))
+            pred_flow = self.postproc_y_hat_test(pred_flow, adapt_info=y_adapt_info)
 
             # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
             unique_name = input_a_path.split('/')[-1][:-4]
