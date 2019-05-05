@@ -130,19 +130,14 @@ class Net(object):
 
             return flow, y_adapt_info
 
-    def postproc_y_hat_test(self, y_hat, adapt_info=None):
+    def postproc_y_hat_test(self, pred_flows, adapt_info=None):
         """
         Postprocess the output flows during test mode
-        :param y_hat: predictions
+        :param pred_flows: predictions
         :param adapt_info: None if input image is multiple of 'divisor', original size otherwise
         :return: postprocessed flow (cropped to original size if need be)
         """
-        print("len(y_hat): {0}".format(len(y_hat)))
-        print("type(y_hat): {0}".format(type(y_hat)))
-        pred_flows = y_hat[0]
-        print("pred_flows.shape: {0}".format(pred_flows.shape))
         if adapt_info is not None:  # must define it when padding!
-            print("adapt_info: {0}".format(adapt_info))
             # pred_flows = pred_flows[:, 0:adapt_info[1], 0:adapt_info[2], :]  # batch!
             pred_flows = pred_flows[0:adapt_info[-3], 0:adapt_info[-2], :]  # one sample
         return pred_flows
