@@ -82,7 +82,6 @@ def __get_dataset(dataset_config, split_name):
     split_name: 'train'/'validate'
     """
     with tf.name_scope('__get_dataset'):
-        print("dataset_config['SIZES']: ".format(dataset_config['SIZES']))
         if split_name not in dataset_config['SIZES']:
             raise ValueError('split name %s not recognized' % split_name)
 
@@ -229,8 +228,6 @@ def load_batch(dataset_config, split_name, global_step):
         tf.python_io.TFRecordCompressionType.ZLIB)}
 
     with tf.name_scope('load_batch'):
-        print("type(dataset_config): {0}".format(type(dataset_config)))
-        print("dataset_config\n{0}".format(dataset_config))
         dataset = __get_dataset(dataset_config, split_name)
         data_provider = slim.dataset_data_provider.DatasetDataProvider(
             dataset,
