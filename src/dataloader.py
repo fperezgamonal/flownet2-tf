@@ -223,7 +223,7 @@ def _generate_coeff(param, discount_coeff=tf.constant(1.0), default_value=tf.con
 
 
 def load_batch(dataset_config, split_name, global_step):
-    num_threads = 32
+    num_threads = 8  # 32  this breaks training
     reader_kwargs = {'options': tf.python_io.TFRecordOptions(
         tf.python_io.TFRecordCompressionType.ZLIB)}
 
@@ -232,8 +232,8 @@ def load_batch(dataset_config, split_name, global_step):
         data_provider = slim.dataset_data_provider.DatasetDataProvider(
             dataset,
             num_readers=num_threads,
-            common_queue_capacity=2048,
-            common_queue_min=1024,
+            common_queue_capacity=2048,  # this may also break training, lower it if so
+            common_queue_min=1024,  # this may also break training, lower it if so
             reader_kwargs=reader_kwargs)
         image_a, image_b, flow = data_provider.get(['image_a', 'image_b', 'flow'])
         image_a, image_b, flow = map(tf.to_float, [image_a, image_b, flow])
