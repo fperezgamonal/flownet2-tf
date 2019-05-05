@@ -4,7 +4,7 @@ from ..training_schedules import LONG_SCHEDULE
 from .flownet2 import FlowNet2
 
 # Create a new network
-net = FlowNet2()
+net = FlowNet2(debug=True)
 
 # Load a batch of data
 input_a, input_b, flow = load_batch(FLYING_CHAIRS_DATASET_CONFIG, 'sample', net.global_step)
