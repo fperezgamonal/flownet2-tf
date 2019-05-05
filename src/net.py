@@ -277,7 +277,10 @@ class Net(object):
 
     # TODO: add the option to resume training from checkpoint (saver)
     # TODO: actively save checkpoint every once in a while (each X iters)
-    def train(self, log_dir, training_schedule, input_a, input_b, flow, checkpoints=None):
+    # Note: by default slim.learning.train creates a new tf.saver(). However it also accepts a pre-defined one
+    # TODO: if we restore a checkpoint, can we use it to properly save the state with the correct global step?
+    # Or we may overwrite it by mistake?! By now, use the default checkpoint
+    def train(self, log_dir, training_schedule, input_a, input_b, flow, checkpoints=None, new_ckpt=None):
         tf.summary.image("image_a", input_a, max_outputs=2)
         tf.summary.image("image_b", input_b, max_outputs=2)
 
