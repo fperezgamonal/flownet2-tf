@@ -18,11 +18,14 @@ def open_flo_file(filename):
     with open(filename, 'rb') as f:
         magic = np.fromfile(f, np.float32, count=1)
         if 202021.25 != magic:
-            print 'Magic number incorrect. Invalid .flo file'
+            print('Magic number incorrect. Invalid .flo file')
         else:
             w = np.fromfile(f, np.int32, count=1)
             h = np.fromfile(f, np.int32, count=1)
-            data = np.fromfile(f, np.float32, count=2*w*h)
+            # Must convert to proper integer (up to here are 1-member ndarray's)
+            #w = int(w[0])  # include 'int' to shield against width or height read as float (e.g.: 512.0)
+            #h = int(h[0])
+            data = np.fromfile(f, np.float32, count=2*w[0]*h[0])
             # Reshape data into 3D array (columns, rows, bands)
             return np.resize(data, (w[0], h[0], 2))
 
