@@ -11,7 +11,7 @@ class FlowNetS_interp(Net):
 
     def __init__(self, mode=Mode.TRAIN, debug=False):
         super(FlowNetS_interp, self).__init__(mode=mode, debug=debug)
-        
+
     # TODO: see where we can output the OF confidence map (based off last conv layer => heat map like?)
     def model(self, inputs, training_schedule, trainable=True):
         _, height, width, _ = inputs['input_a'].shape.as_list()

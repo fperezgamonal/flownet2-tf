@@ -56,6 +56,7 @@ class Net(object):
             print("Normal scheme: first + second frame given")  # only for debugging, remove afterwards
             input_b = input_b[..., [2, 1, 0]]
         else:
+            input_b = input_b[..., np.newaxis]  # from (height, width) to (height, width, 1)
             print("New scheme: first + matches (1st=> 2nd frame) given")  # only for debugging, remove afterwards
 
         input_a = input_a[..., [2, 1, 0]]
@@ -67,13 +68,12 @@ class Net(object):
             input_b = input_b / 255.0
 
         height_a, width_a, channels_a = input_a.shape  # temporal hack so it works with any size (batch or not)
-        # Reading a black/white png image yields a height x width array not height x width x 1 (ignore channels_b)
+        height_b, width_b, channels_b = input_b.shape
         if not input_a.shape[-1] == input_b.shape[-1]:
-            height_b, width_b = input_b.shape[-2:]
+            assert(channels_b == 1)  # valid (reshaped) B&W mask
         else:
-            assert(channels_a == input_b.shape[-1])  # images in the same colourspace!
-            height_b, width_b = input_b.shape[-3:-1]
-        # Assert matching sizes
+            assert(channels_a == channels_b)  # images in the same colourspace!
+        # Assert matching width and height
         assert (height_a == height_b and width_a == width_b)
 
         if height_a % divisor != 0 or width_a % divisor != 0:
@@ -82,20 +82,20 @@ class Net(object):
             pad_height = new_height - height_a
             pad_width = new_width - width_a
 
-            if self.mode == Mode.TRAIN:  # working with batches, adapt to match dimensions
-                padding = []
+            if self.mode == Mode.TRAIN:  # working with batches, adapt to match dimensions (batch, height, width, ch)
+                padding = [(0, 0), (0, pad_height), (0, pad_width), (0, 0)]
             elif self.mode == Mode.TEST:  # working with pair of images (for now there is no inference on whole batches)
                 # TODO: modify test.py so we can predict batches (much quicker for whole datasets) and simplify this!
                 padding = [(0, pad_height), (0, pad_width), (0, 0)]
             else:
-                padding = []
+                padding = [(0, pad_height), (0, pad_width), (0, 0)]
 
             x_adapt_info = input_a.shape  # Save original shape
             input_a = np.pad(input_a, padding, mode='constant', constant_values=0.)
-            if not input_a.shape[-1] == input_b.shape[-1]:
-                input_b = np.pad(input_b, padding[:-1], mode='constant', constant_values=0.)
-            else:
-                input_b = np.pad(input_b, padding, mode='constant', constant_values=0.)
+            # if not input_a.shape[-1] == input_b.shape[-1]:
+            input_b = np.pad(input_b, padding, mode='constant', constant_values=0.)
+            # else:
+            #    input_b = np.pad(input_b, padding, mode='constant', constant_values=0.)
 
             print("Shapes after padding:\n input_a: {0}, input_b: {1}".format(input_a.shape, input_b.shape))
             return input_a, input_b, x_adapt_info
@@ -119,12 +119,12 @@ class Net(object):
             pad_width = new_width - width
 
             if self.mode == Mode.TRAIN:  # working with batches, adapt to match dimensions
-                padding = []
+                padding = [(0, 0), (0, pad_height), (0, pad_width), (0, 0)]
             elif self.mode == Mode.TEST:  # working with pair of images (for now there is no inference on whole batches)
                 # TODO: modify test.py so we can predict batches (much quicker for whole datasets) and simplify this!
                 padding = [(0, pad_height), (0, pad_width), (0, 0)]
             else:
-                padding = []
+                padding = [(0, pad_height), (0, pad_width), (0, 0)]
 
             y_adapt_info = flow.shape  # Save original size
             flow = np.pad(flow, padding, mode='constant', constant_values=0.)
