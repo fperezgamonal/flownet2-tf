@@ -150,7 +150,8 @@ FLYING_CHAIRS_DATASET_CONFIG = {
             },
         }
     },
-},
+}
+
 FLYING_CHAIRS_INTERP_DATASET_CONFIG = {
     'IMAGE_HEIGHT': 384,
     'IMAGE_WIDTH': 512,
