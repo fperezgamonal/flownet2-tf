@@ -7,7 +7,8 @@ from .flownet_s_interp import FlowNetS_interp
 net = FlowNetS_interp()
 
 # Load a batch of data
-input_a, matches_a, flow = load_batch(FLYING_CHAIRS_INTERP_DATASET_CONFIG, 'sample', net.global_step)
+input_a, matches_a, flow, sparse_flow = load_batch(FLYING_CHAIRS_INTERP_DATASET_CONFIG, 'train', net.global_step,
+                                                   input_type='image_matches')
 
 # Train on the data
 net.train(
@@ -15,5 +16,6 @@ net.train(
     training_schedule=LONG_SCHEDULE,
     input_a=input_a,
     input_b=matches_a,
-    flow=flow
+    sparse_flow=sparse_flow,
+    out_flow=flow
 )

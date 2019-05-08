@@ -18,6 +18,7 @@ def main():
             input_b_path=FLAGS.matches_a,
             out_path=FLAGS.out,
             input_type=FLAGS.input_type,
+            sparse_flow_path=FLAGS.sparse_flow,
         )
     elif os.path.isdir(FLAGS.input_a):  # folder of images (batch-like)
         net.test_batch(
@@ -26,6 +27,7 @@ def main():
             input_b_path=FLAGS.matches_a,
             out_path=FLAGS.out,
             input_type=FLAGS.input_type,
+            sparse_flow_path=FLAGS.sparse_flow
         )
     else:
         raise ValueError("'input_a' is not valid, should be a path to a folder or a single image")
@@ -43,7 +45,7 @@ if __name__ == '__main__':
         '--matches_a',
         type=str,
         required=True,
-        help='Path to first to second image matches'
+        help='Path to first to second image matches (mask with 1s on the location of the match, 0s elswhere)'
     )
     parser.add_argument(
         '--out',
@@ -56,6 +58,12 @@ if __name__ == '__main__':
         type=str,
         required=False,
         help='type of input (def: frame 1 + frame 2), alternative: frame 1 + matches'
+    )
+    parser.add_argument(
+        '--sparse_flow',
+        type=str,
+        required=False,
+        help='path to initial sparse flow (undefined areas must be set to 0.0 not NaN)'
     )
     FLAGS = parser.parse_args()
 
