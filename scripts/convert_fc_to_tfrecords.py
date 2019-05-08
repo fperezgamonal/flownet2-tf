@@ -48,6 +48,7 @@ def convert_dataset(indices, name, input_type='image_pairs', dataset='flying_cha
     pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=len(indices)).start()
     for i in indices:
         if input_type == 'image_pairs':  # input to the network is: frame0 + frame1
+            sparse_flow_path = None
             if dataset == 'flying_chairs':
                 image_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1.ppm'.format(i + 1))  #'%05d_img1.ppm' % (i + 1))
                 image_b_path = os.path.join(FLAGS.data_dir, '{0:05d}_img2.ppm'.format(i + 1))  #'%05d_img2.ppm' % (i + 1))
@@ -70,17 +71,20 @@ def convert_dataset(indices, name, input_type='image_pairs', dataset='flying_cha
         elif input_type == 'image_matches':  # input to the network is: frame0 + matches(frame0, frame1)
             if dataset == 'flying_chairs':
                 image_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1.ppm'.format(i + 1))
-                image_b_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_mask.ppm'.format(i + 1))
+                image_b_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_mask.png'.format(i + 1))
+                sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_sparse_flow.flo'.format(i + 1))
                 flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_flow.flo'.format(i + 1))
             elif dataset == 'sintel_clean':
                 data_subdir = 'clean/flatten'
                 image_a_path = os.path.join(FLAGS.data_dir, data_subdir, 'frame_{0:04d}.png'.format(i))
                 image_b_path = os.path.join(FLAGS.data_dir, data_subdir, 'frame_{0:04d}_mask.png'.format(i))
+                sparse_flow_path = os.path.join(FLAGS.data_dir, data_subdir, 'frame_{0:04d}_sparse_flow.flo'.format(i))
                 flow_path = os.path.join(FLAGS.data_dir, data_subdir, '{0:04d}_flow.flo'.format(i))
             elif dataset == 'sintel_final':
                 data_subdir = 'final/flatten'
                 image_a_path = os.path.join(FLAGS.data_dir, data_subdir, 'frame_{0:04d}.png'.format(i))
                 image_b_path = os.path.join(FLAGS.data_dir, data_subdir, 'frame_{0:04d}_mask.png'.format(i))
+                sparse_flow_path = os.path.join(FLAGS.data_dir, data_subdir, 'frame_{0:04d}_sparse_flow.flo'.format(i))
                 flow_path = os.path.join(FLAGS.data_dir, data_subdir, '{0:04d}_flow.flo'.format(i))
             # Add more datasets here
             # elif dataset == 'another_of_dataset':
@@ -130,6 +134,10 @@ def convert_dataset(indices, name, input_type='image_pairs', dataset='flying_cha
         flow_raw = open_flo_file(flow_path)
         # Assert it is a valid flow
         assert (flow_raw.shape[-1] == 2)
+
+        if input_type == 'image_matches':
+            sparse_flow_raw = open_flo_file(sparse_flow_path)
+            assert (sparse_flow_raw.shape[-1] == 2)
         if height_a % divisor != 0 or width_a % divisor != 0:
             new_height = int(ceil(height_a / divisor) * divisor)
             new_width = int(ceil(width_a / divisor) * divisor)
@@ -137,14 +145,25 @@ def convert_dataset(indices, name, input_type='image_pairs', dataset='flying_cha
             pad_width = new_width - width_a
             padding = [(0, pad_height), (0, pad_width), (0, 0)]
             flow_raw = np.pad(flow_raw, padding, mode='constant', constant_values=0.)
+            if input_type == 'image_matches':
+                sparse_flow_raw = np.pad(sparse_flow_raw, padding, mode='constant', constant_values=0.)
 
         # Encode flow as string
         flow_raw = flow_raw.tostring()
+        if input_type == 'image_matches':
+            sparse_flow_raw = sparse_flow_raw.tostring()
 
-        example = tf.train.Example(features=tf.train.Features(feature={
-            'image_a': _bytes_feature(image_a_raw),
-            'image_b': _bytes_feature(image_b_raw),
-            'flow': _bytes_feature(flow_raw)}))
+        if input_type == 'image_matches':
+            example = tf.train.Example(features=tf.train.Features(feature={
+                'image_a': _bytes_feature(image_a_raw),
+                'image_b': _bytes_feature(image_b_raw),
+                'sparse_flow': _bytes_feature(sparse_flow_raw),
+                'flow': _bytes_feature(flow_raw)}))
+        else:
+            example = tf.train.Example(features=tf.train.Features(feature={
+                'image_a': _bytes_feature(image_a_raw),
+                'image_b': _bytes_feature(image_b_raw),
+                'flow': _bytes_feature(flow_raw)}))
         writer.write(example.SerializeToString())
         pbar.update(count + 1)
         count += 1
