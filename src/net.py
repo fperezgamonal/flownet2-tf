@@ -169,6 +169,8 @@ class Net(object):
              input_type='image_pairs', save_image=True, save_flo=True):
         input_a = imread(input_a_path)
         input_b = imread(input_b_path)
+        print("input_a.shape: {0}".format(input_a.shape))
+        print("input_b.shape: {0}".format(input_b.shape))
 
         if sparse_flow_path is not None and matches_a_path is not None and input_type == 'image_matches':
             # Read matches mask and sparse flow from file
@@ -183,7 +185,7 @@ class Net(object):
             input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b,
                                                                                   matches_a, sparse_flow)
         else:
-            input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b)
+            input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b=input_b)
 
         # TODO: This is a hack, we should get rid of this
         # the author probably means that it should be chosen as an input parameter not hardcoded!
