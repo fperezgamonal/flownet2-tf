@@ -179,8 +179,11 @@ class Net(object):
             # sparse_flow = None
             # matches_a = None
             print("Avoid 'double-defining' as None...")
-
-        input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b, matches_a, sparse_flow)
+        if sparse_flow_path is not None and matches_a_path is not None and input_type == 'image_matches':
+            input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b,
+                                                                                  matches_a, sparse_flow)
+        else:
+            input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b)
 
         # TODO: This is a hack, we should get rid of this
         # the author probably means that it should be chosen as an input parameter not hardcoded!
