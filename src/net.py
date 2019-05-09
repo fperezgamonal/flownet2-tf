@@ -52,6 +52,7 @@ class Net(object):
         :param divisor: (optional) number by which all image sizes should be divisible by. divisor=2^n_pyram, here 6
         :return: padded and normalised input_a, input_b and sparse_flow (if needed)
         """
+        print("Entered adapt_x...")
         # Convert from RGB -> BGR
         # First + second image
         input_a = input_a[..., [2, 1, 0]]
@@ -109,8 +110,10 @@ class Net(object):
                 sparse_flow = np.pad(input_b, padding, mode='constant', constant_values=0.)
             else:
                 input_b = np.pad(input_b, padding, mode='constant', constant_values=0.)
+        else:
+            x_adapt_info = None
 
-            return input_a, input_b, matches_a, sparse_flow, x_adapt_info
+        return input_a, input_b, matches_a, sparse_flow, x_adapt_info
 
     def adapt_y(self, flow, divisor=64):
         """
@@ -140,8 +143,10 @@ class Net(object):
 
             y_adapt_info = flow.shape  # Save original size
             flow = np.pad(flow, padding, mode='constant', constant_values=0.)
+        else:
+            y_adapt_info = None
 
-            return flow, y_adapt_info
+        return flow, y_adapt_info
 
     def postproc_y_hat_test(self, pred_flows, adapt_info=None):
         """
@@ -185,7 +190,7 @@ class Net(object):
             input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b,
                                                                                   matches_a, sparse_flow)
         else:
-            input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b=input_b)
+            input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b)
 
         # TODO: This is a hack, we should get rid of this
         # the author probably means that it should be chosen as an input parameter not hardcoded!
