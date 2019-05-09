@@ -1,5 +1,5 @@
 from ..dataloader import load_batch
-from ..dataset_configs import FLYING_CHAIRS_INTERP_DATASET_CONFIG
+from ..dataset_configs import FLYING_CHAIRS_ALL_DATASET_CONFIG
 from ..training_schedules import LONG_SCHEDULE
 from .flownet_s_interp import FlowNetS_interp
 
@@ -7,7 +7,7 @@ from .flownet_s_interp import FlowNetS_interp
 net = FlowNetS_interp()
 
 # Load a batch of data
-input_a, matches_a, flow, sparse_flow = load_batch(FLYING_CHAIRS_INTERP_DATASET_CONFIG, 'train', net.global_step,
+input_a, matches_a, sparse_flow, flow = load_batch(FLYING_CHAIRS_ALL_DATASET_CONFIG, 'train', net.global_step,
                                                    input_type='image_matches')
 
 # Train on the data
