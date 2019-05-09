@@ -29,3 +29,34 @@ SHORT_SCHEDULE = {
     'weight_decay': 0.0004,
     'max_iter': 600000,
 }
+
+# TODO: change default values (copied from Sshort)
+# Add learning rate disruptions to fine-tune on Sintel and Kitti from PWC-Net+ (from paper:
+#  Models matter, so does training: an empirical study of CNNs for optical flow estimation"
+FINETUNE_SINTEL = {
+    'step_values': [300000, 400000, 500000],
+    'learning_rates': [0.0001, 0.00005, 0.000025, 0.0000125],
+    'momentum': 0.9,
+    'momentum2': 0.999,
+    'weight_decay': 0.0004,
+    'max_iter': 600000,
+}
+
+FINETUNE_KITTI = {
+    'step_values': [300000, 400000, 500000],
+    'learning_rates': [0.0001, 0.00005, 0.000025, 0.0000125],
+    'momentum': 0.9,
+    'momentum2': 0.999,
+    'weight_decay': 0.0004,
+    'max_iter': 600000,
+}
+
+# Uses mixture of Sintel, KITTI and HD1K to fine-tune
+FINETUNE_ROB = {
+    'step_values': [300000, 400000, 500000],
+    'learning_rates': [0.0001, 0.00005, 0.000025, 0.0000125],
+    'momentum': 0.9,
+    'momentum2': 0.999,
+    'weight_decay': 0.0004,
+    'max_iter': 600000,
+}

@@ -52,7 +52,6 @@ class Net(object):
         :param divisor: (optional) number by which all image sizes should be divisible by. divisor=2^n_pyram, here 6
         :return: padded and normalised input_a, input_b and sparse_flow (if needed)
         """
-        print("Entered adapt_x...")
         # Convert from RGB -> BGR
         # First + second image
         input_a = input_a[..., [2, 1, 0]]
@@ -170,27 +169,28 @@ class Net(object):
 
         return y_hat[0], y_hat[1]
 
-    def test(self, checkpoint, input_a_path, input_b_path, matches_a_path=None, sparse_flow_path=None, out_path='./',
+    def test(self, checkpoint, input_a_path, input_b_path=None, matches_a_path=None, sparse_flow_path=None, out_path='./',
              input_type='image_pairs', save_image=True, save_flo=True):
         input_a = imread(input_a_path)
-        input_b = imread(input_b_path)
-        print("input_a.shape: {0}".format(input_a.shape))
-        print("input_b.shape: {0}".format(input_b.shape))
 
         if sparse_flow_path is not None and matches_a_path is not None and input_type == 'image_matches':
             # Read matches mask and sparse flow from file
+            input_b = None
             matches_a = imread(matches_a_path)
             sparse_flow = flow_to_image(sparse_flow_path)
             assert sparse_flow.shape[-1] == 2  # assert it is a valid flow
         else:  # Define them as None (although in 'apply_x' they default to None, JIC)
-            # sparse_flow = None
-            # matches_a = None
-            print("Avoid 'double-defining' as None...")
-        if sparse_flow_path is not None and matches_a_path is not None and input_type == 'image_matches':
-            input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b,
-                                                                                  matches_a, sparse_flow)
-        else:
-            input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b)
+            input_b = imread(input_b_path)
+            sparse_flow = None
+            matches_a = None
+            # print("Avoid 'double-defining' as None...")
+        input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b,
+                                                                              matches_a, sparse_flow)
+        # if sparse_flow_path is not None and matches_a_path is not None and input_type == 'image_matches':
+        #     input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b,
+        #                                                                           matches_a, sparse_flow)
+        # else:
+        #     input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b)
 
         # TODO: This is a hack, we should get rid of this
         # the author probably means that it should be chosen as an input parameter not hardcoded!
