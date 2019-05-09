@@ -11,7 +11,7 @@ NEIGHBORHOOD_SIZE = 41
 MAX_DISPLACEMENT = int(math.ceil(NEIGHBORHOOD_SIZE / 2.0))
 STRIDE_2 = 2
 
-assert(STRIDE_2 <= NEIGHBORHOOD_SIZE)
+assert STRIDE_2 <= NEIGHBORHOOD_SIZE
 
 # Define two feature maps
 fmA = tf.ones((BATCH_SIZE, HEIGHT, WIDTH, CHANNELS), dtype=tf.int32)
@@ -19,8 +19,9 @@ fmB = tf.convert_to_tensor(np.random.randint(5, size=(BATCH_SIZE, HEIGHT, WIDTH,
 
 depth = int(math.floor((2.0 * MAX_DISPLACEMENT + 1) / STRIDE_2) ** 2)
 
-print 'Output should be size:', (BATCH_SIZE, HEIGHT, WIDTH, depth)
-print 'Striding at values: ', [e for e in range(-MAX_DISPLACEMENT + 1, MAX_DISPLACEMENT, STRIDE_2)]
+print('Output should be size:', (BATCH_SIZE, HEIGHT, WIDTH, depth))
+print('Striding at values: ', [e for e in range(-MAX_DISPLACEMENT + 1, MAX_DISPLACEMENT, STRIDE_2)])
+
 
 def main():
     out = []
@@ -39,6 +40,7 @@ def main():
             final = tf.reduce_sum(cut, 3)
             out.append(final)
     corr = tf.stack(out, 3)
-    print 'Output size: ', corr.shape
+    print('Output size: ', corr.shape)
+
 
 main()

@@ -117,16 +117,16 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
         height_ma, width_ma, channels_ma = matches_a.shape
 
         # Assert matching image sizes
-        assert(height_a == height_b and width_a == width_b and channels_a == channels_b,
+        assert height_a == height_b and width_a == width_b and channels_a == channels_b, (
                "FATAL: image dimensions do not match. Image 1 has shape: {0}, Image 2 has shape: {1}".format(
                    image_a.shape, image_b.shape
                ))
         # Assert that the mask matches dims too
-        assert(height_a == height_ma and width_a == width_ma, "FATAL: mask width, height do not match the images."
+        assert height_a == height_ma and width_a == width_ma, ("FATAL: mask width, height do not match the images."
                                                               "Images have shape: {0}, mask: {1}".format(
             image_a.shape[:-1], matches_a.shape[:-1]))
         # Assert correct number of channels
-        assert(channels_ma == 1, "FATAL: mask should be binary but the number of channels is not one but {0}".format(
+        assert channels_ma == 1, ("FATAL: mask should be binary but the number of channels is not one but {0}".format(
             channels_ma
         ))
 

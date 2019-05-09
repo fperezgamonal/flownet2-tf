@@ -74,16 +74,18 @@ class Net(object):
         height_a, width_a, channels_a = input_a.shape  # temporal hack so it works with any size (batch or not)
         if sparse_flow is not None and matches_a is not None:
             height_ma, width_ma, channels_ma = matches_a.shape
-            assert(height_ma == height_a and width_ma == width_a and channels_ma == 1,
+            assert height_ma == height_a and width_ma == width_a and channels_ma == 1, (
                    "Mask has invalid dimensions. Should be ({0}, {1}, 1) but are {2}".format(height_a, width_a,
-                                                                                             matches_a.shape))
+                                                                                             matches_a.shape)
+            )
         else:
             height_b, width_b, channels_b = input_b.shape
             # Assert matching image sizes
-            assert (height_a == height_b and width_a == width_b and channels_a == channels_b,
+            assert height_a == height_b and width_a == width_b and channels_a == channels_b, (
                     "FATAL: image dimensions do not match. Image 1 has shape: {0}, Image 2 has shape: {1}".format(
                         input_a.shape, input_b.shape
-                    ))
+                    )
+            )
 
         if height_a % divisor != 0 or width_a % divisor != 0:
             new_height = int(ceil(height_a / divisor) * divisor)
@@ -118,7 +120,7 @@ class Net(object):
         :return: padded ground truth optical flow
         """
         # Assert it is a valid flow
-        assert(flow.shape[-1] == 2)
+        assert flow.shape[-1] == 2
         height = flow.shape[-3]  # temporally as this to account for batch/no batch tensor dimensions (also in adapt_x)
         width = flow.shape[-2]
 
@@ -172,7 +174,7 @@ class Net(object):
             # Read matches mask and sparse flow from file
             matches_a = imread(matches_a_path)
             sparse_flow = flow_to_image(sparse_flow_path)
-            assert (sparse_flow.shape[-1] == 2)  # assert it is a valid flow
+            assert sparse_flow.shape[-1] == 2  # assert it is a valid flow
         else:  # Define them as None (although in 'apply_x' they default to None, JIC)
             sparse_flow = None
             matches_a = None
@@ -275,7 +277,7 @@ class Net(object):
                 # Read + pre-process files
                 # Each line is split into a list with N elements (separator: blank space (" "))
                 path_inputs = path_list[img_idx].split(' ')
-                assert(2 <= len(path_inputs) <= 4,
+                assert 2 <= len(path_inputs) <= 4, (
                        'More paths than expected. Expected: I1+I2 (2), I1+MM+sparseflow(3) or all (4).')
                 if len(path_inputs) == 2:  # Only paths to image1 + image2 have been provided
                     frame_0 = imread(path_inputs[0])
