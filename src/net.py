@@ -176,8 +176,9 @@ class Net(object):
             sparse_flow = flow_to_image(sparse_flow_path)
             assert sparse_flow.shape[-1] == 2  # assert it is a valid flow
         else:  # Define them as None (although in 'apply_x' they default to None, JIC)
-            sparse_flow = None
-            matches_a = None
+            # sparse_flow = None
+            # matches_a = None
+            print("Avoid 'double-defining' as None...")
 
         input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b, matches_a, sparse_flow)
 

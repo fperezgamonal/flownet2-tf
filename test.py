@@ -82,8 +82,8 @@ def main():
             trans = out.spatial_transform_a
             inv_trans = out.inv_spatial_transform_b
 
-            print trans.shape
-            print inv_trans.shape
+            print(trans.shape)
+            print(inv_trans.shape)
 
             flow_tf = tf.expand_dims(tf.to_float(tf.constant(flow)), 0)
             aug_flow_tf = _preprocessing_ops.flow_augmentation(flow_tf, trans, inv_trans, crop)
@@ -138,8 +138,8 @@ def main():
             30      49                  n[0, 1, 5, 0]"""
 
 
-print os.getpid()
-raw_input("Press Enter to continue...")
+print(os.getpid())
+name = input("Press Enter to continue...")
 main()
 
 # Last index is channel!!
