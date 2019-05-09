@@ -87,60 +87,40 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
 
         IMAGE_HEIGHT, IMAGE_WIDTH = dataset_config['IMAGE_HEIGHT'], dataset_config['IMAGE_WIDTH']
         reader = tf.TFRecordReader
-        if input_type == 'image_pairs':
-            keys_to_features = {
-                'image_a': tf.FixedLenFeature((), tf.string),
-                'image_b': tf.FixedLenFeature((), tf.string),
-                'flow': tf.FixedLenFeature((), tf.string),
-            }
-            items_to_handlers = {
-                'image_a': Image(
-                    image_key='image_a',
-                    dtype=tf.float64,
-                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 3],
-                    channels=3),
-                'image_b': Image(
-                    image_key='image_b',
-                    dtype=tf.float64,
-                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 3],
-                    channels=3),
-                'flow': Image(
-                    image_key='flow',
-                    dtype=tf.float32,
-                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 2],
-                    channels=2),
-            }
-        elif input_type == 'image_matches':
-            keys_to_features = {
-                'image_a': tf.FixedLenFeature((), tf.string),
-                'image_b': tf.FixedLenFeature((), tf.string),  # matches mask (location)
-                'sparse_flow': tf.FixedLenFeature((), tf.string),  # initial sparse flow (from matches)
-                'flow': tf.FixedLenFeature((), tf.string),
-            }
-            items_to_handlers = {
-                'image_a': Image(
-                    image_key='image_a',
-                    dtype=tf.float64,
-                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 3],
-                    channels=3),
-                'image_b': Image(
-                    image_key='image_b',
-                    dtype=tf.float64,
-                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 3],
-                    channels=3),
-                'sparse_flow': Image(
-                    image_key='sparse_flow',
-                    dtype=tf.float32,
-                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 2],
-                    channels=2),
-                'flow': Image(
-                    image_key='flow',
-                    dtype=tf.float32,
-                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 2],
-                    channels=2),
-            }
-        else:
-            raise ValueError("Invalid type of data (two images or 1 image + sparse flow + matches mask)")
+        keys_to_features = {
+            'image_a': tf.FixedLenFeature((), tf.string),
+            'image_b': tf.FixedLenFeature((), tf.string),
+            'matches_a': tf.FixedLenFeature((), tf.string),
+            'sparse_flow': tf.FixedLenFeature((), tf.string),  # initial sparse flow (from matches)
+            'flow': tf.FixedLenFeature((), tf.string),
+        }
+        items_to_handlers = {
+            'image_a': Image(
+                image_key='image_a',
+                dtype=tf.float64,
+                shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 3],
+                channels=3),
+            'image_b': Image(
+                image_key='image_b',
+                dtype=tf.float64,
+                shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 3],
+                channels=3),
+            'matches_a': Image(
+                image_key='matches_a',
+                dtype=tf.float64,
+                shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 1],
+                channels=1),
+            'sparse_flow': Image(
+                image_key='sparse_flow',
+                dtype=tf.float32,
+                shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 2],
+                channels=2),
+            'flow': Image(
+                image_key='flow',
+                dtype=tf.float32,
+                shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 2],
+                channels=2),
+        }
 
         decoder = slim.tfexample_decoder.TFExampleDecoder(keys_to_features, items_to_handlers)
         return slim.dataset.Dataset(
@@ -255,7 +235,7 @@ def _generate_coeff(param, discount_coeff=tf.constant(1.0), default_value=tf.con
     return value
 
 
-# TODO: fix bug with data augmentation (otherwise training performance will be worse for sure)
+# TODO: fix bug with data augmentation (otherwise training performance will be worse for sure (more likely to overfit!)
 # may be related to gcc version (too new, test 4.8 or similar, current is 6.3)
 # image+matches: only need to remove the pieces regarding transformations on the second image
 # TODO: as it is, for each different data type, we require a different dataset config (OK!)
@@ -274,14 +254,10 @@ def load_batch(dataset_config, split_name, global_step, input_type='image_pairs'
             common_queue_capacity=512,  # this also broke training, we lowered it (og. value = 2048)
             common_queue_min=256,  # this also broke training, we lowered it (og. value = 1024)
             reader_kwargs=reader_kwargs)
-        if input_type == 'image_pairs':
-            image_a, image_b, flow = data_provider.get(['image_a', 'image_b', 'flow'])
-            image_a, image_b, flow = map(tf.to_float, [image_a, image_b, flow])
-        elif input_type == 'image_matches':
-            image_a, image_b, sparse_flow, flow = data_provider.get(['image_a', 'image_b', 'sparse_flow', 'flow'])
-            image_a, image_b, sparse_flow, flow = map(tf.to_float, [image_a, image_b, sparse_flow, flow])
-        else:
-            raise ValueError('Invalid input data type (load_batch)')
+        image_a, image_b, matches_a, sparse_flow, flow = data_provider.get(['image_a', 'image_b', 'matches_a',
+                                                                            'sparse_flow', 'flow'])
+        image_a, image_b, matches_a, sparse_flow, flow = map(tf.to_float, [image_a, image_b, matches_a, sparse_flow,
+                                                                           flow])
 
         if dataset_config['PREPROCESS']['scale']:
             image_a = image_a / 255.0
@@ -292,14 +268,8 @@ def load_batch(dataset_config, split_name, global_step, input_type='image_pairs'
         # config_a = config_to_arrays(dataset_config['PREPROCESS']['image_a'])
         # config_b = config_to_arrays(dataset_config['PREPROCESS']['image_b'])
         #
-        if input_type == 'image_pairs':
-            image_as, image_bs, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b, flow])
-        elif input_type == 'image_matches':
-            image_as, image_bs, sparse_flows, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b,
-                                                                                           sparse_flow, flow])
-
-        else:
-            raise ValueError('Invalid input data type while expanding dims (load_batch)')
+        image_as, image_bs, matches_as, sparse_flows, flows = map(lambda x: tf.expand_dims(x, 0),
+                                                                  [image_a, image_b, matches_a, sparse_flow, flow])
         #
         # # Perform data augmentation on GPU  fperezgamonal: typo, it does not work on the GPU, only on the CPU!
         # with tf.device('/cpu:0'):
@@ -375,20 +345,8 @@ def load_batch(dataset_config, split_name, global_step, input_type='image_pairs'
         #     flows = _preprocessing_ops.flow_augmentation(
         #         flows, transforms_from_a, transforms_from_b, crop)
 
-        if input_type == 'image_pairs':  # set sparse_flow to None
-            return tf.train.batch([image_as, image_bs, flows, None],  # so the output tuple has the same length
-                                  enqueue_many=True,
-                                  batch_size=dataset_config['BATCH_SIZE'],
-                                  capacity=dataset_config['BATCH_SIZE'] * 4,
-                                  num_threads=num_threads,
-                                  allow_smaller_final_batch=False)
-
-        elif input_type == 'image_matches':
-            return tf.train.batch([image_as, image_bs, sparse_flow, flows],
-                                  enqueue_many=True,
-                                  batch_size=dataset_config['BATCH_SIZE'],
-                                  capacity=dataset_config['BATCH_SIZE'] * 4,
-                                  num_threads=num_threads,
-                                  allow_smaller_final_batch=False)
-        else:
-            raise ValueError('Invalid input data type while returning batch (load_batch)')
+        return tf.train.batch([image_as, image_bs, matches_as, sparse_flows, flows],
+                              enqueue_many=True,
+                              batch_size=dataset_config['BATCH_SIZE'],
+                              capacity=dataset_config['BATCH_SIZE'] * 4,
+                              allow_smaller_final_batch=False)

@@ -42,40 +42,48 @@ class Net(object):
 
     # based on github.com/philferriere/tfoptflow/blob/33e8a701e34c8ce061f17297d40619afbd459ade/tfoptflow/model_pwcnet.py
     # functions: adapt_x, adapt_y, postproc_y_hat (crop)
-    def adapt_x(self, input_a, input_b, sparse_flow=None, divisor=64):
+    def adapt_x(self, input_a, input_b=None, matches_a=None, sparse_flow=None, divisor=64):
         """
         Adapts the input images/matches to the required network dimensions
         :param input_a: first image
-        :param input_b: second image (or matches between first and second images)
+        :param input_b: second image (optional if we use sparse flow + the first image)
+        :param matches_a: (optional) matches between first and second images
         :param sparse_flow: (optional) sparse optical flow field initialised from a set of sparse matches
         :param divisor: (optional) number by which all image sizes should be divisible by. divisor=2^n_pyram, here 6
         :return: padded and normalised input_a, input_b and sparse_flow (if needed)
         """
         # Convert from RGB -> BGR
         # First + second image
-        if input_b.shape[-1] == input_a.shape[-1]:
+        input_a = input_a[..., [2, 1, 0]]
+        if sparse_flow is not None and matches_a is not None:
+            matches_a = matches_a[..., np.newaxis]  # from (height, width) to (height, width, 1)
+            print("New scheme: first + matches (1st=> 2nd frame) given")  # only for debugging, remove afterwards
+        else:
             print("Normal scheme: first + second frame given")  # only for debugging, remove afterwards
             input_b = input_b[..., [2, 1, 0]]
-        else:
-            input_b = input_b[..., np.newaxis]  # from (height, width) to (height, width, 1)
-            print("New scheme: first + matches (1st=> 2nd frame) given")  # only for debugging, remove afterwards
-
-        input_a = input_a[..., [2, 1, 0]]
 
         # Scale from [0, 255] -> [0.0, 1.0] if needed
         if input_a.max() > 1.0:
             input_a = input_a / 255.0
-        if input_b.max() > 1.0:
-            input_b = input_b / 255.0
+        if sparse_flow is not None and matches_a is not None:
+            matches_a = matches_a / 255.0
+        else:
+            if input_b.max() > 1.0:
+                input_b = input_b / 255.0
 
         height_a, width_a, channels_a = input_a.shape  # temporal hack so it works with any size (batch or not)
-        height_b, width_b, channels_b = input_b.shape
-        if not input_a.shape[-1] == input_b.shape[-1]:
-            assert(channels_b == 1)  # valid (reshaped) B&W mask
+        if sparse_flow is not None and matches_a is not None:
+            height_ma, width_ma, channels_ma = matches_a.shape
+            assert(height_ma == height_a and width_ma == width_a and channels_ma == 1,
+                   "Mask has invalid dimensions. Should be ({0}, {1}, 1) but are {2}".format(height_a, width_a,
+                                                                                             matches_a.shape))
         else:
-            assert(channels_a == channels_b)  # images in the same colourspace!
-        # Assert matching width and height
-        assert (height_a == height_b and width_a == width_b)
+            height_b, width_b, channels_b = input_b.shape
+            # Assert matching image sizes
+            assert (height_a == height_b and width_a == width_b and channels_a == channels_b,
+                    "FATAL: image dimensions do not match. Image 1 has shape: {0}, Image 2 has shape: {1}".format(
+                        input_a.shape, input_b.shape
+                    ))
 
         if height_a % divisor != 0 or width_a % divisor != 0:
             new_height = int(ceil(height_a / divisor) * divisor)
@@ -93,15 +101,14 @@ class Net(object):
 
             x_adapt_info = input_a.shape  # Save original shape
             input_a = np.pad(input_a, padding, mode='constant', constant_values=0.)
-            # if not input_a.shape[-1] == input_b.shape[-1]:
-            input_b = np.pad(input_b, padding, mode='constant', constant_values=0.)
 
-            if sparse_flow is not None:
+            if sparse_flow is not None and matches_a is not None:
+                matches_a = np.pad(matches_a, padding, mode='constant', constant_values=0.)
                 sparse_flow = np.pad(input_b, padding, mode='constant', constant_values=0.)
-            # else:
-            #    input_b = np.pad(input_b, padding, mode='constant', constant_values=0.)
+            else:
+                input_b = np.pad(input_b, padding, mode='constant', constant_values=0.)
 
-            return input_a, input_b, sparse_flow, x_adapt_info
+            return input_a, input_b, matches_a, sparse_flow, x_adapt_info
 
     def adapt_y(self, flow, divisor=64):
         """
@@ -156,19 +163,21 @@ class Net(object):
 
         return y_hat[0], y_hat[1]
 
-    def test(self, checkpoint, input_a_path, input_b_path, out_path, input_type='image_pair', sparse_flow_path=None,
-             save_image=True, save_flo=True):
+    def test(self, checkpoint, input_a_path, input_b_path, matches_a_path=None, sparse_flow_path=None, out_path='./',
+             input_type='image_pairs', save_image=True, save_flo=True):
         input_a = imread(input_a_path)
         input_b = imread(input_b_path)
 
-        if sparse_flow_path is not None and input_type == 'image_matches':
-            # Read sparse flow from file
+        if sparse_flow_path is not None and matches_a_path is not None and input_type == 'image_matches':
+            # Read matches mask and sparse flow from file
+            matches_a = imread(matches_a_path)
             sparse_flow = flow_to_image(sparse_flow_path)
             assert (sparse_flow.shape[-1] == 2)  # assert it is a valid flow
-        else:
+        else:  # Define them as None (although in 'apply_x' they default to None, JIC)
             sparse_flow = None
+            matches_a = None
 
-        input_a, input_b, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b, sparse_flow)
+        input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b, matches_a, sparse_flow)
 
         # TODO: This is a hack, we should get rid of this
         # the author probably means that it should be chosen as an input parameter not hardcoded!
@@ -216,44 +225,38 @@ class Net(object):
                 imsave(full_out_path, flow_img)
 
             if save_flo:
-                full_out_path = os.path.join(out_path, unique_name + '.flo')
+                full_out_path = os.path.join(out_path, unique_name + '_flow.flo')
                 write_flow(pred_flow, full_out_path)
 
-    def test_batch(self, checkpoint, input_a_path, input_b_path, out_path, input_type='image_pair',
-                   sparse_flow_path=None, save_image=True, save_flo=True):
+    # TODO: double-check the number of columns of the txt file to ensure it is OK
+    # Each line will define a set of inputs. By doing so, we reduce complexity and avoid errors due to "forced" sorting
+    def test_batch(self, checkpoint, image_paths, out_path, input_type='image_pairs', save_image=True, save_flo=True):
         """
         Run inference on a set of images defined in .txt files
         :param checkpoint: the path to the pre-trained model weights
-        :param input_a_path: path to the txt file where the image paths are listed
-        :param input_b_path: path to the matches masks (location) for the images above
+        :param image_paths: path to the txt file where the image paths are listed
         :param out_path: output path where flows and visualizations should be stored
         :param input_type: whether we are dealing with two consecutive frames or one frame + matches (interpolation)
-        :param sparse_flow_path: (optional) path to the txt file with the route to the initial sparse flow to densify
         :param save_image: whether to save a png visualization (Middlebury colour code) of the flow
         :param save_flo: whether to save the 'raw' .flo file (useful to compute errors and such)
         :return:
         """
         # Build Graph
         input_a = tf.placeholder(dtype=tf.float32, shape=[1, None, None, 3])
-        if input_type == 'image_pair':
-            input_b = tf.placeholder(dtype=tf.float32, shape=[1, None, None, 3])
-        elif input_type == 'image_matches':
-            input_b = tf.placeholder(dtype=tf.float32, shape=[1, None, None, 1])
-            sparse_flow = tf.placeholder(dtype=tf.float32, shape=[1, None, None, 2])
-        else:
-            print("Invalid output type, reverting to default (pairs of RGB images)...")
-            input_b = tf.placeholder(dtype=tf.float32, shape=[1, None, None, 3])
 
-        if sparse_flow_path is None:
+        if input_type == 'image_matches':
+            matches_a = tf.placeholder(dtype=tf.float32, shape=[1, None, None, 1])
+            sparse_flow = tf.placeholder(dtype=tf.float32, shape=[1, None, None, 2])
             inputs = {
                 'input_a': input_a,
-                'input_b': input_b,
+                'matches_a': matches_a,
+                'sparse_flow': sparse_flow,
             }
         else:
+            input_b = tf.placeholder(dtype=tf.float32, shape=[1, None, None, 3])
             inputs = {
                 'input_a': input_a,
                 'input_b': input_b,
-                'sparse_flow': sparse_flow,
             }
 
         training_schedule = LONG_SCHEDULE
@@ -264,49 +267,42 @@ class Net(object):
 
         with tf.Session() as sess:
             saver.restore(sess, checkpoint)
-            # TODO: input two txt files with the filepaths instead (more robust to other supported image types, etc.)
-            # Read all txt files, ensure they have matching length, sort them alphabetically to ensure matching info
-            # Then, process the resulting lists, one element at a time
-            # If they are not sorted naturally by a number, 'sorted' will mess it up!
-            with open(input_a_path, 'r') as input_file:
-                input_a_list = sorted(input_file.read())
+            # Read and process the resulting list, one element at a time
+            with open(image_paths, 'r') as input_file:
+                path_list = input_file.read()
 
-            with open(input_b_path, 'r') as input_file:
-                input_b_list = sorted(input_file.read())
-
-            with open(sparse_flow_path, 'r') as input_file:
-                sparse_flow_list = sorted(input_file.read())
-
-            assert(len(input_a_list) == len(input_b_list) == len(sparse_flow_list),
-                   'Fatal: the input text file had mismatched dimensions')
-
-            # Get image list
-            # img_types = ('*.png', '*.PNG', '*.jpg', '*.JPG', '*.ppm', '*.PPM')  # add any other necessary (??)
-            # img_list = []
-            # for files in img_types:
-            #     img_list.extend(glob.glob(os.path.join(input_a_path, files)))
-            #     img_list = sorted(img_list)  # very important to process them in order (not really for image+match)
-            # if img_list is None:
-            #     raise ValueError('directory must be non-empty')
-
-            for img_idx in range(len(input_a_list)):
+            for img_idx in range(len(path_list)):
                 # Read + pre-process files
-                frame_0 = imread(input_a_list[img_idx])
-                frame_1 = imread(input_a_list[img_idx])
-                if input_type == 'image_matches':
-                    sparse_flow = flow_to_image(sparse_flow_list[img_idx])
-                else:
-                    sparse_flow = None
+                # Each line is split into a list with N elements (separator: blank space (" "))
+                path_inputs = path_list[img_idx].split(' ')
+                assert(2 <= len(path_inputs) <= 4,
+                       'More paths than expected. Expected: I1+I2 (2), I1+MM+sparseflow(3) or all (4).')
+                if len(path_inputs) == 2:  # Only paths to image1 + image2 have been provided
+                    frame_0 = imread(path_inputs[0])
+                    frame_1 = imread(path_inputs[1])
+                    matches_0 = None
+                    sparse_flow_0 = None
+                elif len(path_inputs) == 3 and input_type == 'image_matches':  # image1 + matches mask + sparse_flow
+                    frame_0 = imread(path_inputs[0])
+                    frame_1 = None
+                    matches_0 = imread(path_inputs[1])
+                    sparse_flow_0 = flow_to_image(path_inputs[2])
+                else:  # path to all inputs (read all and decide what to use based on 'input_type'
+                    frame_0 = imread(path_inputs[0])
+                    frame_1 = imread(path_inputs[1])
+                    matches_0 = imread(path_inputs[2])
+                    sparse_flow_0 = flow_to_image(path_inputs[3])
 
-                frame_0, frame_1, sparse_flow, x_adapt_info = self.adapt_x(frame_0, frame_1, sparse_flow)
-                if sparse_flow is None:
+                frame_0, frame_1, matches_0, sparse_flow_0, x_adapt_info = self.adapt_x(frame_0, frame_1, matches_0,
+                                                                                        sparse_flow_0)
+                if sparse_flow is not None and matches_0 is not None and input_type == 'image_matches':
                     flow = sess.run(pred_flow, feed_dict={
                         input_a: frame_0, input_b: frame_1,
+                        matches_a: matches_0, sparse_flow: sparse_flow_0,
                     })[0, :, :, :]
                 else:
                     flow = sess.run(pred_flow, feed_dict={
                         input_a: frame_0, input_b: frame_1,
-                        sparse_flow: sparse_flow,
                     })[0, :, :, :]
 
                 if x_adapt_info is not None:
@@ -317,8 +313,10 @@ class Net(object):
 
                 # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
                 # TODO: modify to keep the folder structure (at least parent folder of the image) ==> test!
-                parent_folder_name = input_a_list[img_idx].split('/')[-2]
-                unique_name = input_a_list[img_idx].split('/')[-1][:-4]
+                # Assumption: take as reference the parent folder of the first image (common to all input types)
+                # Same for the name of the output flow (take the first image name)
+                parent_folder_name = path_inputs[0].split('/')[-2]
+                unique_name = path_inputs[0].split('/')[-1][:-4]
                 out_path = os.path.join(out_path, parent_folder_name)
 
                 if save_image or save_flo:
@@ -331,18 +329,25 @@ class Net(object):
                     imsave(full_out_path, flow_img)
 
                 if save_flo:
-                    full_out_path = os.path.join(out_path, unique_name + '.flo')
+                    full_out_path = os.path.join(out_path, unique_name + '_flow.flo')
                     write_flow(pred_flow, full_out_path)
 
-    # TODO: add the option to resume training from checkpoint (saver) ==> fine-tuning
-    # TODO: if we restore a checkpoint, can we use it to properly save the state with the correct global step?
-    # Or we may overwrite it by mistake?! By now, use the default checkpoint
-    def train(self, log_dir, training_schedule, input_a, input_b, out_flow, sparse_flow=None, checkpoints=None,
-              new_ckpt=None):
+    def train(self, log_dir, training_schedule, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
+              checkpoints=None, input_type='image_pairs'):
         tf.summary.image("image_a", input_a, max_outputs=2)
-        tf.summary.image("image_b", input_b, max_outputs=2)
-        if sparse_flow is not None:
-            tf.summary.image("sparse_flow", sparse_flow, max_outputs=2)
+        if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
+            tf.summary.image("matches_a", matches_a, max_outputs=2)
+            # Convert sparse flow to image-like
+            sparse_flow_0 = sparse_flow[0, :, :, :]
+            sparse_flow_0 = tf.py_func(flow_to_image, [sparse_flow_0], tf.uint8)
+            sparse_flow_1 = sparse_flow[1, :, :, :]
+            sparse_flow_1 = tf.py_func(flow_to_image, [sparse_flow_1], tf.uint8)
+            sparse_flow_img = tf.stack([sparse_flow_0, sparse_flow_1], 0)
+            # Pad if needed
+            sparse_flow_img, y_adapt_info = self.adapt_y(sparse_flow_img)
+            tf.summary.image("sparse_flow_img", sparse_flow_img, max_outputs=2)
+        else:
+            tf.summary.image("image_b", input_b, max_outputs=2)
 
         self.learning_rate = tf.train.piecewise_constant(
             self.global_step,
@@ -353,10 +358,17 @@ class Net(object):
             training_schedule['momentum'],
             training_schedule['momentum2'])
 
-        inputs = {
-            'input_a': input_a,
-            'input_b': input_b,
-        }
+        if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
+            inputs = {
+                'input_a': input_a,
+                'matches_a': matches_a,
+                'sparse_flow': sparse_flow_img,
+            }
+        else:
+            inputs = {
+                'input_a': input_a,
+                'input_b': input_b,
+            }
         predictions = self.model(inputs, training_schedule)
         total_loss = self.loss(out_flow, predictions)
         tf.summary.scalar('loss', total_loss)
@@ -416,3 +428,8 @@ class Net(object):
                 save_summaries_secs=60,
                 number_of_steps=training_schedule['max_iter']
             )
+
+    # TODO: add the option to resume training from checkpoint (saver) ==> fine-tuning
+    # TODO: if we restore a checkpoint, can we use it to properly save the state with the correct global step?
+    # Or we may overwrite it by mistake?! By now, use the default checkpoint
+    # def finetuning(...)

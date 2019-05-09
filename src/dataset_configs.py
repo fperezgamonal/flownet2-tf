@@ -151,13 +151,16 @@ FLYING_CHAIRS_DATASET_CONFIG = {
         }
     },
 }
-
-FLYING_CHAIRS_INTERP_DATASET_CONFIG = {
+# Contains all the information necessary to deal with the two input types considered: a pair of images or first image,
+# matching mask (location) + sparse flow
+FLYING_CHAIRS_ALL_DATASET_CONFIG = {
     'IMAGE_HEIGHT': 384,
     'IMAGE_WIDTH': 512,
     'ITEMS_TO_DESCRIPTIONS': {
         'image_a': 'A 3-channel image.',
-        'image_b': 'A 1-channel matching mask (1s pixels matched, 0s not matched).',
+        'image_b': 'A 3-channel image.',
+        'matches_a': 'A 1-channel matching mask (1s pixels matched, 0s not matched).',
+        'sparse_flow': 'sparse flow initialised from a set of sparse matches',
         'flow': 'A 2-channel optical flow field',
     },
     'SIZES': {
@@ -167,9 +170,9 @@ FLYING_CHAIRS_INTERP_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 8,
     'PATHS': {
-        'train': './data/tfrecords/fc_train_interp.tfrecords',
-        'validate': './data/tfrecords/fc_val_interp.tfrecords',
-        'sample': './data/tfrecords/fc_sample_interp.tfrecords',
+        'train': './data/tfrecords/fc_train_all.tfrecords',
+        'validate': './data/tfrecords/fc_val_all.tfrecords',
+        'sample': './data/tfrecords/fc_sample_all.tfrecords'  # does not exist
     },
     'PREPROCESS': {
         'scale': False,
@@ -212,7 +215,64 @@ FLYING_CHAIRS_INTERP_DATASET_CONFIG = {
                 'prob': 1.0,
             },
         },
-        # Do no transformation to the matches mask (in principle as it contains very few info)
+
     },
+    # All preprocessing to image A will be applied to image B in addition to the following.
+    'image_b': {
+        'translate': {
+            'rand_type': "gaussian_bernoulli",
+            'exp': False,
+            'mean': 0,
+            'spread': 0.03,
+            'prob': 1.0,
+        },
+        'rotate': {
+            'rand_type': "gaussian_bernoulli",
+            'exp': False,
+            'mean': 0,
+            'spread': 0.03,
+            'prob': 1.0,
+        },
+        'zoom': {
+            'rand_type': "gaussian_bernoulli",
+            'exp': True,
+            'mean': 0,
+            'spread': 0.03,
+            'prob': 1.0,
+        },
+        'gamma': {
+            'rand_type': "gaussian_bernoulli",
+            'exp': True,
+            'mean': 0,
+            'spread': 0.02,
+            'prob': 1.0,
+        },
+        'brightness': {
+            'rand_type': "gaussian_bernoulli",
+            'exp': False,
+            'mean': 0,
+            'spread': 0.02,
+            'prob': 1.0,
+        },
+        'contrast': {
+            'rand_type': "gaussian_bernoulli",
+            'exp': True,
+            'mean': 0,
+            'spread': 0.02,
+            'prob': 1.0,
+        },
+        'color': {
+            'rand_type': "gaussian_bernoulli",
+            'exp': True,
+            'mean': 0,
+            'spread': 0.02,
+            'prob': 1.0,
+        },
+        'coeff_schedule_param': {
+            'half_life': 50000,
+            'initial_coeff': 0.5,
+            'final_coeff': 1,
+        },
+    }
 }
 # Add here configs for other datasets. For instance, sintel/clean, sintel/final, slowflow, etc.
