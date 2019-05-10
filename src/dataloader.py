@@ -254,10 +254,18 @@ def load_batch(dataset_config, split_name, global_step, input_type='image_pairs'
             common_queue_capacity=512,  # this also broke training, we lowered it (og. value = 2048)
             common_queue_min=256,  # this also broke training, we lowered it (og. value = 1024)
             reader_kwargs=reader_kwargs)
-        image_a, image_b, matches_a, sparse_flow, flow = data_provider.get(['image_a', 'image_b', 'matches_a',
-                                                                            'sparse_flow', 'flow'])
-        image_a, image_b, matches_a, sparse_flow, flow = map(tf.to_float, [image_a, image_b, matches_a, sparse_flow,
-                                                                           flow])
+
+        if input_type == 'image_matches':
+            image_a, image_b, matches_a, sparse_flow, flow = data_provider.get(['image_a', 'image_b', 'matches_a',
+                                                                                'sparse_flow', 'flow'])
+            image_a, image_b, matches_a, sparse_flow, flow = map(tf.to_float, [image_a, image_b, matches_a, sparse_flow,
+                                                                               flow])
+
+        else:
+            matches_a = None
+            sparse_flow = None
+            image_a, image_b, flow = data_provider.get(['image_a', 'image_b', 'flow'])
+            image_a, image_b, flow = map(tf.to_float, [image_a, image_b, flow])
 
         if dataset_config['PREPROCESS']['scale']:
             image_a = image_a / 255.0
@@ -268,8 +276,13 @@ def load_batch(dataset_config, split_name, global_step, input_type='image_pairs'
         # config_a = config_to_arrays(dataset_config['PREPROCESS']['image_a'])
         # config_b = config_to_arrays(dataset_config['PREPROCESS']['image_b'])
         #
-        image_as, image_bs, matches_as, sparse_flows, flows = map(lambda x: tf.expand_dims(x, 0),
-                                                                  [image_a, image_b, matches_a, sparse_flow, flow])
+        if input_type == 'image_matches':
+            image_as, image_bs, matches_as, sparse_flows, flows = map(lambda x: tf.expand_dims(x, 0),
+                                                                      [image_a, image_b, matches_a, sparse_flow, flow])
+        else:
+            matches_as = None
+            sparse_flows = None
+            image_as, image_bs, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b, flow])
         #
         # # Perform data augmentation on GPU  fperezgamonal: typo, it does not work on the GPU, only on the CPU!
         # with tf.device('/cpu:0'):
@@ -345,8 +358,15 @@ def load_batch(dataset_config, split_name, global_step, input_type='image_pairs'
         #     flows = _preprocessing_ops.flow_augmentation(
         #         flows, transforms_from_a, transforms_from_b, crop)
 
-        return tf.train.batch([image_as, image_bs, matches_as, sparse_flows, flows],
-                              enqueue_many=True,
-                              batch_size=dataset_config['BATCH_SIZE'],
-                              capacity=dataset_config['BATCH_SIZE'] * 4,
-                              allow_smaller_final_batch=False)
+        if input_type == 'image_matches':
+            return tf.train.batch([image_as, image_bs, matches_as, sparse_flows, flows],
+                                  enqueue_many=True,
+                                  batch_size=dataset_config['BATCH_SIZE'],
+                                  capacity=dataset_config['BATCH_SIZE'] * 4,
+                                  allow_smaller_final_batch=False)
+        else:
+            return tf.train.batch([image_as, image_bs, flows],
+                                  enqueue_many=True,
+                                  batch_size=dataset_config['BATCH_SIZE'],
+                                  capacity=dataset_config['BATCH_SIZE'] * 4,
+                                  allow_smaller_final_batch=False)

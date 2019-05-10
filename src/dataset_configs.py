@@ -151,6 +151,9 @@ FLYING_CHAIRS_DATASET_CONFIG = {
         }
     },
 }
+
+# TODO: according to more modern architectures, adding noise does not prove to be benefitial (consider removing it)
+# TODO: also avoid
 # Contains all the information necessary to deal with the two input types considered: a pair of images or first image,
 # matching mask (location) + sparse flow
 FLYING_CHAIRS_ALL_DATASET_CONFIG = {
@@ -207,13 +210,13 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
                 'spread': 0.3,
                 'prob': 1.0,
             },
-            'noise': {
-                'rand_type': "uniform_bernoulli",
-                'exp': False,
-                'mean': 0.03,
-                'spread': 0.03,
-                'prob': 1.0,
-            },
+            # 'noise': {
+            #     'rand_type': "uniform_bernoulli",
+            #     'exp': False,
+            #     'mean': 0.03,
+            #     'spread': 0.03,
+            #     'prob': 1.0,
+            # },
         },
 
     },
