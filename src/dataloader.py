@@ -271,6 +271,8 @@ def load_batch(dataset_config, split_name, global_step, input_type='image_pairs'
             image_a = image_a / 255.0
             image_b = image_b / 255.0
 
+        print("Shapes on line 274\n image_a.shape: {0}, image_b.shape: {1}".format(image_a.shape, image_b.shape))
+
         # crop = [dataset_config['PREPROCESS']['crop_height'],
         #         dataset_config['PREPROCESS']['crop_width']]
         # config_a = config_to_arrays(dataset_config['PREPROCESS']['image_a'])
@@ -283,6 +285,8 @@ def load_batch(dataset_config, split_name, global_step, input_type='image_pairs'
             matches_as = None
             sparse_flows = None
             image_as, image_bs, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b, flow])
+        print("Shapes on line 288\n image_a.shape: {0}, image_b.shape: {1}".format(image_a.shape, image_b.shape))
+
         #
         # # Perform data augmentation on GPU  fperezgamonal: typo, it does not work on the GPU, only on the CPU!
         # with tf.device('/cpu:0'):

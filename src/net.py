@@ -169,8 +169,8 @@ class Net(object):
 
         return y_hat[0], y_hat[1]
 
-    def test(self, checkpoint, input_a_path, input_b_path=None, matches_a_path=None, sparse_flow_path=None, out_path='./',
-             input_type='image_pairs', save_image=True, save_flo=True):
+    def test(self, checkpoint, input_a_path, input_b_path=None, matches_a_path=None, sparse_flow_path=None,
+             out_path='./', input_type='image_pairs', save_image=True, save_flo=True):
         input_a = imread(input_a_path)
 
         if sparse_flow_path is not None and matches_a_path is not None and input_type == 'image_matches':
