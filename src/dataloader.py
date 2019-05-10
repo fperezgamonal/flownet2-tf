@@ -358,15 +358,8 @@ def load_batch(dataset_config, split_name, global_step, input_type='image_pairs'
         #     flows = _preprocessing_ops.flow_augmentation(
         #         flows, transforms_from_a, transforms_from_b, crop)
 
-        if input_type == 'image_matches':
-            return tf.train.batch([image_as, image_bs, matches_as, sparse_flows, flows],
-                                  enqueue_many=True,
-                                  batch_size=dataset_config['BATCH_SIZE'],
-                                  capacity=dataset_config['BATCH_SIZE'] * 4,
-                                  allow_smaller_final_batch=False)
-        else:
-            return tf.train.batch([image_as, image_bs, flows],
-                                  enqueue_many=True,
-                                  batch_size=dataset_config['BATCH_SIZE'],
-                                  capacity=dataset_config['BATCH_SIZE'] * 4,
-                                  allow_smaller_final_batch=False)
+        return tf.train.batch([image_as, image_bs, matches_as, sparse_flows, flows],
+                              enqueue_many=True,
+                              batch_size=dataset_config['BATCH_SIZE'],
+                              capacity=dataset_config['BATCH_SIZE'] * 4,
+                              allow_smaller_final_batch=False)
