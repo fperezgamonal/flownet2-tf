@@ -188,16 +188,16 @@ def main():
 
     # Convert the train and val datasets into .tfrecords format
     if 'flying' in FLAGS.data_dir:
-        train_name = 'fc_train'
-        val_name = 'fc_val'
+        train_name = 'fc_train_all'
+        val_name = 'fc_val_all'
         set_name = 'flying_chairs'
     elif 'sintel_clean' in FLAGS.data_dir:
-        train_name = 'sintel_clean_train'
-        val_name = 'sintel_clean_val'
+        train_name = 'sintel_clean_train_all'
+        val_name = 'sintel_clean_val_all'
         set_name = 'sintel_clean'
     elif 'sintel_final' in FLAGS.data_dir:
-        train_name = 'sintel_final_train'
-        val_name = 'sintel_final_val'
+        train_name = 'sintel_final_train_all'
+        val_name = 'sintel_final_val_all'
         set_name = 'sintel_final'
     # Add more datasets here (to change the final tfrecords name)
     # elif 'set_name' in FLAGS.data_dir:
