@@ -187,15 +187,15 @@ def main():
     val_idxs = np.flatnonzero(train_val_split == VAL)
 
     # Convert the train and val datasets into .tfrecords format
-    if 'flying' in FLAGS.data_dir:
+    if 'flying' in FLAGS.data_dir.lower():
         train_name = 'fc_train_all'
         val_name = 'fc_val_all'
         set_name = 'flying_chairs'
-    elif 'sintel_clean' in FLAGS.data_dir:
+    elif 'sintel_clean' in FLAGS.data_dir.lower():
         train_name = 'sintel_clean_train_all'
         val_name = 'sintel_clean_val_all'
         set_name = 'sintel_clean'
-    elif 'sintel_final' in FLAGS.data_dir:
+    elif 'sintel_final' in FLAGS.data_dir.lower():
         train_name = 'sintel_final_train_all'
         val_name = 'sintel_final_val_all'
         set_name = 'sintel_final'
@@ -231,7 +231,7 @@ if __name__ == '__main__':
         required=True,
         help='Directory for output .tfrecords files'
     )
-    # Simplified to by default assume we can construct only one dataset with all the information for both types of input:
+    # Simplified by assuming we can construct only one dataset with all the information for both types of input:
     # That is, we have: img1, img2, matches(img1=>img2), sparse_flow and gt_flow
     # parser.add_argument(
     #     '--input_type',
