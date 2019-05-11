@@ -173,8 +173,8 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 8,
     'PATHS': {
-        'train': './data/tfrecords/flying_chairs_train.tfrecords',
-        'validate': './data/tfrecords/flying_chairs_val.tfrecords',
+        'train': './data/tfrecords/fc_train_all.tfrecords',
+        'validate': './data/tfrecords/fc_val_all.tfrecords',
         'sample': './data/tfrecords/fc_sample_all.tfrecords'  # does not exist (ignore)
     },
     'PREPROCESS': {

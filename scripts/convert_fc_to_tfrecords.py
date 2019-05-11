@@ -21,11 +21,12 @@ def open_flo_file(filename):
         if 202021.25 != magic:
             print('Magic number incorrect. Invalid .flo file')
         else:
-            w = np.fromfile(f, np.int32, count=1)
-            h = np.fromfile(f, np.int32, count=1)
-            data = np.fromfile(f, np.float32, count=2*w[0]*h[0])
+            w = np.fromfile(f, np.int32, count=1)[0]
+            h = np.fromfile(f, np.int32, count=1)[0]
+            print("Reading {0} x {1} flo file".format(w, h))
+            data = np.fromfile(f, np.float32, count=2*w*h)
             # Reshape data into 3D array (columns, rows, bands)
-            return np.resize(data, (w[0], h[0], 2))
+            return np.resize(data, (h, w, 2))
 
 
 # https://github.com/tensorflow/tensorflow/blob/r1.1/tensorflow/examples/how_tos/reading_data/convert_to_records.py
@@ -45,7 +46,7 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
     writeOpts = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.ZLIB)
     writer = tf.python_io.TFRecordWriter(filename, options=writeOpts)
 
-    # Load each data sample (image_a, image_b, flow) and write it to the TFRecord
+    # Load each data sample (image_a, image_b, matches_a, sparse_flow, flow) and write it to the TFRecord
     count = 0
     pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=len(indices)).start()
     for i in indices:
@@ -123,7 +124,7 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                ))
         # Assert that the mask matches dims too
         assert height_a == height_ma and width_a == width_ma, ("FATAL: mask width, height do not match the images."
-                                                              "Images have shape: {0}, mask: {1}".format(
+                                                               "Images have shape: {0}, mask: {1}".format(
             image_a.shape[:-1], matches_a.shape[:-1]))
         # Assert correct number of channels
         assert channels_ma == 1, ("FATAL: mask should be binary but the number of channels is not one but {0}".format(
@@ -149,6 +150,7 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
         # From net.py: apply_y()
         flow_raw = open_flo_file(flow_path).tostring()
         sparse_flow_raw = open_flo_file(sparse_flow_path).tostring()
+        # TODO: careful, flow has still not been padded, do so in net.train()
         # # Assert it is a valid flow
         # assert (flow_raw.shape[-1] == 2 and sparse_flow_raw.shape[-1] == 2,
         #         "One (or both) flow(s) has a number of channels different than 2. 'nº ch, sparse_flow: {0},"
@@ -164,7 +166,6 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
         #     sparse_flow_raw = np.pad(sparse_flow_raw, padding, mode='constant', constant_values=0.)
 
         # Encode flow as string
-        # TODO: careful, flow has still not been padded, do so in net.train()
         # flow_raw = flow_raw.tostring()
         # sparse_flow_raw = sparse_flow_raw.tostring()
 
@@ -217,7 +218,7 @@ if __name__ == '__main__':
         '--data_dir',
         type=str,
         required=True,
-        help='Directory that includes all .ppm and .flo files in the dataset'
+        help='Directory that includes all .png and .flo files in the dataset'
     )
     parser.add_argument(
         '--train_val_split',
@@ -229,17 +230,8 @@ if __name__ == '__main__':
         '--out',
         type=str,
         required=True,
-        help='Directory for output .tfrecords files'
+        help='Directory to output .tfrecords files'
     )
-    # Simplified by assuming we can construct only one dataset with all the information for both types of input:
-    # That is, we have: img1, img2, matches(img1=>img2), sparse_flow and gt_flow
-    # parser.add_argument(
-    #     '--input_type',
-    #     type=str,
-    #     required=False,
-    #     help='Whether to use two consecutive frames as input or one frame and the matches "towards" the next one',
-    #     default='image_pairs'
-    # )
     parser.add_argument(
         '--matcher',
         type=str,
