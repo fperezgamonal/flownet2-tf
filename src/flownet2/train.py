@@ -10,24 +10,45 @@ def main():
     net = FlowNet2()
 
     # Load a batch of data
-    input_a, input_b, matches_a, sparse_flow, flow = load_batch(FLYING_CHAIRS_ALL_DATASET_CONFIG, 'train',
-                                                                net.global_step, input_type=FLAGS.input_type)
-    print("input_a.shape: {0}, input_b.shape: {1}, matches_a: {2}, sparse_flow: {3}, flow.shape: {4}".format(
-        input_a.shape, input_b.shape, matches_a, sparse_flow, flow.shape))
+    if FLAGS.input_type == 'image_matches':
+        input_a, matches_a, sparse_flow, flow = load_batch(FLYING_CHAIRS_ALL_DATASET_CONFIG, 'train', net.global_step,
+                                                           input_type=FLAGS.input_type)
+        print("input_a.shape: {0}, matches_a.shape: {1}, sparse_flow.shape: {2}, flow.shape: {3}".format(
+            input_a.shape, matches_a.shape, sparse_flow.shape, flow.shape))
 
-    # Train on the data
-    net.train(
-        log_dir='./logs/flownet_2',
-        training_schedule=LONG_SCHEDULE,
-        input_a=input_a,
-        input_b=input_b,
-        out_flow=flow,
-        # Load trained weights for CSS and SD parts of network
-        checkpoints={
-            './checkpoints/FlowNetCSS-ft-sd/flownet-CSS-ft-sd.ckpt-0': ('FlowNet2/FlowNetCSS', 'FlowNet2'),
-            './checkpoints/FlowNetSD/flownet-SD.ckpt-0': ('FlowNet2/FlowNetSD', 'FlowNet2')
-        }
-    )
+        # Train on the data
+        net.train(
+            log_dir='./logs/flownet_2/image_matches',
+            training_schedule=LONG_SCHEDULE,
+            input_a=input_a,
+            matches_a=matches_a,
+            sparse_flow=sparse_flow,
+            out_flow=flow,
+            # Load trained weights for CSS and SD parts of network
+            checkpoints={
+                './checkpoints/FlowNetCSS-ft-sd/flownet-CSS-ft-sd.ckpt-0': ('FlowNet2/FlowNetCSS', 'FlowNet2'),
+                './checkpoints/FlowNetSD/flownet-SD.ckpt-0': ('FlowNet2/FlowNetSD', 'FlowNet2')
+            }
+        )
+    else:
+        input_a, input_b, flow = load_batch(FLYING_CHAIRS_ALL_DATASET_CONFIG, 'train', net.global_step,
+                                            input_type=FLAGS.input_type)
+        print("input_a.shape: {0}, input_b.shape: {1}, flow.shape: {2}".format(input_a.shape, input_b.shape,
+                                                                               flow.shape))
+
+        # Train on the data
+        net.train(
+            log_dir='./logs/flownet_2/image_pairs',
+            training_schedule=LONG_SCHEDULE,
+            input_a=input_a,
+            input_b=input_b,
+            out_flow=flow,
+            # Load trained weights for CSS and SD parts of network
+            checkpoints={
+                './checkpoints/FlowNetCSS-ft-sd/flownet-CSS-ft-sd.ckpt-0': ('FlowNet2/FlowNetCSS', 'FlowNet2'),
+                './checkpoints/FlowNetSD/flownet-SD.ckpt-0': ('FlowNet2/FlowNetSD', 'FlowNet2')
+            }
+        )
 
 
 if __name__ == '__main__':
