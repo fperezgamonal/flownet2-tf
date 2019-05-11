@@ -1,5 +1,5 @@
 from ..dataloader import load_batch
-from ..dataset_configs import FLYING_CHAIRS_ALL_DATASET_CONFIG
+from ..dataset_configs import FLYING_CHAIRS_ALL_DATASET_CONFIG, FLYING_CHAIRS_ALL_DATASET_CONFIG
 from ..training_schedules import LONG_SCHEDULE
 from .flownet_s_interp import FlowNetS_interp
 
