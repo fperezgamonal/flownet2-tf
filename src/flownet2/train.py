@@ -10,8 +10,10 @@ def main():
     net = FlowNet2()
 
     # Load a batch of data
-    input_a, input_b, matches_a, sparse_flow, flow = load_batch(FLYING_CHAIRS_ALL_DATASET_CONFIG, 'train', net.global_step,
-                                                                input_type=FLAGS.input_type)
+    input_a, input_b, matches_a, sparse_flow, flow = load_batch(FLYING_CHAIRS_ALL_DATASET_CONFIG, 'train',
+                                                                net.global_step, input_type=FLAGS.input_type)
+    print("input_a.shape: {0}, input_b.shape: {1}, matches_a: {2}, sparse_flow: {3}, flow.shape: {4}".format(
+        input_a.shape, input_b.shape, matches_a, sparse_flow, flow.shape))
 
     # Train on the data
     net.train(
@@ -34,7 +36,7 @@ if __name__ == '__main__':
         '--input_type',
         type=str,
         required=False,
-        help='Path to first image',
+        help='Type of input that is fed to the network',
         default='image_pairs'
     )
     FLAGS = parser.parse_args()
