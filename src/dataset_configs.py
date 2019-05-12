@@ -248,20 +248,20 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
             #     'spread': 0.02,
             #     'prob': 1.0,
             # },
-            'brightness': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': False,
-                'mean': 0,
-                'spread': 0.02,
-                'prob': 1.0,
-            },
-            'contrast': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': True,
-                'mean': 0,
-                'spread': 0.02,
-                'prob': 1.0,
-            },
+            # 'brightness': {
+            #     'rand_type': "gaussian_bernoulli",
+            #     'exp': False,
+            #     'mean': 0,
+            #     'spread': 0.02,
+            #     'prob': 1.0,
+            # },
+            # 'contrast': {
+            #     'rand_type': "gaussian_bernoulli",
+            #     'exp': True,
+            #     'mean': 0,
+            #     'spread': 0.02,
+            #     'prob': 1.0,
+            # },
             # 'color': {
             #     'rand_type': "gaussian_bernoulli",
             #     'exp': True,
@@ -269,11 +269,11 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
             #     'spread': 0.02,
             #     'prob': 1.0,
             # },
-            'coeff_schedule_param': {
-                'half_life': 50000,
-                'initial_coeff': 0.5,
-                'final_coeff': 1,
-            },
+            # 'coeff_schedule_param': {
+            #     'half_life': 50000,
+            #     'initial_coeff': 0.5,
+            #     'final_coeff': 1,
+            # },
         }
     }
 }
