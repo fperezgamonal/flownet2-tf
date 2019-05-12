@@ -173,8 +173,8 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 8,
     'PATHS': {
-        'train': './data/tfrecords/fc_train_all.tfrecords',
-        'validate': './data/tfrecords/fc_val_all.tfrecords',
+        'train': './data/tfrecords/flying_chairs_train.tfrecords',  # './data/tfrecords/fc_train_all.tfrecords',
+        'validate': './data/tfrecords/flying_chairs_val.tfrecords',  #: './data/tfrecords/fc_val_all.tfrecords',
         'sample': './data/tfrecords/fc_sample_all.tfrecords'  # does not exist (ignore)
     },
     'PREPROCESS': {
@@ -218,64 +218,63 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
             #     'prob': 1.0,
             # },
         },
-
-    },
-    # All preprocessing to image A will be applied to image B in addition to the following.
-    'image_b': {
-        'translate': {
-            'rand_type': "gaussian_bernoulli",
-            'exp': False,
-            'mean': 0,
-            'spread': 0.03,
-            'prob': 1.0,
-        },
-        'rotate': {
-            'rand_type': "gaussian_bernoulli",
-            'exp': False,
-            'mean': 0,
-            'spread': 0.03,
-            'prob': 1.0,
-        },
-        'zoom': {
-            'rand_type': "gaussian_bernoulli",
-            'exp': True,
-            'mean': 0,
-            'spread': 0.03,
-            'prob': 1.0,
-        },
-        'gamma': {
-            'rand_type': "gaussian_bernoulli",
-            'exp': True,
-            'mean': 0,
-            'spread': 0.02,
-            'prob': 1.0,
-        },
-        'brightness': {
-            'rand_type': "gaussian_bernoulli",
-            'exp': False,
-            'mean': 0,
-            'spread': 0.02,
-            'prob': 1.0,
-        },
-        'contrast': {
-            'rand_type': "gaussian_bernoulli",
-            'exp': True,
-            'mean': 0,
-            'spread': 0.02,
-            'prob': 1.0,
-        },
-        'color': {
-            'rand_type': "gaussian_bernoulli",
-            'exp': True,
-            'mean': 0,
-            'spread': 0.02,
-            'prob': 1.0,
-        },
-        'coeff_schedule_param': {
-            'half_life': 50000,
-            'initial_coeff': 0.5,
-            'final_coeff': 1,
-        },
+        # All preprocessing to image A will be applied to image B in addition to the following.
+        'image_b': {
+            'translate': {
+                'rand_type': "gaussian_bernoulli",
+                'exp': False,
+                'mean': 0,
+                'spread': 0.03,
+                'prob': 1.0,
+            },
+            'rotate': {
+                'rand_type': "gaussian_bernoulli",
+                'exp': False,
+                'mean': 0,
+                'spread': 0.03,
+                'prob': 1.0,
+            },
+            'zoom': {
+                'rand_type': "gaussian_bernoulli",
+                'exp': True,
+                'mean': 0,
+                'spread': 0.03,
+                'prob': 1.0,
+            },
+            'gamma': {
+                'rand_type': "gaussian_bernoulli",
+                'exp': True,
+                'mean': 0,
+                'spread': 0.02,
+                'prob': 1.0,
+            },
+            'brightness': {
+                'rand_type': "gaussian_bernoulli",
+                'exp': False,
+                'mean': 0,
+                'spread': 0.02,
+                'prob': 1.0,
+            },
+            'contrast': {
+                'rand_type': "gaussian_bernoulli",
+                'exp': True,
+                'mean': 0,
+                'spread': 0.02,
+                'prob': 1.0,
+            },
+            'color': {
+                'rand_type': "gaussian_bernoulli",
+                'exp': True,
+                'mean': 0,
+                'spread': 0.02,
+                'prob': 1.0,
+            },
+            'coeff_schedule_param': {
+                'half_life': 50000,
+                'initial_coeff': 0.5,
+                'final_coeff': 1,
+            },
+        }
     }
 }
 # Add here configs for other datasets. For instance, sintel/clean, sintel/final, slowflow, etc.
