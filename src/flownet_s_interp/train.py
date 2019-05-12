@@ -17,7 +17,7 @@ def main():
 
         # Train on the data
         net.train(
-            log_dir='./logs/flownet_s_interp_train/image_matches',
+            log_dir='./logs/flownet_s_interp/image_matches',
             training_schedule=LONG_SCHEDULE,
             input_a=input_a,
             matches_a=matches_a,
@@ -31,7 +31,7 @@ def main():
                                                                                flow.shape))
         # Train on the data
         net.train(
-            log_dir='./logs/flownet_s_interp_train/image_pairs',
+            log_dir='./logs/flownet_s_interp/image_pairs',
             training_schedule=LONG_SCHEDULE,
             input_a=input_a,
             input_b=input_b,

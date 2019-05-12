@@ -14,7 +14,7 @@ def main():
                                                            input_type=FLAGS.input_type)
         # Train on the data
         net.train(
-            log_dir='./logs/flownet_s_sample/image_matches',
+            log_dir='./logs/flownet_s/image_matches',
             training_schedule=LONG_SCHEDULE,
             input_a=input_a,
             matches_a=matches_a,
@@ -26,7 +26,7 @@ def main():
                                             input_type=FLAGS.input_type)
         # Train on the data
         net.train(
-            log_dir='./logs/flownet_s_sample/image_pairs',
+            log_dir='./logs/flownet_s/image_pairs',
             training_schedule=LONG_SCHEDULE,
             input_a=input_a,
             input_b=input_b,

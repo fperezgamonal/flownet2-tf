@@ -17,7 +17,7 @@ def main():
 
         # Train on the data
         net.train(
-            log_dir='./logs/flownet_sd_sample/image_matches',
+            log_dir='./logs/flownet_sd/image_matches',
             training_schedule=LONG_SCHEDULE,
             input_a=input_a,
             matches_a=matches_a,
@@ -32,7 +32,7 @@ def main():
 
         # Train on the data
         net.train(
-            log_dir='./logs/flownet_sd_sample/image_pairs',
+            log_dir='./logs/flownet_sd/image_pairs',
             training_schedule=LONG_SCHEDULE,
             input_a=input_a,
             input_b=input_b,
