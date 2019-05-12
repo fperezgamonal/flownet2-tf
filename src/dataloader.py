@@ -87,40 +87,64 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
 
         IMAGE_HEIGHT, IMAGE_WIDTH = dataset_config['IMAGE_HEIGHT'], dataset_config['IMAGE_WIDTH']
         reader = tf.TFRecordReader
-        keys_to_features = {
-            'image_a': tf.FixedLenFeature((), tf.string),
-            'image_b': tf.FixedLenFeature((), tf.string),
-            'matches_a': tf.FixedLenFeature((), tf.string),
-            'sparse_flow': tf.FixedLenFeature((), tf.string),  # initial sparse flow (from matches)
-            'flow': tf.FixedLenFeature((), tf.string),
-        }
-        items_to_handlers = {
-            'image_a': Image(
-                image_key='image_a',
-                dtype=tf.float64,
-                shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 3],
-                channels=3),
-            'image_b': Image(
-                image_key='image_b',
-                dtype=tf.float64,
-                shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 3],
-                channels=3),
-            'matches_a': Image(
-                image_key='matches_a',
-                dtype=tf.float64,
-                shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 1],
-                channels=1),
-            'sparse_flow': Image(
-                image_key='sparse_flow',
-                dtype=tf.float32,
-                shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 2],
-                channels=2),
-            'flow': Image(
-                image_key='flow',
-                dtype=tf.float32,
-                shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 2],
-                channels=2),
-        }
+        if input_type == 'image_matches':
+            keys_to_features = {
+                'image_a': tf.FixedLenFeature((), tf.string),
+                'image_b': tf.FixedLenFeature((), tf.string),
+                'matches_a': tf.FixedLenFeature((), tf.string),
+                'sparse_flow': tf.FixedLenFeature((), tf.string),  # initial sparse flow (from matches)
+                'flow': tf.FixedLenFeature((), tf.string),
+            }
+            items_to_handlers = {
+                'image_a': Image(
+                    image_key='image_a',
+                    dtype=tf.float64,
+                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 3],
+                    channels=3),
+                'image_b': Image(
+                    image_key='image_b',
+                    dtype=tf.float64,
+                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 3],
+                    channels=3),
+                'matches_a': Image(
+                    image_key='matches_a',
+                    dtype=tf.float64,
+                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 1],
+                    channels=1),
+                'sparse_flow': Image(
+                    image_key='sparse_flow',
+                    dtype=tf.float32,
+                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 2],
+                    channels=2),
+                'flow': Image(
+                    image_key='flow',
+                    dtype=tf.float32,
+                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 2],
+                    channels=2),
+            }
+        else:
+            keys_to_features = {
+                'image_a': tf.FixedLenFeature((), tf.string),
+                'image_b': tf.FixedLenFeature((), tf.string),
+                'flow': tf.FixedLenFeature((), tf.string),
+            }
+            items_to_handlers = {
+                'image_a': Image(
+                    image_key='image_a',
+                    dtype=tf.float64,
+                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 3],
+                    channels=3),
+                'image_b': Image(
+                    image_key='image_b',
+                    dtype=tf.float64,
+                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 3],
+                    channels=3),
+                'flow': Image(
+                    image_key='flow',
+                    dtype=tf.float32,
+                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 2],
+                    channels=2),
+            }
 
         decoder = slim.tfexample_decoder.TFExampleDecoder(keys_to_features, items_to_handlers)
         return slim.dataset.Dataset(
