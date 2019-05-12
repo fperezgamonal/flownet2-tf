@@ -84,13 +84,13 @@ FLYING_CHAIRS_DATASET_CONFIG = {
                 'spread': 0.3,
                 'prob': 1.0,
             },
-            'noise': {
-                'rand_type': "uniform_bernoulli",
-                'exp': False,
-                'mean': 0.03,
-                'spread': 0.03,
-                'prob': 1.0,
-            },
+            # 'noise': {
+            #     'rand_type': "uniform_bernoulli",
+            #     'exp': False,
+            #     'mean': 0.03,
+            #     'spread': 0.03,
+            #     'prob': 1.0,
+            # },
         },
         # All preprocessing to image A will be applied to image B in addition to the following.
         'image_b': {
