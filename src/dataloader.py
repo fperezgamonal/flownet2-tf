@@ -242,7 +242,7 @@ def _generate_coeff(param, discount_coeff=tf.constant(1.0), default_value=tf.con
 # TODO: but we also require on TFRecords (HUGE!), better create one with all the required data!!
 # TODO: that is, image_a (img1), image_b (img2), matches_a, sparse_flow ==> make sure the mappings are OK
 def load_batch(dataset_config, split_name, global_step, input_type='image_pairs'):
-    num_threads = 1  # og value: 32  this broke training
+    num_threads = 8  # og value: 32  this broke training
     reader_kwargs = {'options': tf.python_io.TFRecordOptions(
         tf.python_io.TFRecordCompressionType.ZLIB)}
 
