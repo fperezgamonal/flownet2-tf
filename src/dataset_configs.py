@@ -241,13 +241,13 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
                 'spread': 0.03,
                 'prob': 1.0,
             },
-            'gamma': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': True,
-                'mean': 0,
-                'spread': 0.02,
-                'prob': 1.0,
-            },
+            # 'gamma': {
+            #     'rand_type': "gaussian_bernoulli",
+            #     'exp': True,
+            #     'mean': 0,
+            #     'spread': 0.02,
+            #     'prob': 1.0,
+            # },
             'brightness': {
                 'rand_type': "gaussian_bernoulli",
                 'exp': False,
