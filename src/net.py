@@ -10,6 +10,7 @@ from .training_schedules import LONG_SCHEDULE
 slim = tf.contrib.slim
 from math import ceil
 import glob
+import datetime
 
 
 class Mode(Enum):
@@ -418,6 +419,10 @@ class Net(object):
             optimizer,
             summarize_gradients=True)
 
+        # Create unique logging dir to avoid overwritting of old data (e.g.: when comparing different runs)
+        now = datetime.datetime.now()
+        date_now = now.strftime('%d-%m-%y_%H-%M-%S')
+        log_dir = os.path.join(log_dir, date_now)
         if self.debug:
             with tf.Session() as sess:
                 sess.run(tf.global_variables_initializer())
