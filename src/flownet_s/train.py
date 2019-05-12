@@ -7,7 +7,7 @@ import argparse
 
 def main():
     # Create a new network
-    net = FlowNetS(debug=True)
+    net = FlowNetS()
 
     if FLAGS.input_type == 'image_matches':
         input_a, matches_a, sparse_flow, flow = load_batch(FLYING_CHAIRS_ALL_DATASET_CONFIG, 'train', net.global_step,
