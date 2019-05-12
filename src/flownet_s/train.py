@@ -7,14 +7,11 @@ import argparse
 
 def main():
     # Create a new network
-    net = FlowNetS()
+    net = FlowNetS(debug=True)
 
     if FLAGS.input_type == 'image_matches':
         input_a, matches_a, sparse_flow, flow = load_batch(FLYING_CHAIRS_ALL_DATASET_CONFIG, 'train', net.global_step,
                                                            input_type=FLAGS.input_type)
-        print("input_a.shape: {0}, matches_a.shape: {1}, sparse_flow.shape: {2}, flow.shape: {3}".format(
-            input_a.shape, matches_a.shape, sparse_flow.shape, flow.shape))
-
         # Train on the data
         net.train(
             log_dir='./logs/flownet_s_sample/image_matches',
@@ -27,8 +24,6 @@ def main():
     else:
         input_a, input_b, flow = load_batch(FLYING_CHAIRS_ALL_DATASET_CONFIG, 'train', net.global_step,
                                             input_type=FLAGS.input_type)
-        print("input_a.shape: {0}, input_b.shape: {1}, flow.shape: {2}".format(input_a.shape, input_b.shape,
-                                                                               flow.shape))
         # Train on the data
         net.train(
             log_dir='./logs/flownet_s_sample/image_pairs',

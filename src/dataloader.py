@@ -271,8 +271,6 @@ def load_batch(dataset_config, split_name, global_step, input_type='image_pairs'
             if not input_type == 'image_matches':
                 image_b = image_b / 255.0
 
-        print("Shapes on line 274\n image_a.shape: {0}, image_b.shape: {1}".format(image_a.shape, image_b.shape))
-        print("matches_a: {0}, sparse_flow: {1}, flow.shape: {2}".format(matches_a, sparse_flow, flow.shape))
         crop = [dataset_config['PREPROCESS']['crop_height'],
                 dataset_config['PREPROCESS']['crop_width']]
         config_a = config_to_arrays(dataset_config['PREPROCESS']['image_a'])
@@ -286,12 +284,14 @@ def load_batch(dataset_config, split_name, global_step, input_type='image_pairs'
             matches_as = None
             sparse_flows = None
             image_as, image_bs, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b, flow])
-        print("Shapes on line 288\n image_as.shape: {0}, image_bs.shape: {1}".format(image_as.shape, image_bs.shape))
-        print("matches_as: {0}, sparse_flows: {1}, flows.shape: {2}".format(matches_as, sparse_flows, flows.shape))
 
         #
         # Perform data augmentation on GPU  fperezgamonal: typo, it does not work on the GPU, only on the CPU!
-        with tf.device('/cpu:0'):  # it should work on the gpu according to the test.py (repo root folder)
+        # TODO: despite not reporting segmentation fault, the process is killed when data_augmentation is added. Test:
+        #   - See if it works in GPU (more memory)
+        #   - Test with more CPUs and/or memory per cpu (harder to get in the queue to test anything!)
+        #   - Play arround with queue sizes and num_threads (maybe the queue is still too large (or short?))
+        with tf.device('/gpu:0'):  # it should work on the gpu according to the test.py (repo root folder)
             image_as, image_bs, transforms_from_a, transforms_from_b = \
                 _preprocessing_ops.data_augmentation(image_as,
                                                      image_bs,
