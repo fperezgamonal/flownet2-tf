@@ -30,6 +30,9 @@ def open_flo_file(filename):
 
 
 # https://github.com/tensorflow/tensorflow/blob/r1.1/tensorflow/examples/how_tos/reading_data/convert_to_records.py
+def _int64_feature(value):
+  return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+
 def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
@@ -128,6 +131,7 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
             channels_ma
         ))
 
+        original_shape = image_a.shape
         if height_a % divisor != 0 or width_a % divisor != 0:
             new_height = int(ceil(height_a / divisor) * divisor)
             new_width = int(ceil(width_a / divisor) * divisor)
@@ -145,16 +149,41 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
 
         # Pad flows as well for training (to compute the loss)
         # From net.py: apply_y()
-        flow_raw = open_flo_file(flow_path).tostring()
-        sparse_flow_raw = open_flo_file(sparse_flow_path).tostring()
-        # TODO: careful, flow has still not been padded, do so in net.train()
+        flow_raw = open_flo_file(flow_path)
+        sparse_flow_raw = open_flo_file(sparse_flow_path)
+        flow_height, flow_width, flow_ch = flow_raw.shape
+        sparse_height, sparse_width, sparse_ch = sparse_flow_raw.shape
+
+        # Assert correct dimensions
+        assert flow_height == sparse_height and flow_width == sparse_width and flow_ch == sparse_ch, \
+            ("Fatal: both flows should have matching dimensions but instead have: out_flow.shape: {0},"
+             " sparse_flow: {1}".format(flow_raw.shape, sparse_flow_raw.shape))
+
+        assert flow_ch == 2, ("Expected flow field to have 2 channels (horizontal + vertical) but it has: {0}".format(
+            flow_ch))
+
+        # Pad if necessary (like above or to be more precise like 'apply_y' (net.py))
+        if flow_height % divisor != 0 or flow_width % divisor != 0:
+            new_height = int(ceil(flow_height / divisor) * divisor)
+            new_width = int(ceil(flow_width / divisor) * divisor)
+            pad_height = new_height - flow_height
+            pad_width = new_width - flow_width
+            padding = [(0, pad_height), (0, pad_width), (0, 0)]
+            flow_raw = np.pad(flow_raw, padding, mode='constant', constant_values=0.)
+            sparse_flow_raw = np.pad(sparse_flow_raw, padding, mode='constant', constant_values=0.)
+
+        # Encode as string to include in TFrecord
+        flow_raw = flow_raw.tostring()
+        sparse_flow_raw = sparse_flow_raw.tostring()
 
         example = tf.train.Example(features=tf.train.Features(feature={
             'image_a': _bytes_feature(image_a_raw),
             'image_b': _bytes_feature(image_b_raw),
             'matches_a': _bytes_feature(matches_a_raw),
             'sparse_flow': _bytes_feature(sparse_flow_raw),
-            'flow': _bytes_feature(flow_raw)}))
+            'flow': _bytes_feature(flow_raw),
+            'height': _int64_feature(original_shape[0]),
+            'width': _int64_feature(original_shape[1])}))
         writer.write(example.SerializeToString())
         pbar.update(count + 1)
         count += 1

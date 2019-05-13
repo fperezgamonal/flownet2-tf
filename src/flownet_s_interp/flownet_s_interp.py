@@ -13,6 +13,8 @@ class FlowNetS_interp(Net):
         super(FlowNetS_interp, self).__init__(mode=mode, debug=debug)
 
     # TODO: see where we can output the OF confidence map (based off last conv layer => heat map like?)
+    # TODO: "modernise" architecture (remove 7x7 and 5x5 filters by 3x3 and proper stride!)
+    # TODO: take "hints" from PWC-Net as it is has more or less the same nº of weights
     def model(self, inputs, training_schedule, trainable=True):
         _, height, width, _ = inputs['input_a'].shape.as_list()
         stacked = False
@@ -125,7 +127,7 @@ class FlowNetS_interp(Net):
                     }
 
     def loss(self, flow, predictions):
-        flow = flow * 0.05
+        flow = flow * 0.05  # i.e.: flow / 20
 
         losses = []
         INPUT_HEIGHT, INPUT_WIDTH = float(flow.shape[1].value), float(flow.shape[2].value)

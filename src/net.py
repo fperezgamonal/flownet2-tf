@@ -2,7 +2,7 @@ import abc
 from enum import Enum
 import os
 import tensorflow as tf
-from .flowlib import flow_to_image, write_flow
+from .flowlib import flow_to_image, write_flow, read_flow
 import numpy as np
 from scipy.misc import imread, imsave
 import uuid
@@ -178,7 +178,7 @@ class Net(object):
             # Read matches mask and sparse flow from file
             input_b = None
             matches_a = imread(matches_a_path)
-            sparse_flow = flow_to_image(sparse_flow_path)
+            sparse_flow = read_flow(sparse_flow_path)
             assert sparse_flow.shape[-1] == 2  # assert it is a valid flow
         else:  # Define them as None (although in 'apply_x' they default to None, JIC)
             input_b = imread(input_b_path)
@@ -300,12 +300,12 @@ class Net(object):
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
                     matches_0 = imread(path_inputs[1])
-                    sparse_flow_0 = flow_to_image(path_inputs[2])
+                    sparse_flow_0 = read_flow(path_inputs[2])
                 else:  # path to all inputs (read all and decide what to use based on 'input_type'
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
                     matches_0 = imread(path_inputs[2])
-                    sparse_flow_0 = flow_to_image(path_inputs[3])
+                    sparse_flow_0 = read_flow(path_inputs[3])
 
                 frame_0, frame_1, matches_0, sparse_flow_0, x_adapt_info = self.adapt_x(frame_0, frame_1, matches_0,
                                                                                         sparse_flow_0)
@@ -351,7 +351,7 @@ class Net(object):
         tf.summary.image("image_a", input_a, max_outputs=2)
         if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
             tf.summary.image("matches_a", matches_a, max_outputs=2)
-            # Convert sparse flow to image-like
+            # Convert sparse flow to image-like (ONLY for visualization)
             sparse_flow_0 = sparse_flow[0, :, :, :]
             sparse_flow_0 = tf.py_func(flow_to_image, [sparse_flow_0], tf.uint8)
             sparse_flow_1 = sparse_flow[1, :, :, :]
@@ -376,7 +376,7 @@ class Net(object):
             inputs = {
                 'input_a': input_a,
                 'matches_a': matches_a,
-                'sparse_flow': sparse_flow_img,
+                'sparse_flow': sparse_flow,
             }
         else:
             inputs = {
