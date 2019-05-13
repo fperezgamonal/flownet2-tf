@@ -35,12 +35,9 @@ def _bytes_feature(value):
 
 
 # TODO: create a subfolder in sintel/clean and sintel/final 'flatten' that contains an alphabetical list of files
-# to ease the creation of the tfrecord and the general use of the framework
-# Cropping during training is not necessary since the flow with also be padded with 0s and no errors will be added!
-# TODO: simplify the conversion by just simply creating one TFrecords with every input needed and then select the
-#  appropiate fields via 'load_batch (dataloader.py)'
-def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chairs',
-                    divisor=64):
+# TODO: for some reason, the new dataset created by just adding some fields on base one are "corrupt"
+# TODO: check if moving the padding into 'load_batch' solves the problem...
+def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chairs', divisor=64):
     # Open a TFRRecordWriter
     filename = os.path.join(FLAGS.out, name + '.tfrecords')
     writeOpts = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.ZLIB)
@@ -112,7 +109,7 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
         matches_a = matches_a / 255.0
 
         # Deal with images not multiple of 64 (e.g.: Sintel, Middlebury, etc.)
-        # Copied from the method from net.py: apply_x()
+        # Copied from the method from net.py: adapt_x()
         height_a, width_a, channels_a = image_a.shape
         height_b, width_b, channels_b = image_b.shape
         height_ma, width_ma, channels_ma = matches_a.shape
@@ -151,23 +148,6 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
         flow_raw = open_flo_file(flow_path).tostring()
         sparse_flow_raw = open_flo_file(sparse_flow_path).tostring()
         # TODO: careful, flow has still not been padded, do so in net.train()
-        # # Assert it is a valid flow
-        # assert (flow_raw.shape[-1] == 2 and sparse_flow_raw.shape[-1] == 2,
-        #         "One (or both) flow(s) has a number of channels different than 2. 'nº ch, sparse_flow: {0},"
-        #         " out_flow: {1}".format(sparse_flow_raw.shape[-1], flow_raw.shape[-1]))
-        #
-        # if height_a % divisor != 0 or width_a % divisor != 0:
-        #     new_height = int(ceil(height_a / divisor) * divisor)
-        #     new_width = int(ceil(width_a / divisor) * divisor)
-        #     pad_height = new_height - height_a
-        #     pad_width = new_width - width_a
-        #     padding = [(0, pad_height), (0, pad_width), (0, 0)]
-        #     flow_raw = np.pad(flow_raw, padding, mode='constant', constant_values=0.)
-        #     sparse_flow_raw = np.pad(sparse_flow_raw, padding, mode='constant', constant_values=0.)
-
-        # Encode flow as string
-        # flow_raw = flow_raw.tostring()
-        # sparse_flow_raw = sparse_flow_raw.tostring()
 
         example = tf.train.Example(features=tf.train.Features(feature={
             'image_a': _bytes_feature(image_a_raw),

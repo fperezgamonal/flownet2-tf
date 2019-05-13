@@ -46,7 +46,7 @@ if __name__ == '__main__':
         type=str,
         required=False,
         help='Type of input that is fed to the network',
-        default='image_pairs'
+        default='image_matches'
     )
     FLAGS = parser.parse_args()
     main()

@@ -22,7 +22,7 @@ def main():
             out_flow=flow
         )
     else:
-        input_a, input_b, flow = load_batch(FLYING_CHAIRS_DATASET_CONFIG, 'train', net.global_step,
+        input_a, input_b, flow = load_batch(FLYING_CHAIRS_ALL_DATASET_CONFIG, 'train', net.global_step,
                                             input_type=FLAGS.input_type)
         # Train on the data
         net.train(
