@@ -82,6 +82,7 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
     dataset_config: A dataset_config defined in dataset_configs.py
     split_name: 'train'/'validate'
     """
+    print("_get_dataset input_type: {0}".format(input_type))
     with tf.name_scope('__get_dataset'):
         if split_name not in dataset_config['SIZES']:
             raise ValueError('split name %s not recognized' % split_name)
@@ -89,12 +90,13 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
         IMAGE_HEIGHT, IMAGE_WIDTH = dataset_config['IMAGE_HEIGHT'], dataset_config['IMAGE_WIDTH']
         reader = tf.TFRecordReader
         if input_type == 'image_matches':
+            print("Configuring keys and items for 'image_matches' input type...")
             keys_to_features = {
-                'image_a': tf.FixedLenFeature((), tf.string),
-                'image_b': tf.FixedLenFeature((), tf.string),
-                'matches_a': tf.FixedLenFeature((), tf.string),
-                'sparse_flow': tf.FixedLenFeature((), tf.string),  # initial sparse flow (from matches)
-                'flow': tf.FixedLenFeature((), tf.string),
+                'image_a': tf.FixedLenFeature([], tf.string),
+                'image_b': tf.FixedLenFeature([], tf.string),
+                'matches_a': tf.FixedLenFeature([], tf.string),
+                'sparse_flow': tf.FixedLenFeature([], tf.string),  # initial sparse flow (from matches)
+                'flow': tf.FixedLenFeature([], tf.string),
             }
             items_to_handlers = {
                 'image_a': Image(
@@ -124,10 +126,11 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
                     channels=2),
             }
         else:
+            print("Configuring keys and items for 'image_pairs' input type (default)...")
             keys_to_features = {
-                'image_a': tf.FixedLenFeature((), tf.string),
-                'image_b': tf.FixedLenFeature((), tf.string),
-                'flow': tf.FixedLenFeature((), tf.string),
+                'image_a': tf.FixedLenFeature([], tf.string),
+                'image_b': tf.FixedLenFeature([], tf.string),
+                'flow': tf.FixedLenFeature([], tf.string),
             }
             items_to_handlers = {
                 'image_a': Image(
@@ -146,6 +149,8 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
                     shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 2],
                     channels=2),
             }
+        print("keys_to_features: {0}".format(keys_to_features))
+        print("items_to_handlers: {0}".format(items_to_handlers))
 
         decoder = slim.tfexample_decoder.TFExampleDecoder(keys_to_features, items_to_handlers)
         return slim.dataset.Dataset(
@@ -319,78 +324,78 @@ def load_batch(dataset_config, split_name, global_step, input_type='image_pairs'
         #   - See if it works in GPU (more memory)
         #   - Test with more CPUs and/or memory per cpu (harder to get in the queue to test anything!)
         #   - Play arround with queue sizes and num_threads (maybe the queue is still too large (or short?))
-        with tf.device('/cpu:0'):  # it should work on the gpu according to the test.py (repo root folder)
-            image_as, image_bs, transforms_from_a, transforms_from_b = \
-                _preprocessing_ops.data_augmentation(image_as,
-                                                     image_bs,
-                                                     global_step,
-                                                     crop,
-                                                     config_a['name'],
-                                                     config_a['rand_type'],
-                                                     config_a['exp'],
-                                                     config_a['mean'],
-                                                     config_a['spread'],
-                                                     config_a['prob'],
-                                                     config_a['coeff_schedule'],
-                                                     config_b['name'],
-                                                     config_b['rand_type'],
-                                                     config_b['exp'],
-                                                     config_b['mean'],
-                                                     config_b['spread'],
-                                                     config_b['prob'],
-                                                     config_b['coeff_schedule'])
-
-            noise_coeff_a = None
-            noise_coeff_b = None
-
-            # Generate and apply noise coeff for A if defined in A params
-            if 'noise' in dataset_config['PREPROCESS']['image_a']:
-                discount_coeff = tf.constant(1.0)
-                if 'coeff_schedule_param' in dataset_config['PREPROCESS']['image_a']:
-                    initial_coeff = dataset_config['PREPROCESS']['image_a']['coeff_schedule_param']['initial_coeff']
-                    final_coeff = dataset_config['PREPROCESS']['image_a']['coeff_schedule_param']['final_coeff']
-                    half_life = dataset_config['PREPROCESS']['image_a']['coeff_schedule_param']['half_life']
-                    discount_coeff = initial_coeff + \
-                        (final_coeff - initial_coeff) * \
-                        (2.0 / (1.0 + exp(-1.0986 * global_step / half_life)) - 1.0)
-
-                noise_coeff_a = _generate_coeff(
-                    dataset_config['PREPROCESS']['image_a']['noise'], discount_coeff)
-                noise_a = tf.random_normal(shape=tf.shape(image_as),
-                                           mean=0.0, stddev=noise_coeff_a,
-                                           dtype=tf.float32)
-                image_as = tf.clip_by_value(image_as + noise_a, 0.0, 1.0)
-
-            # Generate noise coeff for B if defined in B params
-            if 'noise' in dataset_config['PREPROCESS']['image_b']:
-                discount_coeff = tf.constant(1.0)
-                if 'coeff_schedule_param' in dataset_config['PREPROCESS']['image_b']:
-                    initial_coeff = dataset_config['PREPROCESS']['image_b']['coeff_schedule_param']['initial_coeff']
-                    final_coeff = dataset_config['PREPROCESS']['image_b']['coeff_schedule_param']['final_coeff']
-                    half_life = dataset_config['PREPROCESS']['image_b']['coeff_schedule_param']['half_life']
-                    discount_coeff = initial_coeff + \
-                        (final_coeff - initial_coeff) * \
-                        (2.0 / (1.0 + exp(-1.0986 * global_step / half_life)) - 1.0)
-                noise_coeff_b = _generate_coeff(
-                    dataset_config['PREPROCESS']['image_b']['noise'], discount_coeff)
-
-            # Combine coeff from a with coeff from b
-            if noise_coeff_a is not None:
-                if noise_coeff_b is not None:
-                    noise_coeff_b = noise_coeff_a * noise_coeff_b
-                else:
-                    noise_coeff_b = noise_coeff_a
-
-            # Add noise to B if needed
-            if noise_coeff_b is not None:
-                noise_b = tf.random_normal(shape=tf.shape(image_bs),
-                                           mean=0.0, stddev=noise_coeff_b,
-                                           dtype=tf.float32)
-                image_bs = tf.clip_by_value(image_bs + noise_b, 0.0, 1.0)
-
-            # Perform flow augmentation using spatial parameters from data augmentation
-            flows = _preprocessing_ops.flow_augmentation(
-                flows, transforms_from_a, transforms_from_b, crop)
+        # with tf.device('/cpu:0'):  # it should work on the gpu according to the test.py (repo root folder)
+        #     image_as, image_bs, transforms_from_a, transforms_from_b = \
+        #         _preprocessing_ops.data_augmentation(image_as,
+        #                                              image_bs,
+        #                                              global_step,
+        #                                              crop,
+        #                                              config_a['name'],
+        #                                              config_a['rand_type'],
+        #                                              config_a['exp'],
+        #                                              config_a['mean'],
+        #                                              config_a['spread'],
+        #                                              config_a['prob'],
+        #                                              config_a['coeff_schedule'],
+        #                                              config_b['name'],
+        #                                              config_b['rand_type'],
+        #                                              config_b['exp'],
+        #                                              config_b['mean'],
+        #                                              config_b['spread'],
+        #                                              config_b['prob'],
+        #                                              config_b['coeff_schedule'])
+        #
+        #     noise_coeff_a = None
+        #     noise_coeff_b = None
+        #
+        #     # Generate and apply noise coeff for A if defined in A params
+        #     if 'noise' in dataset_config['PREPROCESS']['image_a']:
+        #         discount_coeff = tf.constant(1.0)
+        #         if 'coeff_schedule_param' in dataset_config['PREPROCESS']['image_a']:
+        #             initial_coeff = dataset_config['PREPROCESS']['image_a']['coeff_schedule_param']['initial_coeff']
+        #             final_coeff = dataset_config['PREPROCESS']['image_a']['coeff_schedule_param']['final_coeff']
+        #             half_life = dataset_config['PREPROCESS']['image_a']['coeff_schedule_param']['half_life']
+        #             discount_coeff = initial_coeff + \
+        #                 (final_coeff - initial_coeff) * \
+        #                 (2.0 / (1.0 + exp(-1.0986 * global_step / half_life)) - 1.0)
+        #
+        #         noise_coeff_a = _generate_coeff(
+        #             dataset_config['PREPROCESS']['image_a']['noise'], discount_coeff)
+        #         noise_a = tf.random_normal(shape=tf.shape(image_as),
+        #                                    mean=0.0, stddev=noise_coeff_a,
+        #                                    dtype=tf.float32)
+        #         image_as = tf.clip_by_value(image_as + noise_a, 0.0, 1.0)
+        #
+        #     # Generate noise coeff for B if defined in B params
+        #     if 'noise' in dataset_config['PREPROCESS']['image_b']:
+        #         discount_coeff = tf.constant(1.0)
+        #         if 'coeff_schedule_param' in dataset_config['PREPROCESS']['image_b']:
+        #             initial_coeff = dataset_config['PREPROCESS']['image_b']['coeff_schedule_param']['initial_coeff']
+        #             final_coeff = dataset_config['PREPROCESS']['image_b']['coeff_schedule_param']['final_coeff']
+        #             half_life = dataset_config['PREPROCESS']['image_b']['coeff_schedule_param']['half_life']
+        #             discount_coeff = initial_coeff + \
+        #                 (final_coeff - initial_coeff) * \
+        #                 (2.0 / (1.0 + exp(-1.0986 * global_step / half_life)) - 1.0)
+        #         noise_coeff_b = _generate_coeff(
+        #             dataset_config['PREPROCESS']['image_b']['noise'], discount_coeff)
+        #
+        #     # Combine coeff from a with coeff from b
+        #     if noise_coeff_a is not None:
+        #         if noise_coeff_b is not None:
+        #             noise_coeff_b = noise_coeff_a * noise_coeff_b
+        #         else:
+        #             noise_coeff_b = noise_coeff_a
+        #
+        #     # Add noise to B if needed
+        #     if noise_coeff_b is not None:
+        #         noise_b = tf.random_normal(shape=tf.shape(image_bs),
+        #                                    mean=0.0, stddev=noise_coeff_b,
+        #                                    dtype=tf.float32)
+        #         image_bs = tf.clip_by_value(image_bs + noise_b, 0.0, 1.0)
+        #
+        #     # Perform flow augmentation using spatial parameters from data augmentation
+        #     flows = _preprocessing_ops.flow_augmentation(
+        #         flows, transforms_from_a, transforms_from_b, crop)
 
         if input_type == 'image_matches':
             return tf.train.batch([image_as, matches_as, sparse_flows, flows],

@@ -152,8 +152,6 @@ FLYING_CHAIRS_DATASET_CONFIG = {
     },
 }
 
-# TODO: according to more modern architectures, adding noise does not prove to be benefitial (consider removing it)
-# TODO: also avoid
 # Contains all the information necessary to deal with the two input types considered: a pair of images or first image,
 # matching mask (location) + sparse flow
 FLYING_CHAIRS_ALL_DATASET_CONFIG = {
@@ -163,8 +161,8 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
         'image_a': 'A 3-channel image.',
         'image_b': 'A 3-channel image.',
         'matches_a': 'A 1-channel matching mask (1s pixels matched, 0s not matched).',
-        'sparse_flow': 'sparse flow initialised from a set of sparse matches',
-        'flow': 'A 2-channel optical flow field',
+        'sparse_flow': 'A sparse flow initialised from a set of sparse matches.',
+        'flow': 'A 2-channel optical flow field.',
     },
     'SIZES': {
         'train': 22232,
@@ -173,8 +171,8 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 8,
     'PATHS': {
-        'train': './data/tfrecords/flying_chairs_train.tfrecords',  # './data/tfrecords/fc_train_all.tfrecords',
-        'validate': './data/tfrecords/flying_chairs_val.tfrecords',  #: './data/tfrecords/fc_val_all.tfrecords',
+        'train': './data/tfrecords/interp/fc_train_all.tfrecord',  # './data/tfrecords/fc_train_all.tfrecords',
+        'validate': './data/tfrecords/interp/fc_val_all.tfrecord',  #: './data/tfrecords/fc_val_all.tfrecords',
         'sample': './data/tfrecords/fc_sample_all.tfrecords'  # does not exist (ignore)
     },
     'PREPROCESS': {
