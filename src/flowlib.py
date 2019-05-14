@@ -93,7 +93,7 @@ def read_flow(filename):
         else:
             w = np.fromfile(f, np.int32, count=1)[0]
             h = np.fromfile(f, np.int32, count=1)[0]
-            print("Reading {0} x {1} flo file".format(w, h))
+            # print("Reading {0} x {1} flo file".format(w, h))  too verbose when reading batches of images
             data = np.fromfile(f, np.float32, count=2*w*h)
             # Reshape data into 3D array (columns, rows, bands)
             return np.resize(data, (h, w, 2))

@@ -23,7 +23,7 @@ def open_flo_file(filename):
         else:
             w = np.fromfile(f, np.int32, count=1)[0]
             h = np.fromfile(f, np.int32, count=1)[0]
-            print("Reading {0} x {1} flo file".format(w, h))
+            # print("Reading {0} x {1} flo file".format(w, h))
             data = np.fromfile(f, np.float32, count=2*w*h)
             # Reshape data into 3D array (columns, rows, bands)
             return np.resize(data, (h, w, 2))
@@ -54,7 +54,6 @@ def image_example(image_a, image_b, matches_a, sparse_flow, flow):
 
     # Create a Features message using tf.train.Example.
     example_proto = tf.train.Example(features=tf.train.Features(feature=feature))
-    print("example_proto:\n {0}".format(example_proto))
     return example_proto
 
 
@@ -118,9 +117,9 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                 raise ValueError("Invalid dataset name!")
 
             print("Path to source images/flows are:")
-            print("img_a: {0}\nimg_b: {1}\nmch_a: {2}sp_flow: {3}\nflow: {4}\n".format(image_a_path, image_b_path,
-                                                                                       matches_a_path, sparse_flow_path,
-                                                                                       flow_path))
+            print("img_a: {0}\nimg_b: {1}\nmch_a: {2}\nsp_flow: {3}\nflow: {4}\n".format(image_a_path, image_b_path,
+                                                                                         matches_a_path,
+                                                                                         sparse_flow_path, flow_path))
 
             image_a = imread(image_a_path)
             image_b = imread(image_b_path)
