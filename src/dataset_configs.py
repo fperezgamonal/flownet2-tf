@@ -173,8 +173,8 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 8,
     'PATHS': {
-        'train': './data/tfrecords/new/fc_train_all.tfrecords',  # './data/tfrecords/fc_train_all.tfrecords',
-        'validate': './data/tfrecords/new/fc_val_all.tfrecords',  #: './data/tfrecords/fc_val_all.tfrecords',
+        'train': './data/tfrecords/flying_chairs_train.tfrecords',  # './data/tfrecords/fc_train_all.tfrecords',
+        'validate': './data/tfrecords/flying_chairs_val.tfrecords',  #: './data/tfrecords/fc_val_all.tfrecords',
         'sample': './data/tfrecords/fc_sample_all.tfrecords'  # does not exist (ignore)
     },
     'PREPROCESS': {
@@ -210,13 +210,13 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
                 'spread': 0.3,
                 'prob': 1.0,
             },
-            # 'noise': {
-            #     'rand_type': "uniform_bernoulli",
-            #     'exp': False,
-            #     'mean': 0.03,
-            #     'spread': 0.03,
-            #     'prob': 1.0,
-            # },
+            'noise': {
+                'rand_type': "uniform_bernoulli",
+                'exp': False,
+                'mean': 0.03,
+                'spread': 0.03,
+                'prob': 1.0,
+            },
         },
         # All preprocessing to image A will be applied to image B in addition to the following.
         'image_b': {
