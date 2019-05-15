@@ -12,6 +12,7 @@ FLAGS = None
 # Values defined here: https://lmb.informatik.uni-freiburg.de/resources/datasets/FlyingChairs.en.html#flyingchairs
 TRAIN = 1
 VAL = 2
+DEBUG = False  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
 
 
 # https://stackoverflow.com/questions/28013200/reading-middlebury-flow-files-with-python-bytes-array-numpy
@@ -58,8 +59,7 @@ def image_example(image_a, image_b, matches_a, sparse_flow, flow):
 
 
 # TODO: create a subfolder in sintel/clean and sintel/final 'flatten' that contains an alphabetical list of files
-# TODO: for some reason, the new dataset created by just adding some fields on base one are "corrupt"
-# TODO: check if moving the padding into 'load_batch' solves the problem...
+# TODO: check if moving the padding into 'load_batch' solves the corruption problem...
 def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chairs', divisor=64):
     # Open a TFRRecordWriter
     filename = os.path.join(FLAGS.out, name + '.tfrecord')
@@ -116,10 +116,12 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
             else:
                 raise ValueError("Invalid dataset name!")
 
-            print("Path to source images/flows are:")
-            print("img_a: {0}\nimg_b: {1}\nmch_a: {2}\nsp_flow: {3}\nflow: {4}\n".format(image_a_path, image_b_path,
-                                                                                         matches_a_path,
-                                                                                         sparse_flow_path, flow_path))
+            if DEBUG:
+                print("Path to source images/flows are:")
+                print("img_a: {0}\nimg_b: {1}\nmch_a: {2}\nsp_flow: {3}\nflow: {4}\n".format(image_a_path, image_b_path,
+                                                                                             matches_a_path,
+                                                                                             sparse_flow_path,
+                                                                                             flow_path))
 
             image_a = imread(image_a_path)
             image_b = imread(image_b_path)
@@ -156,8 +158,9 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                 channels_ma
             ))
 
-            print("OG shapes before padding (images-matches): ")
-            print("img_a: {0}\nimg_b: {1}\nmch_a: {2}".format(image_a.shape, image_b.shape, matches_a.shape))
+            if DEBUG:
+                print("OG shapes before padding (images-matches): ")
+                print("img_a: {0}\nimg_b: {1}\nmch_a: {2}".format(image_a.shape, image_b.shape, matches_a.shape))
             original_shape = image_a.shape
             if height_a % divisor != 0 or width_a % divisor != 0:
                 new_height = int(ceil(height_a / divisor) * divisor)
@@ -169,8 +172,10 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                 image_a = np.pad(image_a, padding, mode='constant', constant_values=0.)
                 image_b = np.pad(image_b, padding, mode='constant', constant_values=0.)
                 matches_a = np.pad(matches_a, padding, mode='constant', constant_values=0.)
-            print("NEW shapes after padding (images-matches): ")
-            print("img_a: {0}\nimg_b: {1}\nmch_a: {2}".format(image_a.shape, image_b.shape, matches_a.shape))
+
+            if DEBUG:
+                print("NEW shapes after padding (images-matches): ")
+                print("img_a: {0}\nimg_b: {1}\nmch_a: {2}".format(image_a.shape, image_b.shape, matches_a.shape))
 
             image_a_raw = image_a.tostring()
             image_b_raw = image_b.tostring()
@@ -191,8 +196,10 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
             assert flow_ch == 2, ("Expected flow field to have 2 channels (horizontal + vertical) but it has: {0}".format(
                 flow_ch))
 
-            print("OG shapes before padding (flows): ")
-            print("sparse_flow: {0}\nflow: {1}".format(sparse_flow.shape, flow.shape))
+            if DEBUG:
+                print("OG shapes before padding (flows): ")
+                print("sparse_flow: {0}\nflow: {1}".format(sparse_flow.shape, flow.shape))
+
             # Pad if necessary (like above or to be more precise like 'apply_y' (net.py))
             if flow_height % divisor != 0 or flow_width % divisor != 0:
                 new_height = int(ceil(flow_height / divisor) * divisor)
@@ -203,8 +210,10 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                 flow = np.pad(flow, padding, mode='constant', constant_values=0.)
                 sparse_flow = np.pad(sparse_flow, padding, mode='constant', constant_values=0.)
 
-            print("NEW shapes after padding (flows): ")
-            print("sparse_flow: {0}\nflow: {1}".format(sparse_flow.shape, flow.shape))
+            if DEBUG:
+                print("NEW shapes after padding (flows): ")
+                print("sparse_flow: {0}\nflow: {1}".format(sparse_flow.shape, flow.shape))
+
             # Encode as string to include in TFrecord
             flow_raw = flow.tostring()
             sparse_flow_raw = sparse_flow.tostring()
