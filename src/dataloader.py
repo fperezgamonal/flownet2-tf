@@ -90,7 +90,7 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
         IMAGE_HEIGHT, IMAGE_WIDTH = dataset_config['IMAGE_HEIGHT'], dataset_config['IMAGE_WIDTH']
         reader = tf.TFRecordReader
         if input_type == 'image_matches':
-            print("Configuring keys and items for 'image_matches' input type...")
+            print("Configuring keys and items for 'image_tmatches' input type...")
             keys_to_features = {
                 'image_a': tf.FixedLenFeature([], tf.string),
                 'image_b': tf.FixedLenFeature([], tf.string),
@@ -279,7 +279,7 @@ def load_batch(dataset_config, split_name, global_step, input_type='image_pairs'
     num_threads = 8  # og value: 32  this broke training
     reader_kwargs = {'options': tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.ZLIB)}
     with tf.name_scope('load_batch'):
-        dataset = __get_dataset(dataset_config, split_name)
+        dataset = __get_dataset(dataset_config, split_name, input_type=input_type)
         data_provider = slim.dataset_data_provider.DatasetDataProvider(
             dataset,
             num_readers=num_threads,

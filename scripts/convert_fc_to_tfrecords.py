@@ -83,6 +83,24 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                 # add more matchers if need be (more elif's)
                 else:
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+            elif dataset == 'flying_things3D':
+                """
+                    We have a stereo-pair but we will arbitrarily only use the 'left' view (any would be ok)
+                    By doing so, we can only copy the left ground truth and significantly reduce the storage burden.
+                    Also, we follow FlowNet2.0 training and discard a set of difficult sequences (1388, to be precise)
+                """
+                image_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1.webp'.format(i + 1))
+                image_b_path = os.path.join(FLAGS.data_dir, '{0:05d}_img2.webp'.format(i + 1))
+                flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_flow.flo'.format(i + 1))
+                if matcher == 'sift':
+                    matches_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_sift_mask.png'.format(i + 1))
+                    sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_sift_sparse_flow.flo'.format(i + 1))
+                elif matcher == 'deepmatching':
+                    matches_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_dm_mask.png'.format(i + 1))
+                    sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_dm_sparse_flow.flo'.format(i + 1))
+                # add more matchers if need be (more elif's)
+                else:
+                    raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
 
             elif dataset == 'sintel_clean':
                 pass_dir = 'clean/flatten'
@@ -238,10 +256,14 @@ def main():
     val_idxs = np.flatnonzero(train_val_split == VAL)
 
     # Convert the train and val datasets into .tfrecords format
-    if 'flying' in FLAGS.data_dir.lower():
+    if 'chairs' in FLAGS.data_dir.lower():
         train_name = 'fc_train_all'
         val_name = 'fc_val_all'
         set_name = 'flying_chairs'
+    elif 'things' in FLAGS.data_dir.lower():
+        train_name = 'ft3d_train_all'
+        val_name = 'ft3d_val_all'
+        set_name = 'flying_things3d'
     elif 'sintel_clean' in FLAGS.data_dir.lower():
         train_name = 'sintel_clean_train_all'
         val_name = 'sintel_clean_val_all'
