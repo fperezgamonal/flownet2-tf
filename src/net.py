@@ -349,6 +349,12 @@ class Net(object):
     def train(self, log_dir, training_schedule, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
               checkpoints=None, input_type='image_pairs'):
         tf.summary.image("image_a", input_a, max_outputs=2)
+        print("image_a is None? {}".format(input_a is None))
+        print("image_b is None? {}".format(input_b is None))
+        print("matches_a is None? {}".format(matches_a is None))
+        print("sparse_flow is None? {}".format(sparse_flow is None))
+        print("flow is None? {}".format(flow is None))
+
         if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
             tf.summary.image("matches_a", matches_a, max_outputs=2)
             # Convert sparse flow to image-like (ONLY for visualization)
