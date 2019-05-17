@@ -22,7 +22,8 @@ def main():
             input_a=input_a,
             matches_a=matches_a,
             sparse_flow=sparse_flow,
-            out_flow=flow
+            out_flow=flow,
+            input_type=FLAGS.input_type
         )
     else:
         input_a, input_b, flow = load_batch(FLYING_CHAIRS_ALL_DATASET_CONFIG, 'train', net.global_step,
@@ -35,7 +36,8 @@ def main():
             training_schedule=LONG_SCHEDULE,
             input_a=input_a,
             input_b=input_b,
-            out_flow=flow
+            out_flow=flow,
+            input_type=FLAGS.input_type
         )
 
 
