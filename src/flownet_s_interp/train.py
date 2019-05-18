@@ -4,20 +4,24 @@ from ..training_schedules import LONG_SCHEDULE
 from .flownet_s_interp import FlowNetS_interp
 import argparse
 
+# TODO: consider enabling training sequentially with several schedules with only one call to 'train'
+# TODO: should load previous checkpoint to properly resume training
+# TODO: sometimes we want the flexibility of deciding whether we want to use all finetuning steps or only a few
+
 
 def main():
     # Create a new network
     net = FlowNetS_interp()
 
     if FLAGS.input_type == 'image_matches':
-        input_a, matches_a, sparse_flow, flow = load_batch(FLYING_CHAIRS_ALL_DATASET_CONFIG, 'train', net.global_step,
+        input_a, matches_a, sparse_flow, flow = load_batch(FLAGS.dataset_config, 'train', net.global_step,
                                                            input_type=FLAGS.input_type)
         print("Input_type: 'image_matches'")
 
         # Train on the data
         net.train(
             log_dir='./logs/flownet_s_interp/image_matches',
-            training_schedule=LONG_SCHEDULE,
+            training_schedule=FLAGS.training_schedule,
             input_a=input_a,
             matches_a=matches_a,
             sparse_flow=sparse_flow,
@@ -26,14 +30,14 @@ def main():
             checkpoints=FLAGS.checkpoint,
         )
     else:
-        input_a, input_b, flow = load_batch(FLYING_CHAIRS_ALL_DATASET_CONFIG, 'train', net.global_step,
+        input_a, input_b, flow = load_batch(FLAGS.dataset_config, 'train', net.global_step,
                                             input_type=FLAGS.input_type)
         print("Input_type: 'image_pairs'")
 
         # Train on the data
         net.train(
             log_dir='./logs/flownet_s_interp/image_pairs',
-            training_schedule=LONG_SCHEDULE,
+            training_schedule=FLAGS.training_schedule,
             input_a=input_a,
             input_b=input_b,
             out_flow=flow,
@@ -58,5 +62,20 @@ if __name__ == '__main__':
         help='Path to checkpoint to load and continue training',
         default=None
     )
+    parser.add_argument(
+        '--dataset_config',
+        type=str,
+        required=False,
+        help='Dataset configuration to be used in training (i.e.: the dataset, crop size and data transformations)',
+        default=FLYING_CHAIRS_ALL_DATASET_CONFIG,
+    )
+    parser.add_argument(
+        '--training_schedule',
+        type=str,
+        required=False,
+        help='Training schedule (learning rate, weight decay, etc.)',
+        default=LONG_SCHEDULE,
+    )
+
     FLAGS = parser.parse_args()
     main()
