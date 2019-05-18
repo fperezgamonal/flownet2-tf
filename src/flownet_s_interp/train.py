@@ -23,6 +23,7 @@ def main():
             sparse_flow=sparse_flow,
             out_flow=flow,
             input_type=FLAGS.input_type,
+            checkpoints=FLAGS.checkpoint,
         )
     else:
         input_a, input_b, flow = load_batch(FLYING_CHAIRS_ALL_DATASET_CONFIG, 'train', net.global_step,
@@ -37,6 +38,7 @@ def main():
             input_b=input_b,
             out_flow=flow,
             input_type=FLAGS.input_type,
+            checkpoints=FLAGS.checkpoint,
         )
 
 
@@ -48,6 +50,13 @@ if __name__ == '__main__':
         required=False,
         help='Type of input that is fed to the network',
         default='image_matches'
+    )
+    parser.add_argument(
+        '--checkpoint',
+        type=str,
+        required=False,
+        help='Path to checkpoint to load and continue training',
+        default=None
     )
     FLAGS = parser.parse_args()
     main()

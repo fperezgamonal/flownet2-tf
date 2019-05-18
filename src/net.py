@@ -350,12 +350,6 @@ class Net(object):
     def train(self, log_dir, training_schedule, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
               checkpoints=None, input_type='image_pairs'):
         tf.summary.image("image_a", input_a, max_outputs=2)
-        print("image_a is None? {}".format(input_a is None))
-        print("image_b is None? {}".format(input_b is None))
-        print("matches_a is None? {}".format(matches_a is None))
-        print("sparse_flow is None? {}".format(sparse_flow is None))
-        print("out_flow is None? {}".format(out_flow is None))
-        print("input_type: {}".format(input_type))
 
         if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
             tf.summary.image("matches_a", matches_a, max_outputs=2)
@@ -456,6 +450,7 @@ class Net(object):
             )
 
     # TODO: add the option to resume training from checkpoint (saver) ==> fine-tuning
+    # TODO: see the 'scope' of the checkpoint option in the train function, seems like it does not load the whole chkpt
     # TODO: if we restore a checkpoint, can we use it to properly save the state with the correct global step?
     # Or we may overwrite it by mistake?! By now, use the default checkpoint
     # def finetuning(...)
