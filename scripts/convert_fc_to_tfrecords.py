@@ -3,7 +3,8 @@ import os
 import sys
 import numpy as np
 from progressbar import ProgressBar, Percentage, Bar
-from scipy.misc import imread
+# from scipy.misc import imread
+from imageio import imread
 import tensorflow as tf
 from math import ceil
 

@@ -6,8 +6,9 @@ import tensorflow as tf
 import numpy as np
 import glob
 import datetime
-from scipy.misc import imread, imsave
+# from scipy.misc import imread, imsave
 import uuid
+from imageio import imread, imsave
 from .flowlib import flow_to_image, write_flow, read_flow
 from .training_schedules import LONG_SCHEDULE
 slim = tf.contrib.slim

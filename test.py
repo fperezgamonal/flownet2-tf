@@ -1,7 +1,8 @@
 import os
 import tensorflow as tf
 import numpy as np
-from scipy.misc import imread
+# from scipy.misc import imread
+from imageio import imread
 import matplotlib
 from src.flowlib import read_flow, flow_to_image
 matplotlib.use('TKAgg')
