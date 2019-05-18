@@ -11,7 +11,7 @@ LONG_SCHEDULE = {
     'max_iter': 1200000,
 }
 # og repo adds a stepvalue at 500k iters but it is useless since it is equal to maxiter!
-FINETUNE_SCHEDULE = {
+FINE_SCHEDULE = {
     'step_values': [200000, 300000, 400000],  # might not work if the optimizer reloads previous global step!
     'learning_rates': [0.00001, 0.000005, 0.0000025, 0.00000125],
     'momentum': 0.9,

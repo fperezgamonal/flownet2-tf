@@ -10,7 +10,9 @@ import datetime
 import uuid
 from imageio import imread, imsave
 from .flowlib import flow_to_image, write_flow, read_flow
-from .training_schedules import LONG_SCHEDULE
+from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FINETUNE_SINTEL_S1, FINETUNE_SINTEL_S2,\
+    FINETUNE_SINTEL_S3, FINETUNE_SINTEL_S4, FINETUNE_SINTEL_S5, FINETUNE_KITTI_S1, FINETUNE_KITTI_S2, FINETUNE_KITTI_S3,\
+    FINETUNE_KITTI_S4, FINETUNE_ROB
 slim = tf.contrib.slim
 
 
@@ -41,6 +43,40 @@ class Net(object):
         Returns a single Tensor representing the total loss of the model.
         """
         return
+
+    # TODO: consider merging all 'sintel' and 'kitti' schedules into one as they are sequential stages (stop if needed)
+    def get_training_schedule(self, training_schedule_str):
+        if training_schedule_str.lower() == 'fine':  # normally applied after long on FlyingThings3D
+            training_schedule = FINE_SCHEDULE
+        elif training_schedule_str.lower() == 'short':  # quicker schedule to train on FlyingChairs (or any dataset)
+            training_schedule = SHORT_SCHEDULE
+        # SINTEL
+        elif training_schedule_str.lower() == 'sintel_s1':  # Fine-tune Sintel (stage 1)
+            training_schedule = FINETUNE_SINTEL_S1
+        elif training_schedule_str.lower() == 'sintel_s2':
+            training_schedule = FINETUNE_SINTEL_S2
+        elif training_schedule_str.lower() == 'sintel_s3':
+            training_schedule = FINETUNE_SINTEL_S3
+        elif training_schedule_str.lower() == 'sintel_s4':
+            training_schedule = FINETUNE_SINTEL_S4
+        elif training_schedule_str.lower() == 'sintel_s5':
+            training_schedule = FINETUNE_SINTEL_S5
+        # KITTI
+        elif training_schedule_str.lower() == 'kitti_s1':
+            training_schedule = FINETUNE_KITTI_S1
+        elif training_schedule_str.lower() == 'kitti_s2':
+            training_schedule = FINETUNE_KITTI_S2
+        elif training_schedule_str.lower() == 'kitti_s3':
+            training_schedule = FINETUNE_KITTI_S3
+        elif training_schedule_str.lower() == 'kitti_s4':
+            training_schedule = FINETUNE_KITTI_S4
+        # ROB (robust challenge: mix of Sintel, KITTI, HD1K and Middlebury
+        elif training_schedule_str.lower() == 'rob':
+            training_schedule = FINETUNE_ROB
+        else:  # long schedule as default
+            training_schedule = LONG_SCHEDULE  # Normally applied from scratch on FlyingChairs
+
+        return training_schedule
 
     # based on github.com/philferriere/tfoptflow/blob/33e8a701e34c8ce061f17297d40619afbd459ade/tfoptflow/model_pwcnet.py
     # functions: adapt_x, adapt_y, postproc_y_hat (crop)
@@ -347,10 +383,11 @@ class Net(object):
                     full_out_path = os.path.join(out_path, unique_name + '_flow.flo')
                     write_flow(pred_flow, full_out_path)
 
-    def train(self, log_dir, training_schedule, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
+    def train(self, log_dir, training_schedule_str, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
               checkpoints=None, input_type='image_pairs'):
-        tf.summary.image("image_a", input_a, max_outputs=2)
+        training_schedule = self.get_training_schedule(training_schedule_str)    # Should it be a method of net?
 
+        tf.summary.image("image_a", input_a, max_outputs=2)
         if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
             tf.summary.image("matches_a", matches_a, max_outputs=2)
             # Convert sparse flow to image-like (ONLY for visualization)

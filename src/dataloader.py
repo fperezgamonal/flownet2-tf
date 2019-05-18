@@ -3,6 +3,7 @@ import tensorflow as tf
 import copy
 slim = tf.contrib.slim
 from math import exp
+from .dataset_configs import FLYING_CHAIRS_ALL_DATASET_CONFIG, SINTEL_FINAL_ALL_DATASET_CONFIG
 
 _preprocessing_ops = tf.load_op_library(
     tf.resource_loader.get_path_to_datafile("./ops/build/preprocessing.so"))
@@ -271,11 +272,17 @@ def _generate_coeff(param, discount_coeff=tf.constant(1.0), default_value=tf.con
 # TODO: as it is, for each different data type, we require a different dataset config (OK!)
 # TODO: but we also require on TFRecords (HUGE!), better create one with all the required data!!
 # TODO: that is, image_a (img1), image_b (img2), matches_a, sparse_flow ==> make sure the mappings are OK
-def load_batch(dataset_config, split_name, global_step, input_type='image_pairs'):
-    print("Input type is: {0}".format(input_type))
-    print("items_to_descriptions is: {0}".format(dataset_config['ITEMS_TO_DESCRIPTIONS']))
-    print("path to tfrecords\ntrain: {0}\nval{1}".format(dataset_config['PATHS']['train'],
-                                                         dataset_config['PATHS']['validate']))
+def load_batch(dataset_config_str, split_name, global_step, input_type='image_pairs'):
+
+    if dataset_config_str.lower() == 'flying_things3D':
+        dataset_config = FLYING_CHAIRS_ALL_DATASET_CONFIG  # must create tfrecords!
+    elif dataset_config_str.lower() == 'sintel_clean':
+        dataset_config = SINTEL_FINAL_ALL_DATASET_CONFIG  # must create tfrecords!
+    elif dataset_config_str.lower() == 'sintel_final':
+        dataset_config = SINTEL_FINAL_ALL_DATASET_CONFIG
+    else:  # flying_chairs
+        dataset_config = FLYING_CHAIRS_ALL_DATASET_CONFIG
+
     num_threads = 8  # og value: 32  this broke training
     reader_kwargs = {'options': tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.ZLIB)}
     with tf.name_scope('load_batch'):

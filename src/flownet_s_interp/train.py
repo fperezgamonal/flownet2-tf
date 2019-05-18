@@ -1,6 +1,4 @@
 from ..dataloader import load_batch
-from ..dataset_configs import FLYING_CHAIRS_ALL_DATASET_CONFIG, FLYING_CHAIRS_ALL_DATASET_CONFIG
-from ..training_schedules import LONG_SCHEDULE
 from .flownet_s_interp import FlowNetS_interp
 import argparse
 
@@ -67,14 +65,14 @@ if __name__ == '__main__':
         type=str,
         required=False,
         help='Dataset configuration to be used in training (i.e.: the dataset, crop size and data transformations)',
-        default=FLYING_CHAIRS_ALL_DATASET_CONFIG,
+        default='flying_chairs',
     )
     parser.add_argument(
         '--training_schedule',
         type=str,
         required=False,
         help='Training schedule (learning rate, weight decay, etc.)',
-        default=LONG_SCHEDULE,
+        default='long_schedule',
     )
 
     FLAGS = parser.parse_args()
