@@ -21,10 +21,10 @@ def main():
             input_type=FLAGS.input_type,
             sparse_flow_path=FLAGS.sparse_flow
         )
-    elif os.path.isdir(FLAGS.input_a) and FLAGS.input_a[:-4] is '.txt':  # txt with image list (batch-like)
+    elif os.path.isfile(FLAGS.input_a) and FLAGS.input_a[:-4] is '.txt':  # txt with image list (batch-like)
         net.test_batch(
             checkpoint='./checkpoints/FlowNetS/flownet-S.ckpt-0',
-            image_paths=FLAGS.image_paths,
+            image_paths=FLAGS.input_a,
             out_path=FLAGS.out,
             input_type=FLAGS.input_type,
         )
@@ -36,11 +36,30 @@ def main():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--image_paths',
+        '--input_a',
         type=str,
-        required=True,
+        required=False,
         help='Path to first image',
         default='data/samples/0img0.ppm'
+    )
+    parser.add_argument(
+        '--input_b',
+        type=str,
+        required=False,
+        help='Path to second image',
+        default='data/samples/0img1.ppm'
+    )
+    parser.add_argument(
+        '--matches_a',
+        type=str,
+        required=False,
+        help='Path to matches mask',
+    )
+    parser.add_argument(
+        '--sparse_flow',
+        type=str,
+        required=False,
+        help='Sparse flow initialized from sparse matches',
     )
     parser.add_argument(
         '--out',
@@ -53,7 +72,8 @@ if __name__ == '__main__':
         '--input_type',
         type=str,
         required=False,
-        help='type of input (def: frame 1 + frame 2), alternative: frame 1 + matches'
+        help='type of input (def: frame 1 + frame 2), alternative: frame 1 + matches',
+        default='image_matches'
     )
     FLAGS = parser.parse_args()
 
