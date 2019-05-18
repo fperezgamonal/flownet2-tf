@@ -104,7 +104,7 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
 
             elif dataset == 'sintel_clean':
-                pass_dir = 'clean/flatten'
+                pass_dir = 'clean'
                 image_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
                 image_b_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
                 flow_path = os.path.join(FLAGS.data_dir, pass_dir, '{0:04d}_flow.flo'.format(i+1))
@@ -120,7 +120,7 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
 
             elif dataset == 'sintel_final':
-                pass_dir = 'final/flatten'
+                pass_dir = 'final'
                 image_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
                 image_b_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
                 flow_path = os.path.join(FLAGS.data_dir, pass_dir, '{0:04d}_flow.flo'.format(i+1))
