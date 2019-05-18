@@ -12,8 +12,7 @@ def main():
     if FLAGS.input_type == 'image_matches':
         input_a, matches_a, sparse_flow, flow = load_batch(FLYING_CHAIRS_ALL_DATASET_CONFIG, 'train', net.global_step,
                                                            input_type=FLAGS.input_type)
-        print("input_a.shape: {0}, matches_a.shape: {1}, sparse_flow.shape: {2}, flow.shape: {3}".format(
-            input_a.shape, matches_a.shape, sparse_flow.shape, flow.shape))
+        print("Input_type: 'image_matches'")
 
         # Train on the data
         net.train(
@@ -23,13 +22,13 @@ def main():
             matches_a=matches_a,
             sparse_flow=sparse_flow,
             out_flow=flow,
-            input_type=FLAGS.input_type
+            input_type=FLAGS.input_type,
         )
     else:
         input_a, input_b, flow = load_batch(FLYING_CHAIRS_ALL_DATASET_CONFIG, 'train', net.global_step,
                                             input_type=FLAGS.input_type)
-        print("input_a.shape: {0}, input_b.shape: {1}, flow.shape: {2}".format(input_a.shape, input_b.shape,
-                                                                               flow.shape))
+        print("Input_type: 'image_pairs'")
+
         # Train on the data
         net.train(
             log_dir='./logs/flownet_s_interp/image_pairs',
@@ -37,7 +36,7 @@ def main():
             input_a=input_a,
             input_b=input_b,
             out_flow=flow,
-            input_type=FLAGS.input_type
+            input_type=FLAGS.input_type,
         )
 
 

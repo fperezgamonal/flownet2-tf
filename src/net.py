@@ -354,7 +354,7 @@ class Net(object):
         print("matches_a is None? {}".format(matches_a is None))
         print("sparse_flow is None? {}".format(sparse_flow is None))
         print("out_flow is None? {}".format(out_flow is None))
-        print("input_type: ".format(input_type))
+        print("input_type: {}".format(input_type))
 
         if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
             tf.summary.image("matches_a", matches_a, max_outputs=2)
