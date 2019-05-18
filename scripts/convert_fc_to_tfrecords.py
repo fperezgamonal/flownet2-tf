@@ -256,19 +256,19 @@ def main():
     val_idxs = np.flatnonzero(train_val_split == VAL)
 
     # Convert the train and val datasets into .tfrecords format
-    if 'chairs' in FLAGS.data_dir.lower():
+    if 'chairs' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'chairs':
         train_name = 'fc_train_all'
         val_name = 'fc_val_all'
         set_name = 'flying_chairs'
-    elif 'things' in FLAGS.data_dir.lower():
+    elif 'things' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'things':
         train_name = 'ft3d_train_all'
         val_name = 'ft3d_val_all'
         set_name = 'flying_things3d'
-    elif 'sintel_clean' in FLAGS.data_dir.lower():
+    elif 'sintel_clean' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'sintel_clean':
         train_name = 'sintel_clean_train_all'
         val_name = 'sintel_clean_val_all'
         set_name = 'sintel_clean'
-    elif 'sintel_final' in FLAGS.data_dir.lower():
+    elif 'sintel_final' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'sintel_final':
         train_name = 'sintel_final_train_all'
         val_name = 'sintel_final_val_all'
         set_name = 'sintel_final'
@@ -291,6 +291,13 @@ if __name__ == '__main__':
         type=str,
         required=True,
         help='Directory that includes all .png and .flo files in the dataset'
+    )
+    parser.add_argument(
+        '--dataset',
+        type=str,
+        required=False,
+        help="Dataset name: 'chairs', 'things', 'sintel', 'kitti'",
+        default='chairs'
     )
     parser.add_argument(
         '--train_val_split',
