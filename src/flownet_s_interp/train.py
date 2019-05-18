@@ -19,7 +19,7 @@ def main():
         # Train on the data
         net.train(
             log_dir='./logs/flownet_s_interp/image_matches',
-            training_schedule=FLAGS.training_schedule,
+            training_schedule_str=FLAGS.training_schedule,
             input_a=input_a,
             matches_a=matches_a,
             sparse_flow=sparse_flow,
@@ -35,7 +35,7 @@ def main():
         # Train on the data
         net.train(
             log_dir='./logs/flownet_s_interp/image_pairs',
-            training_schedule=FLAGS.training_schedule,
+            training_schedule_str=FLAGS.training_schedule,
             input_a=input_a,
             input_b=input_b,
             out_flow=flow,
