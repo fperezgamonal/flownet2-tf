@@ -91,7 +91,6 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
         IMAGE_HEIGHT, IMAGE_WIDTH = dataset_config['IMAGE_HEIGHT'], dataset_config['IMAGE_WIDTH']
         reader = tf.TFRecordReader
         if input_type == 'image_matches':
-            print("Configuring keys and items for 'image_tmatches' input type...")
             keys_to_features = {
                 'image_a': tf.FixedLenFeature([], tf.string),
                 'image_b': tf.FixedLenFeature([], tf.string),
@@ -127,7 +126,6 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
                     channels=2),
             }
         else:
-            print("Configuring keys and items for 'image_pairs' input type (default)...")
             keys_to_features = {
                 'image_a': tf.FixedLenFeature([], tf.string),
                 'image_b': tf.FixedLenFeature([], tf.string),
@@ -150,8 +148,6 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
                     shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 2],
                     channels=2),
             }
-        print("keys_to_features: {0}".format(keys_to_features))
-        print("items_to_handlers: {0}".format(items_to_handlers))
 
         decoder = slim.tfexample_decoder.TFExampleDecoder(keys_to_features, items_to_handlers)
         return slim.dataset.Dataset(
