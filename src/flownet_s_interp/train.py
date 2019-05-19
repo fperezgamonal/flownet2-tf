@@ -10,6 +10,10 @@ import argparse
 def main():
     # Create a new network
     net = FlowNetS_interp()
+    if FLAGS.checkpoint is not None:
+        checkpoints = {FLAGS.checkpoint: ('FlowNetS', 'FlowNetS')}
+    else:
+        checkpoints = None  # double-check None
 
     if FLAGS.input_type == 'image_matches':
         print("Input_type: 'image_matches'")
@@ -25,7 +29,7 @@ def main():
             sparse_flow=sparse_flow,
             out_flow=flow,
             input_type=FLAGS.input_type,
-            checkpoints={FLAGS.checkpoint: ('FlowNetS', 'FlowNetS')},
+            checkpoints=checkpoints,
         )
     else:
         print("Input_type: 'image_pairs'")
@@ -40,7 +44,7 @@ def main():
             input_b=input_b,
             out_flow=flow,
             input_type=FLAGS.input_type,
-            checkpoints={FLAGS.checkpoint: ('FlowNetS', 'FlowNetS')},
+            checkpoints=checkpoints,
         )
 
 
