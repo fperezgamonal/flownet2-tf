@@ -152,6 +152,7 @@ class Net(object):
 
         return input_a, input_b, matches_a, sparse_flow, x_adapt_info
 
+    # This is not used in training since we load already padded flows. If it applies, use in test for 'sparse_flow'
     def adapt_y(self, flow, divisor=64):
         """
         Adapts the ground truth flows to train to the required network dimensions
@@ -184,6 +185,41 @@ class Net(object):
             y_adapt_info = None
 
         return flow, y_adapt_info
+
+    def adapt_sample(self, sample, divisor=64):
+        """
+        Adapts a sample image by padding it with zeros if it is not multiple of divisor
+        :param sample: image to be padded
+        :param divisor: number by which the dimensions of sample must be divisible by
+        :return: the padded sample that can be fed to the network
+        """
+        if len(sample.shape) == 4:  # batch
+            batch, height, width, channels = sample.shape
+        elif len(sample.shape) == 3:  # standard 3 channels image
+            height, width, channels = sample.shape
+        else:
+            raise ValueError("expected a tensor with 3 or 4 dimensions but {} were given".format(len(sample.shape)))
+
+        if height % divisor != 0 or width % divisor != 0:
+            new_height = int(ceil(height / divisor) * divisor)
+            new_width = int(ceil(width / divisor) * divisor)
+            pad_height = new_height - height
+            pad_width = new_width - width
+
+            if self.mode == Mode.TRAIN:  # working with batches, adapt to match dimensions
+                padding = [(0, 0), (0, pad_height), (0, pad_width), (0, 0)]
+            elif self.mode == Mode.TEST:  # working with pair of images (for now there is no inference on whole batches)
+                # TODO: modify test.py so we can predict batches (much quicker for whole datasets) and simplify this!
+                padding = [(0, pad_height), (0, pad_width), (0, 0)]
+            else:
+                padding = [(0, pad_height), (0, pad_width), (0, 0)]
+
+            sample_adapt_info = sample.shape  # Save original size
+            padded_sample = np.pad(sample, padding, mode='constant', constant_values=0.)
+        else:
+            sample_adapt_info = None
+
+        return padded_sample, sample_adapt_info
 
     def postproc_y_hat_test(self, pred_flows, adapt_info=None):
         """
@@ -397,7 +433,9 @@ class Net(object):
             sparse_flow_1 = tf.py_func(flow_to_image, [sparse_flow_1], tf.uint8)
             sparse_flow_img = tf.stack([sparse_flow_0, sparse_flow_1], 0)
             # Pad if needed
-            sparse_flow_img, y_adapt_info = self.adapt_y(sparse_flow_img)
+            print("Before padding: sparse_flo_img.shape: {}".format(sparse_flow_img.shape))
+            sparse_flow_img, y_adapt_info = self.adapt_sample(sparse_flow_img)
+            print("After padding: sparse_flo_img.shape: {}".format(sparse_flow_img.shape))
             tf.summary.image("sparse_flow_img", sparse_flow_img, max_outputs=2)
         else:
             tf.summary.image("image_b", input_b, max_outputs=2)

@@ -330,7 +330,7 @@ def load_batch(dataset_config_str, split_name, global_step, input_type='image_pa
         # TODO: despite not reporting segmentation fault, the process is killed when data_augmentation is added. Test:
         #   - See if it works in GPU (more memory)
         #   - Test with more CPUs and/or memory per cpu (harder to get in the queue to test anything!)
-        #   - Play arround with queue sizes and num_threads (maybe the queue is still too large (or short?))
+        #   - Play around with queue sizes and num_threads (maybe the queue is still too large (or short?))
         # with tf.device('/cpu:0'):  # it should work on the gpu according to the test.py (repo root folder)
         #     image_as, image_bs, transforms_from_a, transforms_from_b = \
         #         _preprocessing_ops.data_augmentation(image_as,
