@@ -433,6 +433,7 @@ class Net(object):
             sparse_flow_1 = tf.py_func(flow_to_image, [sparse_flow_1], tf.uint8)
             sparse_flow_img = tf.stack([sparse_flow_0, sparse_flow_1], 0)
             # Pad if needed
+            print("Data type of sparse_flow_img is : {}".format(type(sparse_flow_img)))
             print("Before padding: sparse_flo_img.shape: {}".format(sparse_flow_img.shape))
             sparse_flow_img, y_adapt_info = self.adapt_sample(sparse_flow_img)
             print("After padding: sparse_flo_img.shape: {}".format(sparse_flow_img.shape))
