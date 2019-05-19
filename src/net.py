@@ -427,17 +427,17 @@ class Net(object):
         if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
             tf.summary.image("matches_a", matches_a, max_outputs=2)
             # Convert sparse flow to image-like (ONLY for visualization)
-            print("sparse_flow.shape".format(sparse_flow.shape))
+            print("sparse_flow.shape: {}".format(sparse_flow.shape))
             sparse_flow_0 = sparse_flow[0, :, :, :]
-            print("sparse_flow_0.shape".format(sparse_flow_0.shape))
+            print("sparse_flow_0.shape: {}".format(sparse_flow_0.shape))
             sparse_flow_0 = tf.py_func(flow_to_image, [sparse_flow_0], tf.uint8)
-            print("after tf.py_func: sparse_flow_0.shape".format(sparse_flow_0.shape))
+            print("after tf.py_func: sparse_flow_0.shape: {}".format(sparse_flow_0.shape))
             sparse_flow_1 = sparse_flow[1, :, :, :]
-            print("sparse_flow_1.shape".format(sparse_flow_1.shape))
+            print("sparse_flow_1.shape: {}".format(sparse_flow_1.shape))
             sparse_flow_1 = tf.py_func(flow_to_image, [sparse_flow_1], tf.uint8)
-            print("after tf.py_func: sparse_flow_1.shape".format(sparse_flow_1.shape))
+            print("after tf.py_func: sparse_flow_1.shape: {}".format(sparse_flow_1.shape))
             sparse_flow_img = tf.stack([sparse_flow_0, sparse_flow_1], 0)
-            print("image_flow_img.get_shape()".format(sparse_flow_img.get_shape()))
+            print("image_flow_img.get_shape(): {}".format(sparse_flow_img.get_shape()))
             # Pad if needed
             print("Data type of sparse_flow_img is : {}".format(type(sparse_flow_img)))
             print("Before padding: sparse_flo_img.shape: {}".format(sparse_flow_img.get_shape().as_list()))
