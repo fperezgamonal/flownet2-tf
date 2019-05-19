@@ -189,13 +189,13 @@ class Net(object):
     def adapt_sample(self, sample, divisor=64):
         """
         Adapts a sample image by padding it with zeros if it is not multiple of divisor
-        :param sample: image to be padded
+        :param sample: image to be padded (is a tf tensor so we should use tf.shape instead of numpy's A.shape)
         :param divisor: number by which the dimensions of sample must be divisible by
         :return: the padded sample that can be fed to the network
         """
-        if len(sample.shape) == 4:  # batch
+        if len(tf.shape(sample)) == 4:  # batch
             batch, height, width, channels = sample.shape
-        elif len(sample.shape) == 3:  # standard 3 channels image
+        elif len(tf.shape(sample)) == 3:  # standard 3 channels image
             height, width, channels = sample.shape
         else:
             raise ValueError("expected a tensor with 3 or 4 dimensions but {} were given".format(len(sample.shape)))
@@ -214,12 +214,12 @@ class Net(object):
             else:
                 padding = [(0, pad_height), (0, pad_width), (0, 0)]
 
-            sample_adapt_info = sample.shape  # Save original size
-            padded_sample = np.pad(sample, padding, mode='constant', constant_values=0.)
+            sample_adapt_info = tf.shape(sample)  # Save original size
+            sample = np.pad(sample, padding, mode='constant', constant_values=0.)
         else:
             sample_adapt_info = None
 
-        return padded_sample, sample_adapt_info
+        return sample, sample_adapt_info
 
     def postproc_y_hat_test(self, pred_flows, adapt_info=None):
         """
@@ -434,9 +434,9 @@ class Net(object):
             sparse_flow_img = tf.stack([sparse_flow_0, sparse_flow_1], 0)
             # Pad if needed
             print("Data type of sparse_flow_img is : {}".format(type(sparse_flow_img)))
-            print("Before padding: sparse_flo_img.shape: {}".format(sparse_flow_img.shape))
+            print("Before padding: sparse_flo_img.shape: {}".format(tf.shape(sparse_flow_img)))
             sparse_flow_img, y_adapt_info = self.adapt_sample(sparse_flow_img)
-            print("After padding: sparse_flo_img.shape: {}".format(sparse_flow_img.shape))
+            print("After padding: sparse_flo_img.shape: {}".format(tf.shape(sparse_flow_img)))
             tf.summary.image("sparse_flow_img", sparse_flow_img, max_outputs=2)
         else:
             tf.summary.image("image_b", input_b, max_outputs=2)
