@@ -72,6 +72,8 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
         pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=len(indices)).start()
         for i in indices:
             if dataset == 'flying_chairs':
+                if DEBUG:
+                    print("Setting format for 'FlyingChairs'...")
                 image_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1.png'.format(i + 1))
                 image_b_path = os.path.join(FLAGS.data_dir, '{0:05d}_img2.png'.format(i + 1))
                 flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_flow.flo'.format(i + 1))
@@ -90,6 +92,7 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                     By doing so, we can only copy the left ground truth and significantly reduce the storage burden.
                     Also, we follow FlowNet2.0 training and discard a set of difficult sequences (1388, to be precise)
                 """
+                print("Setting format for 'FlyingThings3D'...")
                 image_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1.webp'.format(i + 1))
                 image_b_path = os.path.join(FLAGS.data_dir, '{0:05d}_img2.webp'.format(i + 1))
                 flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_flow.flo'.format(i + 1))
@@ -104,6 +107,7 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
 
             elif dataset == 'sintel_clean':
+                print("Setting format for 'MPI-Sintel (clean pass)'...")
                 pass_dir = 'clean'
                 image_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
                 image_b_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
@@ -120,6 +124,7 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
 
             elif dataset == 'sintel_final':
+                print("Setting format for 'MPI-Sintel (final pass)'...")
                 pass_dir = 'final'
                 image_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
                 image_b_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
@@ -270,30 +275,38 @@ def main():
 
     # Convert the train and val datasets into .tfrecords format
     if 'chairs' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'chairs':
+        print("Chosen dataset is 'FlyingChairs'")
         train_name = 'fc_train_all'
         val_name = 'fc_val_all'
         set_name = 'flying_chairs'
     elif 'things' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'things':
+        print("Chosen dataset is 'FlyingThings3D'")
         train_name = 'ft3d_train_all'
         val_name = 'ft3d_val_all'
         set_name = 'flying_things3d'
     elif 'sintel_clean' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'sintel_clean':
+        print("Chosen dataset is 'MPI-Sintel (clean pass)'")
         train_name = 'sintel_clean_train_all'
         val_name = 'sintel_clean_val_all'
         set_name = 'sintel_clean'
     elif 'sintel_final' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'sintel_final':
+        print("Chosen dataset is 'MPI-Sintel (final pass)'")
         train_name = 'sintel_final_train_all'
         val_name = 'sintel_final_val_all'
         set_name = 'sintel_final'
     # Add more datasets here (to change the final tfrecords name)
     # elif 'set_name' in FLAGS.data_dir:
     else:
+        print("Chosen dataset is 'FlyingChairs'")
         train_name = 'flying_chairs_train'
         val_name = 'flying_chairs_val'
         set_name = 'flying_chairs'
 
     # Actual conversion
+    print("Generating TFRecords...")
+    print("Current split: {}".format(train_name))
     convert_dataset(train_idxs, train_name, matcher=FLAGS.matcher, dataset=set_name)
+    print("Current split: {}".format(val_name))
     convert_dataset(val_idxs, val_name, matcher=FLAGS.matcher, dataset=set_name)
 
 
