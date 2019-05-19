@@ -15,10 +15,6 @@ def main():
         print("Input_type: 'image_matches'")
         input_a, matches_a, sparse_flow, flow = load_batch(FLAGS.dataset_config, 'train', net.global_step,
                                                            input_type=FLAGS.input_type)
-        print("input_a.shape: {}".format(input_a.shape))
-        print("matches_a.shape: {}".format(matches_a.shape))
-        print("sparse_flow.shape: {}".format(sparse_flow.shape))
-
 
         # Train on the data
         net.train(
@@ -29,7 +25,7 @@ def main():
             sparse_flow=sparse_flow,
             out_flow=flow,
             input_type=FLAGS.input_type,
-            checkpoints=FLAGS.checkpoint,
+            checkpoints={FLAGS.checkpoint: ('FlowNetS', 'FlowNetS')},
         )
     else:
         print("Input_type: 'image_pairs'")
@@ -44,7 +40,7 @@ def main():
             input_b=input_b,
             out_flow=flow,
             input_type=FLAGS.input_type,
-            checkpoints=FLAGS.checkpoint,
+            checkpoints={FLAGS.checkpoint: ('FlowNetS', 'FlowNetS')},
         )
 
 
