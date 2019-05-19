@@ -193,10 +193,10 @@ class Net(object):
         :param divisor: number by which the dimensions of sample must be divisible by
         :return: the padded sample that can be fed to the network
         """
-        if len(tf.shape(sample)) == 4:  # batch
-            batch, height, width, channels = sample.shape
+        if len(sample.get_shape()) == 4:  # batch
+            batch, height, width, channels = sample.get_shape().as_list()
         elif len(tf.shape(sample)) == 3:  # standard 3 channels image
-            height, width, channels = sample.shape
+            height, width, channels = sample.get_shape().as_list()
         else:
             raise ValueError("expected a tensor with 3 or 4 dimensions but {} were given".format(len(sample.shape)))
 
@@ -214,7 +214,7 @@ class Net(object):
             else:
                 padding = [(0, pad_height), (0, pad_width), (0, 0)]
 
-            sample_adapt_info = tf.shape(sample)  # Save original size
+            sample_adapt_info = sample.get_shape().as_list()  # Save original size
             sample = np.pad(sample, padding, mode='constant', constant_values=0.)
         else:
             sample_adapt_info = None
@@ -434,9 +434,9 @@ class Net(object):
             sparse_flow_img = tf.stack([sparse_flow_0, sparse_flow_1], 0)
             # Pad if needed
             print("Data type of sparse_flow_img is : {}".format(type(sparse_flow_img)))
-            print("Before padding: sparse_flo_img.shape: {}".format(tf.shape(sparse_flow_img)))
+            print("Before padding: sparse_flo_img.shape: {}".format(sparse_flow_img.get_shape().as_list()))
             sparse_flow_img, y_adapt_info = self.adapt_sample(sparse_flow_img)
-            print("After padding: sparse_flo_img.shape: {}".format(tf.shape(sparse_flow_img)))
+            print("After padding: sparse_flo_img.shape: {}".format(sparse_flow_img.get_shape().as_list()))
             tf.summary.image("sparse_flow_img", sparse_flow_img, max_outputs=2)
         else:
             tf.summary.image("image_b", input_b, max_outputs=2)
