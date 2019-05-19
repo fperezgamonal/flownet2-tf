@@ -462,7 +462,8 @@ class Net(object):
         total_loss = self.loss(out_flow, predictions)
         tf.summary.scalar('loss', total_loss)
 
-        if checkpoints:
+        print("checkpoints has value: {}".format(checkpoints))
+        if checkpoints is not None:
             if isinstance(checkpoints, dict):
                 for (checkpoint_path, (scope, new_scope)) in checkpoints.items():
                     variables_to_restore = slim.get_variables(scope=scope)
