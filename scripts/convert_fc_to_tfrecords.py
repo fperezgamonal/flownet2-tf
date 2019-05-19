@@ -13,7 +13,7 @@ FLAGS = None
 # Values defined here: https://lmb.informatik.uni-freiburg.de/resources/datasets/FlyingChairs.en.html#flyingchairs
 TRAIN = 1
 VAL = 2
-DEBUG = False  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
+DEBUG = True  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
 
 
 # https://stackoverflow.com/questions/28013200/reading-middlebury-flow-files-with-python-bytes-array-numpy
@@ -185,12 +185,20 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                 print("OG shapes before padding (images-matches): ")
                 print("img_a: {0}\nimg_b: {1}\nmch_a: {2}".format(image_a.shape, image_b.shape, matches_a.shape))
             original_shape = image_a.shape
+            print("height_a % divisor: {} % {} = {}".format(height_a, divisor, height_a % divisor))
+            print("width_a % divisor: {} % {} = {}".format(width_a, divisor, width_a % divisor))
             if height_a % divisor != 0 or width_a % divisor != 0:
+                if DEBUG:
+                    print("{}x{} dimensions are not both multiple of {}, must pad...".format(height_a, width_a,
+                                                                                             divisor))
                 new_height = int(ceil(height_a / divisor) * divisor)
                 new_width = int(ceil(width_a / divisor) * divisor)
                 pad_height = new_height - height_a
                 pad_width = new_width - width_a
                 padding = [(0, pad_height), (0, pad_width), (0, 0)]
+                if DEBUG:
+                    print("Padding with: {}x{} pixels, to achieve a target size: {}x{}".format(pad_height, pad_width,
+                                                                                               new_height, new_width))
 
                 image_a = np.pad(image_a, padding, mode='constant', constant_values=0.)
                 image_b = np.pad(image_b, padding, mode='constant', constant_values=0.)
