@@ -13,7 +13,7 @@ FLAGS = None
 # Values defined here: https://lmb.informatik.uni-freiburg.de/resources/datasets/FlyingChairs.en.html#flyingchairs
 TRAIN = 1
 VAL = 2
-DEBUG = True  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
+DEBUG = False  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
 
 
 # https://stackoverflow.com/questions/28013200/reading-middlebury-flow-files-with-python-bytes-array-numpy
@@ -254,12 +254,6 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
             flow_raw = flow.tostring()
             sparse_flow_raw = sparse_flow.tostring()
 
-            # example = tf.train.Example(features=tf.train.Features(feature={
-            #     'image_a': _bytes_feature(image_a_raw),
-            #     'image_b': _bytes_feature(image_b_raw),
-            #     'matches_a': _bytes_feature(matches_a_raw),
-            #     'sparse_flow': _bytes_feature(sparse_flow_raw),
-            #     'flow': _bytes_feature(flow_raw)}))
             tf_example = image_example(image_a_raw, image_b_raw, matches_a_raw, sparse_flow_raw, flow_raw)
             writer.write(tf_example.SerializeToString())
             pbar.update(count + 1)

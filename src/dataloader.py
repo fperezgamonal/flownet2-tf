@@ -76,8 +76,6 @@ class Image(slim.tfexample_decoder.ItemHandler):
         return image
 
 
-# TODO: check where IMAGE_HEIGHT and IMAGE_WIDTH are used to pad before training (imgs not multiple of 64)
-# actual changes: 'items_to_handlers', different input_b definition
 def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
     """
     dataset_config: A dataset_config defined in dataset_configs.py
@@ -88,7 +86,8 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
         if split_name not in dataset_config['SIZES']:
             raise ValueError('split name %s not recognized' % split_name)
 
-        IMAGE_HEIGHT, IMAGE_WIDTH = dataset_config['IMAGE_HEIGHT'], dataset_config['IMAGE_WIDTH']
+        # Width and height accounting for needed padding to match network dimensions
+        IMAGE_HEIGHT, IMAGE_WIDTH = dataset_config['PADDED_IMAGE_HEIGHT'], dataset_config['PADDED_IMAGE_WIDTH']
         reader = tf.TFRecordReader
         if input_type == 'image_matches':
             keys_to_features = {

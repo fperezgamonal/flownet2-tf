@@ -4,6 +4,8 @@ Add dataset configurations here. Each dataset must have the following structure:
 NAME = {
     IMAGE_HEIGHT: int,
     IMAGE_WIDTH: int,
+    PADDED_IMAGE_HEIGHT: int,  # necessary since tf.slim cuts to the passed dimensions regardless of the OG input size
+    PADDED_IMAGE_WIDTH: int,
     ITEMS_TO_DESCRIPTIONS: {
         'image_a': 'A 3-channel image.',
         'image_b': 'A 3-channel image.',
@@ -35,6 +37,8 @@ note that one step = one batch of data processed, ~not~ an entire epoch
 FLYING_CHAIRS_DATASET_CONFIG = {
     'IMAGE_HEIGHT': 384,
     'IMAGE_WIDTH': 512,
+    'PADDED_IMAGE_HEIGHT': 384,
+    'PADDED_IMAGE_WIDTH': 512,
     'ITEMS_TO_DESCRIPTIONS': {
         'image_a': 'A 3-channel image.',
         'image_b': 'A 3-channel image.',
@@ -157,6 +161,8 @@ FLYING_CHAIRS_DATASET_CONFIG = {
 FLYING_CHAIRS_ALL_DATASET_CONFIG = {
     'IMAGE_HEIGHT': 384,
     'IMAGE_WIDTH': 512,
+    'PADDED_IMAGE_HEIGHT': 384,
+    'PADDED_IMAGE_WIDTH': 512,
     'ITEMS_TO_DESCRIPTIONS': {
         'image_a': 'A 3-channel image.',
         'image_b': 'A 3-channel image.',
@@ -280,6 +286,8 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
 SINTEL_FINAL_ALL_DATASET_CONFIG = {
     'IMAGE_HEIGHT': 436,
     'IMAGE_WIDTH': 1024,
+    'PADDED_IMAGE_HEIGHT': 448,
+    'PADDED_IMAGE_WIDTH': 1024,
     'ITEMS_TO_DESCRIPTIONS': {
         'image_a': 'A 3-channel image.',
         'image_b': 'A 3-channel image.',
