@@ -480,6 +480,8 @@ class Net(object):
                 scope = checkpoints.split('/')[-2]  # i.e.: FlowNetS
                 checkpoint_path = checkpoints
                 variables_to_restore = slim.get_variables(scope=scope)
+                for var in variables_to_restore:
+                    print("var_name: {}".format(var))
                 # renamed_variables = {}
                 restorer = tf.train.Saver(variables_to_restore)
                 with tf.Session() as sess:
@@ -503,6 +505,7 @@ class Net(object):
         true_flow_img = tf.stack([true_flow_0, true_flow_1], 0)
         tf.summary.image('true_flow', true_flow_img, max_outputs=2)
 
+        print("Creating training op...")
         train_op = slim.learning.create_train_op(
             total_loss,
             optimizer,
@@ -512,6 +515,7 @@ class Net(object):
         now = datetime.datetime.now()
         date_now = now.strftime('%d-%m-%y_%H-%M-%S')
         log_dir = os.path.join(log_dir, date_now)
+        print("Starting training...")
         if self.debug:
             with tf.Session() as sess:
                 sess.run(tf.global_variables_initializer())
