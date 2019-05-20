@@ -274,6 +274,7 @@ def load_batch(dataset_config_str, split_name, global_step, input_type='image_pa
     elif dataset_config_str.lower() == 'sintel_clean':
         dataset_config = SINTEL_FINAL_ALL_DATASET_CONFIG  # must create tfrecords!
     elif dataset_config_str.lower() == 'sintel_final':
+        print("dataset_config is 'sintel_final' (OK)")
         dataset_config = SINTEL_FINAL_ALL_DATASET_CONFIG
     else:  # flying_chairs
         dataset_config = FLYING_CHAIRS_ALL_DATASET_CONFIG
