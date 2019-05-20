@@ -11,7 +11,7 @@ def main():
     # Create a new network
     net = FlowNetS_interp()
     if FLAGS.checkpoint is not None:
-        checkpoints = {FLAGS.checkpoint: ('FlowNetS', 'FlowNetS')}
+        checkpoints = FLAGS.checkpoint  # we want to define it as a string (only one checkpoint to load)
     else:
         checkpoints = None  # double-check None
 

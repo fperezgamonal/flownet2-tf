@@ -465,6 +465,7 @@ class Net(object):
         print("checkpoints has value: {}".format(checkpoints))
         if checkpoints is not None:
             if isinstance(checkpoints, dict):
+                print("checkpoints is instance of dict")
                 for (checkpoint_path, (scope, new_scope)) in checkpoints.items():
                     variables_to_restore = slim.get_variables(scope=scope)
                     renamed_variables = {
@@ -475,6 +476,7 @@ class Net(object):
                     with tf.Session() as sess:
                         restorer.restore(sess, checkpoint_path)
             elif isinstance(checkpoints, str):  # means we are only loading weights for FlowNetS/C (one architecture)
+                print("checkpoints is instance of string")
                 scope = checkpoints.split('/')[-2]  # i.e.: FlowNetS
                 checkpoint_path = checkpoints
                 variables_to_restore = slim.get_variables(scope=scope)

@@ -28,11 +28,8 @@ class FlowNetS_interp(Net):
                                            inputs['flow'],
                                            inputs['brightness_error']], axis=3)
             else:
-                # must define matches for first image (a)
                 # TODO: consider permutating order
                 concat_inputs = tf.concat([inputs['input_a'], inputs['sparse_flow'], inputs['matches_a']], axis=3)
-                print("type(concat_inputs):".format(type(concat_inputs)))
-                print("concat_inputs.shape: {}".format(concat_inputs.shape))
             with slim.arg_scope([slim.conv2d, slim.conv2d_transpose],
                                 # Only backprop this network if trainable
                                 trainable=trainable,
@@ -94,9 +91,6 @@ class FlowNetS_interp(Net):
                                                                           stride=2,
                                                                           scope='upsample_flow4to3',
                                                                           activation_fn=None))
-                        print("conv3_1.shape: {}".format(conv3_1.shape))
-                        print("deconv3.shape: {}".format(deconv3.shape))
-                        print("upsample_flow4to3.shape: {}".format(upsample_flow4to3.shape))
 
                         concat3 = tf.concat([conv3_1, deconv3, upsample_flow4to3], axis=3)
 
