@@ -481,8 +481,8 @@ class Net(object):
                 scope = checkpoints.split('/')[-2]  # i.e.: FlowNetS
                 checkpoint_path = checkpoints
                 variables_to_restore = slim.get_variables(scope=scope)
-                for var in variables_to_restore:
-                    print("var_name: {}".format(var.op.name))
+                # for var in variables_to_restore:
+                #     print("var_name: {}".format(var.op.name))
                 # renamed_variables = {}
                 restorer = tf.train.Saver(variables_to_restore)
                 with tf.Session() as sess:
