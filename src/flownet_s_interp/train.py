@@ -80,4 +80,8 @@ if __name__ == '__main__':
     )
 
     FLAGS = parser.parse_args()
+    print("FLAGS.checkpoint: {}".format(FLAGS.checkpoint))
+    print("FLAGS.dataset_config: {}".format(FLAGS.dataset_config))
+    print("FLAGS.training_schedule: {}".format(FLAGS.training_schedule))
+
     main()
