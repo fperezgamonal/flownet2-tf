@@ -486,39 +486,49 @@ class Net(object):
 
     # with tf.Session(graph=graph) as sess:
         # Load previous checkpoint
-        print("checkpoints has value: {}".format(checkpoints))
-        if checkpoints is not None:
-            if isinstance(checkpoints, dict):
-                print("checkpoints is instance of dict")
-                for (checkpoint_path, (scope, new_scope)) in checkpoints.items():
-                    variables_to_restore = slim.get_variables(scope=scope)
-                    renamed_variables = {
-                        var.op.name.split(new_scope + '/')[1]: var
-                        for var in variables_to_restore
-                    }
-                    restorer = tf.train.Saver(renamed_variables)
-                    with tf.Session() as sess:
-                        restorer.restore(sess, checkpoint_path)
+        # print("checkpoints has value: {}".format(checkpoints))
+        # if checkpoints is not None:
+        #     if isinstance(checkpoints, dict):
+        #         print("checkpoints is instance of dict")
+        #         for (checkpoint_path, (scope, new_scope)) in checkpoints.items():
+        #             variables_to_restore = slim.get_variables(scope=scope)
+        #             renamed_variables = {
+        #                 var.op.name.split(new_scope + '/')[1]: var
+        #                 for var in variables_to_restore
+        #             }
+        #             restorer = tf.train.Saver(renamed_variables)
+        #             with tf.Session() as sess:
+        #                 restorer.restore(sess, checkpoint_path)
+        #
+        #     elif isinstance(checkpoints, str):  # only loading weights for FlowNetS/C (one architecture)
+        #         print("checkpoints is instance of string")
+        #         scope = checkpoints.split('/')[-2]  # i.e.: FlowNetS
+        #         checkpoint_path = checkpoints
+        #         variables_to_restore = slim.get_variables(scope=scope)
+        #         # for var in variables_to_restore:
+        #         #     print("var_name: {}".format(var.op.name))
+        #         # renamed_variables = {}
+        #         restorer = tf.train.Saver(variables_to_restore)
+        #         with tf.Session() as sess:
+        #             restorer.restore(sess, checkpoint_path)
+        #     else:
+        #         raise ValueError("checkpoints must be a string or dictionary (simple vs stacked architectures)")
 
-            elif isinstance(checkpoints, str):  # only loading weights for FlowNetS/C (one architecture)
-                print("checkpoints is instance of string")
-                scope = checkpoints.split('/')[-2]  # i.e.: FlowNetS
-                checkpoint_path = checkpoints
-                variables_to_restore = slim.get_variables(scope=scope)
-                # for var in variables_to_restore:
-                #     print("var_name: {}".format(var.op.name))
-                # renamed_variables = {}
-                restorer = tf.train.Saver(variables_to_restore)
-                with tf.Session() as sess:
-                    restorer.restore(sess, checkpoint_path)
-            else:
-                raise ValueError("checkpoints must be a string or dictionary (simple vs stacked architectures)")
-
-        print("Creating training op...")
+        # Create the train_op
         train_op = slim.learning.create_train_op(
             total_loss,
             optimizer,
             summarize_gradients=True)
+
+        # Create the initial assignment op
+        checkpoint_path = checkpoints
+        variables_to_restore = slim.get_model_variables()
+        init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
+            checkpoint_path, variables_to_restore)
+
+        # Create an initial assignment function.
+        def InitAssignFn(sess):
+            sess.run(init_assign_op, init_feed_dict)
 
         # Create unique logging dir to avoid overwritting of old data (e.g.: when comparing different runs)
         now = datetime.datetime.now()
@@ -546,7 +556,8 @@ class Net(object):
                 # session_config=tf.ConfigProto(allow_soft_placement=True),
                 global_step=self.global_step,
                 save_summaries_secs=60,
-                number_of_steps=training_schedule['max_iter']
+                number_of_steps=training_schedule['max_iter'],
+                init_fn=InitAssignFn,
             )
 
     # TODO: add the option to resume training from checkpoint (saver) ==> fine-tuning
