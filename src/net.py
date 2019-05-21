@@ -540,6 +540,7 @@ class Net(object):
                 variables_to_restore = slim.get_model_variables()
                 init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
                     checkpoint_path, variables_to_restore)
+                self.global_step = checkpoint_path.split('-')[-1]
 
         # Create an initial assignment function.
         def InitAssignFn(sess):
