@@ -422,25 +422,27 @@ class Net(object):
 
     def train(self, log_dir, training_schedule_str, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
               checkpoints=None, input_type='image_pairs'):
-        training_schedule = self.get_training_schedule(training_schedule_str)    # Should it be a method of net?
-
-        tf.summary.image("image_a", input_a, max_outputs=2)
-        if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
-            tf.summary.image("matches_a", matches_a, max_outputs=2)
-            # Convert sparse flow to image-like (ONLY for visualization)
-            # not padding needed ! (we do it as a pre-processing step when creating the tfrecord)
-            sparse_flow_0 = sparse_flow[0, :, :, :]
-            sparse_flow_0 = tf.py_func(flow_to_image, [sparse_flow_0], tf.uint8)
-            sparse_flow_1 = sparse_flow[1, :, :, :]
-            sparse_flow_1 = tf.py_func(flow_to_image, [sparse_flow_1], tf.uint8)
-            sparse_flow_img = tf.stack([sparse_flow_0, sparse_flow_1], 0)
-
-            tf.summary.image("sparse_flow_img", sparse_flow_img, max_outputs=2)
-        else:
-            tf.summary.image("image_b", input_b, max_outputs=2)
 
         graph = tf.Graph()
         with graph.as_default():
+            training_schedule = self.get_training_schedule(training_schedule_str)    # Should it be a method of net?
+
+            tf.summary.image("image_a", input_a, max_outputs=2)
+            if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
+                tf.summary.image("matches_a", matches_a, max_outputs=2)
+                # Convert sparse flow to image-like (ONLY for visualization)
+                # not padding needed ! (we do it as a pre-processing step when creating the tfrecord)
+                sparse_flow_0 = sparse_flow[0, :, :, :]
+                sparse_flow_0 = tf.py_func(flow_to_image, [sparse_flow_0], tf.uint8)
+                sparse_flow_1 = sparse_flow[1, :, :, :]
+                sparse_flow_1 = tf.py_func(flow_to_image, [sparse_flow_1], tf.uint8)
+                sparse_flow_img = tf.stack([sparse_flow_0, sparse_flow_1], 0)
+
+                tf.summary.image("sparse_flow_img", sparse_flow_img, max_outputs=2)
+            else:
+                tf.summary.image("image_b", input_b, max_outputs=2)
+
+
             self.learning_rate = tf.train.piecewise_constant(
                 self.global_step,
                 [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
@@ -482,9 +484,9 @@ class Net(object):
             tf.summary.image('true_flow', true_flow_img, max_outputs=2)
 
             # Create saver 'restorer' for graph 'graph'
-            restorer = tf.train.Saver()  # gets ALL variables in 'graph'
+            # restorer = tf.train.Saver()  # gets ALL variables in 'graph'
 
-        with tf.Session(graph=graph) as sess:
+        # with tf.Session(graph=graph) as sess:
             # Load previous checkpoint
             print("checkpoints has value: {}".format(checkpoints))
             if checkpoints is not None:
@@ -496,7 +498,9 @@ class Net(object):
                             var.op.name.split(new_scope + '/')[1]: var
                             for var in variables_to_restore
                         }
-                        restorer.restore(renamed_variables)
+                        restorer = tf.train.Saver(renamed_variables)
+                        with tf.Session() as sess:
+                            restorer.restore(sess, checkpoint_path)
 
                 elif isinstance(checkpoints, str):  # only loading weights for FlowNetS/C (one architecture)
                     print("checkpoints is instance of string")
@@ -506,7 +510,9 @@ class Net(object):
                     # for var in variables_to_restore:
                     #     print("var_name: {}".format(var.op.name))
                     # renamed_variables = {}
-                    restorer.restore(sess, checkpoint_path)
+                    restorer = tf.train.Saver(variables_to_restore)
+                    with tf.Session() as sess:
+                        restorer.restore(sess, checkpoint_path)
                 else:
                     raise ValueError("checkpoints must be a string or dictionary (simple vs stacked architectures)")
 
