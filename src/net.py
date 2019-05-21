@@ -499,7 +499,7 @@ class Net(object):
                             for var in variables_to_restore
                         }
                         restorer = tf.train.Saver(renamed_variables)
-                        with tf.Session() as sess:
+                        with tf.Session(graph=graph) as sess:
                             restorer.restore(sess, checkpoint_path)
 
                 elif isinstance(checkpoints, str):  # only loading weights for FlowNetS/C (one architecture)
@@ -511,7 +511,7 @@ class Net(object):
                     #     print("var_name: {}".format(var.op.name))
                     # renamed_variables = {}
                     restorer = tf.train.Saver(variables_to_restore)
-                    with tf.Session() as sess:
+                    with tf.Session(graph=graph) as sess:
                         restorer.restore(sess, checkpoint_path)
                 else:
                     raise ValueError("checkpoints must be a string or dictionary (simple vs stacked architectures)")
@@ -528,7 +528,7 @@ class Net(object):
             log_dir = os.path.join(log_dir, date_now)
             print("Starting training...")
             if self.debug:
-                with tf.Session() as sess:
+                with tf.Session(graph=graph) as sess:
                     sess.run(tf.global_variables_initializer())
                     tf.train.start_queue_runners(sess)
                     slim.learning.train_step(
