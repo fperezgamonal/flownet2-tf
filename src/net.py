@@ -420,7 +420,6 @@ class Net(object):
                     full_out_path = os.path.join(out_path, unique_name + '_flow.flo')
                     write_flow(pred_flow, full_out_path)
 
-    # TODO: reloading from checkpoint works for default one but not for that created in training
     def train(self, log_dir, training_schedule_str, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
               checkpoints=None, input_type='image_pairs'):
 
@@ -520,11 +519,27 @@ class Net(object):
             optimizer,
             summarize_gradients=True)
 
-        # Create the initial assignment op
-        checkpoint_path = checkpoints
-        variables_to_restore = slim.get_model_variables()
-        init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
-            checkpoint_path, variables_to_restore)
+        if checkpoints is not None:
+            # Create the initial assignment op
+            # TODO: check that loading from checkpoint works with stacked nets (new code)
+            # TODO: consider that it worked with old code (above) and already-stored checkpoints (like non-stacked ones)
+            # TODO: in that regard, it seems plausible that it will not work either with OUR pre-trained stacked nets
+            if isinstance(checkpoints, dict):
+                print("checkpoints is instance of dict")
+                for (checkpoint_path, (scope, new_scope)) in checkpoints.items():
+                    variables_to_restore = slim.get_variables(scope=scope)
+                    renamed_variables = {
+                        var.op.name.split(new_scope + '/')[1]: var
+                        for var in variables_to_restore
+                    }
+                    init_assign_op, init_feed_dict = slim.assign_from_checkpoint(checkpoint_path, renamed_variables)
+
+            elif isinstance(checkpoints, str):
+                print("checkpoints is instance of string")
+                checkpoint_path = checkpoints
+                variables_to_restore = slim.get_model_variables()
+                init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
+                    checkpoint_path, variables_to_restore)
 
         # Create an initial assignment function.
         def InitAssignFn(sess):
@@ -550,15 +565,25 @@ class Net(object):
                     }
                 )
         else:
-            slim.learning.train(
-                train_op,
-                log_dir,
-                # session_config=tf.ConfigProto(allow_soft_placement=True),
-                global_step=self.global_step,
-                save_summaries_secs=60,
-                number_of_steps=training_schedule['max_iter'],
-                init_fn=InitAssignFn,
-            )
+            if checkpoints is not None:
+                slim.learning.train(
+                    train_op,
+                    log_dir,
+                    # session_config=tf.ConfigProto(allow_soft_placement=True),
+                    global_step=self.global_step,
+                    save_summaries_secs=60,
+                    number_of_steps=training_schedule['max_iter'],
+                    init_fn=InitAssignFn,
+                )
+            else:
+                slim.learning.train(
+                    train_op,
+                    log_dir,
+                    # session_config=tf.ConfigProto(allow_soft_placement=True),
+                    global_step=self.global_step,
+                    save_summaries_secs=60,
+                    number_of_steps=training_schedule['max_iter'],
+                )
 
     # TODO: add the option to resume training from checkpoint (saver) ==> fine-tuning
     # TODO: see the 'scope' of the checkpoint option in the train function, seems like it does not load the whole chkpt
