@@ -517,7 +517,7 @@ class Net(object):
         train_op = slim.learning.create_train_op(
             total_loss,
             optimizer,
-            summarize_gradients=True)
+            summarize_gradients=False)
 
         if checkpoints is not None:
             # Create the initial assignment op
@@ -565,15 +565,18 @@ class Net(object):
                     }
                 )
         else:
+            # Explicitly create a Saver to specify maximum number of checkpoints to keep (and how frequently)
+            saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2)
             if checkpoints is not None:
                 slim.learning.train(
                     train_op,
                     log_dir,
                     # session_config=tf.ConfigProto(allow_soft_placement=True),
                     global_step=self.global_step,
-                    save_summaries_secs=60,
+                    save_summaries_secs=180,
                     number_of_steps=training_schedule['max_iter'],
                     init_fn=InitAssignFn,
+                    saver=saver,
                 )
             else:
                 slim.learning.train(
@@ -581,8 +584,9 @@ class Net(object):
                     log_dir,
                     # session_config=tf.ConfigProto(allow_soft_placement=True),
                     global_step=self.global_step,
-                    save_summaries_secs=60,
+                    save_summaries_secs=180,
                     number_of_steps=training_schedule['max_iter'],
+                    saver=saver,
                 )
 
     # TODO: add the option to resume training from checkpoint (saver) ==> fine-tuning
