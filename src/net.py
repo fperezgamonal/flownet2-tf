@@ -420,136 +420,134 @@ class Net(object):
                     full_out_path = os.path.join(out_path, unique_name + '_flow.flo')
                     write_flow(pred_flow, full_out_path)
 
+    # TODO: reloading from checkpoint works for default one but not for that created in training
     def train(self, log_dir, training_schedule_str, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
               checkpoints=None, input_type='image_pairs'):
 
-        graph = tf.Graph()
-        with graph.as_default():
-            training_schedule = self.get_training_schedule(training_schedule_str)    # Should it be a method of net?
+        training_schedule = self.get_training_schedule(training_schedule_str)    # Should it be a method of net?
 
-            tf.summary.image("image_a", input_a, max_outputs=2)
-            if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
-                tf.summary.image("matches_a", matches_a, max_outputs=2)
-                # Convert sparse flow to image-like (ONLY for visualization)
-                # not padding needed ! (we do it as a pre-processing step when creating the tfrecord)
-                sparse_flow_0 = sparse_flow[0, :, :, :]
-                sparse_flow_0 = tf.py_func(flow_to_image, [sparse_flow_0], tf.uint8)
-                sparse_flow_1 = sparse_flow[1, :, :, :]
-                sparse_flow_1 = tf.py_func(flow_to_image, [sparse_flow_1], tf.uint8)
-                sparse_flow_img = tf.stack([sparse_flow_0, sparse_flow_1], 0)
+        tf.summary.image("image_a", input_a, max_outputs=2)
+        if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
+            tf.summary.image("matches_a", matches_a, max_outputs=2)
+            # Convert sparse flow to image-like (ONLY for visualization)
+            # not padding needed ! (we do it as a pre-processing step when creating the tfrecord)
+            sparse_flow_0 = sparse_flow[0, :, :, :]
+            sparse_flow_0 = tf.py_func(flow_to_image, [sparse_flow_0], tf.uint8)
+            sparse_flow_1 = sparse_flow[1, :, :, :]
+            sparse_flow_1 = tf.py_func(flow_to_image, [sparse_flow_1], tf.uint8)
+            sparse_flow_img = tf.stack([sparse_flow_0, sparse_flow_1], 0)
 
-                tf.summary.image("sparse_flow_img", sparse_flow_img, max_outputs=2)
-            else:
-                tf.summary.image("image_b", input_b, max_outputs=2)
+            tf.summary.image("sparse_flow_img", sparse_flow_img, max_outputs=2)
+        else:
+            tf.summary.image("image_b", input_b, max_outputs=2)
 
+        self.learning_rate = tf.train.piecewise_constant(
+            self.global_step,
+            [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
+            training_schedule['learning_rates'])
+        optimizer = tf.train.AdamOptimizer(
+            self.learning_rate,
+            training_schedule['momentum'],
+            training_schedule['momentum2'])
 
-            self.learning_rate = tf.train.piecewise_constant(
-                self.global_step,
-                [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
-                training_schedule['learning_rates'])
-            optimizer = tf.train.AdamOptimizer(
-                self.learning_rate,
-                training_schedule['momentum'],
-                training_schedule['momentum2'])
+        if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
+            inputs = {
+                'input_a': input_a,
+                'matches_a': matches_a,
+                'sparse_flow': sparse_flow,
+            }
+        else:
+            inputs = {
+                'input_a': input_a,
+                'input_b': input_b,
+            }
+        predictions = self.model(inputs, training_schedule)
+        total_loss = self.loss(out_flow, predictions)
+        tf.summary.scalar('loss', total_loss)
 
-            if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
-                inputs = {
-                    'input_a': input_a,
-                    'matches_a': matches_a,
-                    'sparse_flow': sparse_flow,
-                }
-            else:
-                inputs = {
-                    'input_a': input_a,
-                    'input_b': input_b,
-                }
-            predictions = self.model(inputs, training_schedule)
-            total_loss = self.loss(out_flow, predictions)
-            tf.summary.scalar('loss', total_loss)
+        # Show the generated flow in TensorBoard
+        if 'flow' in predictions:
+            pred_flow_0 = predictions['flow'][0, :, :, :]
+            pred_flow_0 = tf.py_func(flow_to_image, [pred_flow_0], tf.uint8)
+            pred_flow_1 = predictions['flow'][1, :, :, :]
+            pred_flow_1 = tf.py_func(flow_to_image, [pred_flow_1], tf.uint8)
+            pred_flow_img = tf.stack([pred_flow_0, pred_flow_1], 0)
+            tf.summary.image('pred_flow', pred_flow_img, max_outputs=2)
 
-            # Show the generated flow in TensorBoard
-            if 'flow' in predictions:
-                pred_flow_0 = predictions['flow'][0, :, :, :]
-                pred_flow_0 = tf.py_func(flow_to_image, [pred_flow_0], tf.uint8)
-                pred_flow_1 = predictions['flow'][1, :, :, :]
-                pred_flow_1 = tf.py_func(flow_to_image, [pred_flow_1], tf.uint8)
-                pred_flow_img = tf.stack([pred_flow_0, pred_flow_1], 0)
-                tf.summary.image('pred_flow', pred_flow_img, max_outputs=2)
+        true_flow_0 = out_flow[0, :, :, :]
+        true_flow_0 = tf.py_func(flow_to_image, [true_flow_0], tf.uint8)
+        true_flow_1 = out_flow[1, :, :, :]
+        true_flow_1 = tf.py_func(flow_to_image, [true_flow_1], tf.uint8)
+        true_flow_img = tf.stack([true_flow_0, true_flow_1], 0)
+        tf.summary.image('true_flow', true_flow_img, max_outputs=2)
 
-            true_flow_0 = out_flow[0, :, :, :]
-            true_flow_0 = tf.py_func(flow_to_image, [true_flow_0], tf.uint8)
-            true_flow_1 = out_flow[1, :, :, :]
-            true_flow_1 = tf.py_func(flow_to_image, [true_flow_1], tf.uint8)
-            true_flow_img = tf.stack([true_flow_0, true_flow_1], 0)
-            tf.summary.image('true_flow', true_flow_img, max_outputs=2)
+        # Create saver 'restorer' for graph 'graph'
+        # restorer = tf.train.Saver()  # gets ALL variables in 'graph'
 
-            # Create saver 'restorer' for graph 'graph'
-            # restorer = tf.train.Saver()  # gets ALL variables in 'graph'
-
-        # with tf.Session(graph=graph) as sess:
-            # Load previous checkpoint
-            print("checkpoints has value: {}".format(checkpoints))
-            if checkpoints is not None:
-                if isinstance(checkpoints, dict):
-                    print("checkpoints is instance of dict")
-                    for (checkpoint_path, (scope, new_scope)) in checkpoints.items():
-                        variables_to_restore = slim.get_variables(scope=scope)
-                        renamed_variables = {
-                            var.op.name.split(new_scope + '/')[1]: var
-                            for var in variables_to_restore
-                        }
-                        restorer = tf.train.Saver(renamed_variables)
-                        with tf.Session(graph=graph) as sess:
-                            restorer.restore(sess, checkpoint_path)
-
-                elif isinstance(checkpoints, str):  # only loading weights for FlowNetS/C (one architecture)
-                    print("checkpoints is instance of string")
-                    scope = checkpoints.split('/')[-2]  # i.e.: FlowNetS
-                    checkpoint_path = checkpoints
+    # with tf.Session(graph=graph) as sess:
+        # Load previous checkpoint
+        print("checkpoints has value: {}".format(checkpoints))
+        if checkpoints is not None:
+            if isinstance(checkpoints, dict):
+                print("checkpoints is instance of dict")
+                for (checkpoint_path, (scope, new_scope)) in checkpoints.items():
                     variables_to_restore = slim.get_variables(scope=scope)
-                    # for var in variables_to_restore:
-                    #     print("var_name: {}".format(var.op.name))
-                    # renamed_variables = {}
-                    restorer = tf.train.Saver(variables_to_restore)
-                    with tf.Session(graph=graph) as sess:
+                    renamed_variables = {
+                        var.op.name.split(new_scope + '/')[1]: var
+                        for var in variables_to_restore
+                    }
+                    restorer = tf.train.Saver(renamed_variables)
+                    with tf.Session() as sess:
                         restorer.restore(sess, checkpoint_path)
-                else:
-                    raise ValueError("checkpoints must be a string or dictionary (simple vs stacked architectures)")
 
-            print("Creating training op...")
-            train_op = slim.learning.create_train_op(
-                total_loss,
-                optimizer,
-                summarize_gradients=True)
-
-            # Create unique logging dir to avoid overwritting of old data (e.g.: when comparing different runs)
-            now = datetime.datetime.now()
-            date_now = now.strftime('%d-%m-%y_%H-%M-%S')
-            log_dir = os.path.join(log_dir, date_now)
-            print("Starting training...")
-            if self.debug:
-                with tf.Session(graph=graph) as sess:
-                    sess.run(tf.global_variables_initializer())
-                    tf.train.start_queue_runners(sess)
-                    slim.learning.train_step(
-                        sess,
-                        train_op,
-                        self.global_step,
-                        {
-                            'should_trace': tf.constant(1),
-                            'should_log': tf.constant(1),
-                            'logdir': log_dir + '/debug',
-                        }
-                    )
+            elif isinstance(checkpoints, str):  # only loading weights for FlowNetS/C (one architecture)
+                print("checkpoints is instance of string")
+                scope = checkpoints.split('/')[-2]  # i.e.: FlowNetS
+                checkpoint_path = checkpoints
+                variables_to_restore = slim.get_variables(scope=scope)
+                # for var in variables_to_restore:
+                #     print("var_name: {}".format(var.op.name))
+                # renamed_variables = {}
+                restorer = tf.train.Saver(variables_to_restore)
+                with tf.Session() as sess:
+                    restorer.restore(sess, checkpoint_path)
             else:
-                slim.learning.train(
+                raise ValueError("checkpoints must be a string or dictionary (simple vs stacked architectures)")
+
+        print("Creating training op...")
+        train_op = slim.learning.create_train_op(
+            total_loss,
+            optimizer,
+            summarize_gradients=True)
+
+        # Create unique logging dir to avoid overwritting of old data (e.g.: when comparing different runs)
+        now = datetime.datetime.now()
+        date_now = now.strftime('%d-%m-%y_%H-%M-%S')
+        log_dir = os.path.join(log_dir, date_now)
+        print("Starting training...")
+        if self.debug:
+            with tf.Session() as sess:
+                sess.run(tf.global_variables_initializer())
+                tf.train.start_queue_runners(sess)
+                slim.learning.train_step(
+                    sess,
                     train_op,
-                    log_dir,
-                    # session_config=tf.ConfigProto(allow_soft_placement=True),
-                    global_step=self.global_step,
-                    save_summaries_secs=60,
-                    number_of_steps=training_schedule['max_iter']
+                    self.global_step,
+                    {
+                        'should_trace': tf.constant(1),
+                        'should_log': tf.constant(1),
+                        'logdir': log_dir + '/debug',
+                    }
                 )
+        else:
+            slim.learning.train(
+                train_op,
+                log_dir,
+                # session_config=tf.ConfigProto(allow_soft_placement=True),
+                global_step=self.global_step,
+                save_summaries_secs=60,
+                number_of_steps=training_schedule['max_iter']
+            )
 
     # TODO: add the option to resume training from checkpoint (saver) ==> fine-tuning
     # TODO: see the 'scope' of the checkpoint option in the train function, seems like it does not load the whole chkpt
