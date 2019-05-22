@@ -10,10 +10,12 @@ import datetime
 import uuid
 from imageio import imread, imsave
 from .flowlib import flow_to_image, write_flow, read_flow
-from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FINETUNE_SINTEL_S1, FINETUNE_SINTEL_S2,\
-    FINETUNE_SINTEL_S3, FINETUNE_SINTEL_S4, FINETUNE_SINTEL_S5, FINETUNE_KITTI_S1, FINETUNE_KITTI_S2, FINETUNE_KITTI_S3,\
+from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FINETUNE_SINTEL_S1, FINETUNE_SINTEL_S2, \
+    FINETUNE_SINTEL_S3, FINETUNE_SINTEL_S4, FINETUNE_SINTEL_S5, FINETUNE_KITTI_S1, FINETUNE_KITTI_S2, FINETUNE_KITTI_S3, \
     FINETUNE_KITTI_S4, FINETUNE_ROB, LONG_SCHEDULE_TMP
 slim = tf.contrib.slim
+
+VAL_INTERVAL = 1000  # each N samples, we evaluate the validation set
 
 
 class Mode(Enum):
@@ -117,16 +119,16 @@ class Net(object):
         if sparse_flow is not None and matches_a is not None:
             height_ma, width_ma, channels_ma = matches_a.shape
             assert height_ma == height_a and width_ma == width_a and channels_ma == 1, (
-                   "Mask has invalid dimensions. Should be ({0}, {1}, 1) but are {2}".format(height_a, width_a,
-                                                                                             matches_a.shape)
+                "Mask has invalid dimensions. Should be ({0}, {1}, 1) but are {2}".format(height_a, width_a,
+                                                                                          matches_a.shape)
             )
         else:
             height_b, width_b, channels_b = input_b.shape
             # Assert matching image sizes
             assert height_a == height_b and width_a == width_b and channels_a == channels_b, (
-                    "FATAL: image dimensions do not match. Image 1 has shape: {0}, Image 2 has shape: {1}".format(
-                        input_a.shape, input_b.shape
-                    )
+                "FATAL: image dimensions do not match. Image 1 has shape: {0}, Image 2 has shape: {1}".format(
+                    input_a.shape, input_b.shape
+                )
             )
 
         if height_a % divisor != 0 or width_a % divisor != 0:
@@ -367,7 +369,7 @@ class Net(object):
                 # Each line is split into a list with N elements (separator: blank space (" "))
                 path_inputs = path_list[img_idx].split(' ')
                 assert 2 <= len(path_inputs) <= 4, (
-                       'More paths than expected. Expected: I1+I2 (2), I1+MM+sparseflow(3) or all (4).')
+                    'More paths than expected. Expected: I1+I2 (2), I1+MM+sparseflow(3) or all (4).')
                 if len(path_inputs) == 2:  # Only paths to image1 + image2 have been provided
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
@@ -424,7 +426,10 @@ class Net(object):
                     write_flow(pred_flow, full_out_path)
 
     def train(self, log_dir, training_schedule_str, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
-              checkpoints=None, input_type='image_pairs'):
+              checkpoints=None, input_type='image_pairs', log_verbosity=True):
+        if log_verbosity:  # print loss and tfinfo to stdout
+            tf.logging.set_verbosity(tf.logging.INFO)
+        # Otherwise, info only printed through TensorBoard
 
         # TODO: WIP read checkpoints first to try to correctly restore global_step as creating it breaks training
         # NOTE: everything depends on global_step to be correctly reported, that is why is critical to get it right
@@ -456,7 +461,10 @@ class Net(object):
                 # step_number = int(checkpoint_path.split('-')[-1])
                 # checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
                 #                                             dtype='int64')
-                # checkpoint_global_step_tensor = slim.get_variables_by_name("global_step")
+                checkpoint_global_step_tensor = slim.get_variables_by_name("global_step")[0]
+                print("checkpoint_global_step_tensor: {}".format(checkpoint_global_step_tensor))
+                self.global_step = checkpoint_global_step_tensor
+                print("self.global_step after assignment: {0}".format(self.global_step))
                 # restorer = tf.train.Saver(checkpoint_global_step_tensor)
                 # with tf.Session() as sess:
                 #     restorer.restore(sess, checkpoint_path)
@@ -544,7 +552,7 @@ class Net(object):
         # Create saver 'restorer' for graph 'graph'
         # restorer = tf.train.Saver()  # gets ALL variables in 'graph'
 
-    # with tf.Session(graph=graph) as sess:
+        # with tf.Session(graph=graph) as sess:
         # Load previous checkpoint
         # print("checkpoints has value: {}".format(checkpoints))
         # if checkpoints is not None:
@@ -575,16 +583,21 @@ class Net(object):
         #         raise ValueError("checkpoints must be a string or dictionary (simple vs stacked architectures)")
 
         # Create the train_op
+        print("Creating training op...")
+        print("self.global_step before creating training op is: {}".format(self.global_step))
         train_op = slim.learning.create_train_op(
             total_loss,
             optimizer,
-            summarize_gradients=False)
+            summarize_gradients=False,
+            # global_step=self.global_step
+        )
 
         # Create unique logging dir to avoid overwritting of old data (e.g.: when comparing different runs)
         now = datetime.datetime.now()
         date_now = now.strftime('%d-%m-%y_%H-%M-%S')
         log_dir = os.path.join(log_dir, date_now)
         print("Starting training...")
+        print("self.global_step before starting training is: {}".format(self.global_step))
         if self.debug:
             with tf.Session() as sess:
                 sess.run(tf.global_variables_initializer())
@@ -603,7 +616,7 @@ class Net(object):
             # Explicitly create a Saver to specify maximum number of checkpoints to keep (and how frequently)
             # saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2)
             if checkpoints is not None:
-                slim.learning.train(
+                final_loss = slim.learning.train(
                     train_op,
                     log_dir,
                     # session_config=tf.ConfigProto(allow_soft_placement=True),
@@ -614,7 +627,7 @@ class Net(object):
                     # saver=saver,
                 )
             else:
-                slim.learning.train(
+                final_loss = slim.learning.train(
                     train_op,
                     log_dir,
                     # session_config=tf.ConfigProto(allow_soft_placement=True),
@@ -623,6 +636,7 @@ class Net(object):
                     number_of_steps=training_schedule['max_iter'],
                     # saver=saver,
                 )
+            print("Loss at the end of training is {}".format(final_loss))
 
     # TODO: add the option to resume training from checkpoint (saver) ==> fine-tuning
     # TODO: see the 'scope' of the checkpoint option in the train function, seems like it does not load the whole chkpt

@@ -17,6 +17,7 @@ from PIL import Image
 UNKNOWN_FLOW_THRESH = 1e7
 SMALLFLOW = 0.0
 LARGEFLOW = 1e8
+DEBUG = False  # flag to print out verbose information like: range of optical flow, dimensions of matrix, etc.
 
 """
 =============
@@ -93,7 +94,8 @@ def read_flow(filename):
         else:
             w = np.fromfile(f, np.int32, count=1)[0]
             h = np.fromfile(f, np.int32, count=1)[0]
-            # print("Reading {0} x {1} flo file".format(w, h))  too verbose when reading batches of images
+            if DEBUG:
+                print("Reading {0} x {1} flo file".format(w, h))
             data = np.fromfile(f, np.float32, count=2*w*h)
             # Reshape data into 3D array (columns, rows, bands)
             return np.resize(data, (h, w, 2))
@@ -260,7 +262,8 @@ def flow_to_image(flow):
     rad = np.sqrt(u ** 2 + v ** 2)
     maxrad = max(-1, np.max(rad))
 
-    print("max flow: %.4f\nflow range:\nu = %.3f .. %.3f\nv = %.3f .. %.3f" % (maxrad, minu, maxu, minv, maxv))
+    if DEBUG:
+        print("max flow: %.4f\nflow range:\nu = %.3f .. %.3f\nv = %.3f .. %.3f" % (maxrad, minu, maxu, minv, maxv))
 
     u = u/(maxrad + np.finfo(float).eps)
     v = v/(maxrad + np.finfo(float).eps)
@@ -376,15 +379,15 @@ def warp_image(im, flow):
     n = image_height * image_width
     (iy, ix) = np.mgrid[0:image_height, 0:image_width]
     (fy, fx) = np.mgrid[0:flow_height, 0:flow_width]
-    fx += flow[:,:,0]
-    fy += flow[:,:,1]
-    mask = np.logical_or(fx <0 , fx > flow_width)
+    fx += flow[:, :, 0]
+    fy += flow[:, :, 1]
+    mask = np.logical_or(fx < 0, fx > flow_width)
     mask = np.logical_or(mask, fy < 0)
     mask = np.logical_or(mask, fy > flow_height)
     fx = np.minimum(np.maximum(fx, 0), flow_width)
     fy = np.minimum(np.maximum(fy, 0), flow_height)
-    points = np.concatenate((ix.reshape(n,1), iy.reshape(n,1)), axis=1)
-    xi = np.concatenate((fx.reshape(n, 1), fy.reshape(n,1)), axis=1)
+    points = np.concatenate((ix.reshape(n, 1), iy.reshape(n, 1)), axis=1)
+    xi = np.concatenate((fx.reshape(n, 1), fy.reshape(n, 1)), axis=1)
     warp = np.zeros((image_height, image_width, im.shape[2]))
     for i in range(im.shape[2]):
         channel = im[:, :, i]
@@ -403,6 +406,7 @@ def warp_image(im, flow):
 Others
 ==============
 """
+
 
 def scale_image(image, new_range):
     """
