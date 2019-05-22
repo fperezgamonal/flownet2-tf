@@ -445,19 +445,19 @@ class Net(object):
         if checkpoints is not None:
             # def_global_step= tf.get_default_graph().get_tensor_by_name('global_step:0')
             step_number = int(checkpoints.split('-')[-1])
-            self.global_step.assign(step_number)
+            self.global_step.assign(step_number).eval()
             def_global_step = tf.Variable(step_number, trainable=False, name='global_step')
             sess = tf.Session()
             sess.run(def_global_step.initializer)
-            sess.run(self.global_step.initializer)
+            # sess.run(self.global_step.initializer)
 
             print('def_global_step: {}'.format(def_global_step))
             print('def_global_step evaluated: {}'.format(tf.train.global_step(sess, def_global_step)))
             print("self.global_step as is: {}".format(self.global_step))
-            print('self.global_step evaluated: {}'.format(tf.train.global_step(sess, self.global_step)))
+            # print('self.global_step evaluated: {}'.format(tf.train.global_step(sess, self.global_step)))
 
             # self.global_step = def_global_step.astype('int64')
-            print("self.global_step after assignment: {}".format(self.global_step))
+            # print("self.global_step after assignment: {}".format(self.global_step))
 
         self.learning_rate = tf.train.piecewise_constant(
             self.global_step,
