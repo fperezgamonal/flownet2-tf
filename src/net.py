@@ -593,7 +593,7 @@ class Net(object):
                     train_op,
                     log_dir,
                     # session_config=tf.ConfigProto(allow_soft_placement=True),
-                    global_step=checkpoint_global_step_tensor,
+                    global_step=self.global_step,
                     save_summaries_secs=180,
                     number_of_steps=training_schedule['max_iter'],
                     init_fn=InitAssignFn,
