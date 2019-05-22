@@ -453,6 +453,8 @@ class Net(object):
             print('def_global_step evaluated: {}'.format(tf.train.global_step(sess, def_global_step)))
             print("self.global_step as is: {}".format(self.global_step))
             print('self.global_step evaluated: {}'.format(tf.train.global_step(sess, self.global_step)))
+            self.global_step = def_global_step
+            print("self.global_step after assignment: {}".format(self.global_step))
 
         self.learning_rate = tf.train.piecewise_constant(
             self.global_step,
