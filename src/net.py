@@ -448,10 +448,8 @@ class Net(object):
                     checkpoint_path, variables_to_restore)
                 checkpoint_global_step_tensor = slim.get_variables_by_name("global_step")
                 print("checkpoint_global_step_tensor: {}".format(checkpoint_global_step_tensor))
-                sess = tf.Session()
-                sess.run(checkpoint_global_step_tensor)
-                print('checkpoint_global_step_tensor evaluated: {}'.format(tf.train.global_step(
-                    sess, checkpoint_global_step_tensor)))
+            else:
+                raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
 
         # Create an initial assignment function.
         def InitAssignFn(sess):
@@ -595,7 +593,7 @@ class Net(object):
                     train_op,
                     log_dir,
                     # session_config=tf.ConfigProto(allow_soft_placement=True),
-                    global_step=self.global_step,
+                    global_step=checkpoint_global_step_tensor,
                     save_summaries_secs=180,
                     number_of_steps=training_schedule['max_iter'],
                     init_fn=InitAssignFn,
