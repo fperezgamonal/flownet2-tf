@@ -540,7 +540,8 @@ class Net(object):
                 variables_to_restore = slim.get_model_variables()
                 init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
                     checkpoint_path, variables_to_restore)
-                self.global_step = checkpoint_path.split('-')[-1]
+                self.global_step = int(checkpoint_path.split('-')[-1])
+                print("Updated previous global step from checkpoint to iteration: {}".format(self.global_step))
 
         # Create an initial assignment function.
         def InitAssignFn(sess):
@@ -567,7 +568,7 @@ class Net(object):
                 )
         else:
             # Explicitly create a Saver to specify maximum number of checkpoints to keep (and how frequently)
-            #saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2)
+            # saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2)
             if checkpoints is not None:
                 slim.learning.train(
                     train_op,
@@ -577,7 +578,7 @@ class Net(object):
                     save_summaries_secs=180,
                     number_of_steps=training_schedule['max_iter'],
                     init_fn=InitAssignFn,
-                    #saver=saver,
+                    # saver=saver,
                 )
             else:
                 slim.learning.train(
@@ -587,7 +588,7 @@ class Net(object):
                     global_step=self.global_step,
                     save_summaries_secs=180,
                     number_of_steps=training_schedule['max_iter'],
-                    #saver=saver,
+                    # saver=saver,
                 )
 
     # TODO: add the option to resume training from checkpoint (saver) ==> fine-tuning
