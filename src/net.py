@@ -446,7 +446,7 @@ class Net(object):
                 variables_to_restore = slim.get_model_variables()
                 init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
                     checkpoint_path, variables_to_restore)
-                checkpoint_global_step_tensor = slim.get_model_variables_by_name("global_step")
+                checkpoint_global_step_tensor = slim.get_variables_by_name("global_step")
                 print("checkpoint_global_step_tensor: {}".format(checkpoint_global_step_tensor))
 
         # Create an initial assignment function.
