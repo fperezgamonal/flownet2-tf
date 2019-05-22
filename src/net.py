@@ -447,6 +447,7 @@ class Net(object):
             def_global_step = tf.Variable(int(checkpoints.split('-')[-1]), trainable=False, name='global_step')
             sess = tf.Session()
             sess.run(def_global_step.initializer)
+            sess.run(self.global_step.initializer)
 
             print('def_global_step: {}'.format(def_global_step))
             print('def_global_step evaluated: {}'.format(tf.train.global_step(sess, def_global_step)))
