@@ -450,6 +450,10 @@ class Net(object):
             checkpoint_global_step = tf.Variable(step_number, trainable=False, name='global_step', dtype='int64')
             # Update global step as the last one in the checkpoint
             self.global_step = checkpoint_global_step  # should work if both have the same dtype
+            print("self.global_step as is: {}".format(self.global_step))
+            sess = tf.Session()
+            sess.run(self.global_step.initializer)
+            print('self.global_step evaluated: {}'.format(tf.train.global_step(sess, self.global_step)))
 
         self.learning_rate = tf.train.piecewise_constant(
             self.global_step,
