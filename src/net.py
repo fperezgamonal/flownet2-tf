@@ -446,7 +446,10 @@ class Net(object):
                 variables_to_restore = slim.get_model_variables()
                 init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
                     checkpoint_path, variables_to_restore)
-                checkpoint_global_step_tensor = slim.get_variables_by_name("global_step")[0]  # returns a list
+                step_number = int(checkpoint_path.split('-')[-1])
+                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
+                                                            dtype='int64')
+                # checkpoint_global_step_tensor = slim.get_variables_by_name("global_step")[0]  # returns a list
                 print("checkpoint_global_step_tensor: {}".format(checkpoint_global_step_tensor))
             else:
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
