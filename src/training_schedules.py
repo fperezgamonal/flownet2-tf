@@ -2,6 +2,14 @@
 # thanks to: https://arxiv.org/pdf/1809.05571.pdf (the code has not been updated yet but the paper is out!)
 # schedules reproduced (aside from long which was already provided) from og repo at: github.com/lmb-freiburg/flownet2
 # Must navigate to models and download models to get the text files (*proto.txt): one for 'long', 'fine' and 'short'
+LONG_SCHEDULE_TMP = {
+    'step_values': [134876, 334876, 534876, 734876],
+    'learning_rates': [0.0001, 0.00005, 0.000025, 0.0000125, 0.00000625],
+    'momentum': 0.9,
+    'momentum2': 0.999,
+    'weight_decay': 0.0004,
+    'max_iter': 1065124,
+}
 LONG_SCHEDULE = {
     'step_values': [400000, 600000, 800000, 1000000],
     'learning_rates': [0.0001, 0.00005, 0.000025, 0.0000125, 0.00000625],
