@@ -423,11 +423,41 @@ class Net(object):
     def train(self, log_dir, training_schedule_str, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
               checkpoints=None, input_type='image_pairs'):
 
-        training_schedule = self.get_training_schedule(training_schedule_str)    # Should it be a method of net?
+        # TODO: WIP read checkpoints first to try to correctly restore global_step as creating it breaks training
+        # NOTE: everything depends on global_step to be correctly reported, that is why is critical to get it right
+        if checkpoints is not None:
+            # Create the initial assignment op
+            # TODO: check that loading from checkpoint works with stacked nets (new code)
+            # TODO: consider that it worked with old code (above) and already-stored checkpoints (like non-stacked ones)
+            # TODO: in that regard, it seems plausible that it will not work either with OUR pre-trained stacked nets
+            if isinstance(checkpoints, dict):
+                print("checkpoints is instance of dict")
+                for (checkpoint_path, (scope, new_scope)) in checkpoints.items():
+                    variables_to_restore = slim.get_variables(scope=scope)
+                    renamed_variables = {
+                        var.op.name.split(new_scope + '/')[1]: var
+                        for var in variables_to_restore
+                    }
+                    init_assign_op, init_feed_dict = slim.assign_from_checkpoint(checkpoint_path, renamed_variables)
 
-        tf.summary.image("image_a", input_a, max_outputs=2)
+            elif isinstance(checkpoints, str):
+                print("checkpoints is instance of string")
+                checkpoint_path = checkpoints
+                variables_to_restore = slim.get_model_variables()
+                init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
+                    checkpoint_path, variables_to_restore)
+                checkpoint_global_step_tensor = slim.get_model_variables_by_name("global_step")
+                print("checkpoint_global_step_tensor: {}".format(checkpoint_global_step_tensor))
+
+        # Create an initial assignment function.
+        def InitAssignFn(sess):
+            sess.run(init_assign_op, init_feed_dict)
+
+        training_schedule = self.get_training_schedule(training_schedule_str)
+
+        tf.summary.image("image_a", input_a, max_outputs=1)
         if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
-            tf.summary.image("matches_a", matches_a, max_outputs=2)
+            tf.summary.image("matches_a", matches_a, max_outputs=1)
             # Convert sparse flow to image-like (ONLY for visualization)
             # not padding needed ! (we do it as a pre-processing step when creating the tfrecord)
             sparse_flow_0 = sparse_flow[0, :, :, :]
@@ -436,24 +466,24 @@ class Net(object):
             sparse_flow_1 = tf.py_func(flow_to_image, [sparse_flow_1], tf.uint8)
             sparse_flow_img = tf.stack([sparse_flow_0, sparse_flow_1], 0)
 
-            tf.summary.image("sparse_flow_img", sparse_flow_img, max_outputs=2)
+            tf.summary.image("sparse_flow_img", sparse_flow_img, max_outputs=1)
         else:
-            tf.summary.image("image_b", input_b, max_outputs=2)
+            tf.summary.image("image_b", input_b, max_outputs=1)
 
         # Update the global step if we are resuming training from a checkpoint
         # TODO: instead of parsing the model filename to get the step, get it from the checkpoint variables
         # TODO: this is a quick fix, it does not work for stacked nets where the global step should be determined by the
         # TODO: largest one (the outermost net)
-        if checkpoints is not None:
-            # def_global_step= tf.get_default_graph().get_tensor_by_name('global_step:0')
-            step_number = int(checkpoints.split('-')[-1])
-            checkpoint_global_step = tf.Variable(step_number, trainable=False, name='global_step', dtype='int64')
-            # Update global step as the last one in the checkpoint
-            self.global_step = checkpoint_global_step  # should work if both have the same dtype
-            print("self.global_step as is: {}".format(self.global_step))
-            sess = tf.Session()
-            sess.run(self.global_step.initializer)
-            print('self.global_step evaluated: {}'.format(tf.train.global_step(sess, self.global_step)))
+        # if checkpoints is not None:
+        #     # def_global_step= tf.get_default_graph().get_tensor_by_name('global_step:0')
+        #     step_number = int(checkpoints.split('-')[-1])
+        #     checkpoint_global_step = tf.Variable(step_number, trainable=False, name='global_step', dtype='int64')
+        #     # Update global step as the last one in the checkpoint
+        #     self.global_step = checkpoint_global_step  # should work if both have the same dtype
+        #     print("self.global_step as is: {}".format(self.global_step))
+        #     sess = tf.Session()
+        #     sess.run(self.global_step.initializer)
+        #     print('self.global_step evaluated: {}'.format(tf.train.global_step(sess, self.global_step)))
 
         self.learning_rate = tf.train.piecewise_constant(
             self.global_step,
@@ -486,14 +516,14 @@ class Net(object):
             pred_flow_1 = predictions['flow'][1, :, :, :]
             pred_flow_1 = tf.py_func(flow_to_image, [pred_flow_1], tf.uint8)
             pred_flow_img = tf.stack([pred_flow_0, pred_flow_1], 0)
-            tf.summary.image('pred_flow', pred_flow_img, max_outputs=2)
+            tf.summary.image('pred_flow', pred_flow_img, max_outputs=1)
 
         true_flow_0 = out_flow[0, :, :, :]
         true_flow_0 = tf.py_func(flow_to_image, [true_flow_0], tf.uint8)
         true_flow_1 = out_flow[1, :, :, :]
         true_flow_1 = tf.py_func(flow_to_image, [true_flow_1], tf.uint8)
         true_flow_img = tf.stack([true_flow_0, true_flow_1], 0)
-        tf.summary.image('true_flow', true_flow_img, max_outputs=2)
+        tf.summary.image('true_flow', true_flow_img, max_outputs=1)
 
         # Create saver 'restorer' for graph 'graph'
         # restorer = tf.train.Saver()  # gets ALL variables in 'graph'
@@ -533,32 +563,6 @@ class Net(object):
             total_loss,
             optimizer,
             summarize_gradients=False)
-
-        if checkpoints is not None:
-            # Create the initial assignment op
-            # TODO: check that loading from checkpoint works with stacked nets (new code)
-            # TODO: consider that it worked with old code (above) and already-stored checkpoints (like non-stacked ones)
-            # TODO: in that regard, it seems plausible that it will not work either with OUR pre-trained stacked nets
-            if isinstance(checkpoints, dict):
-                print("checkpoints is instance of dict")
-                for (checkpoint_path, (scope, new_scope)) in checkpoints.items():
-                    variables_to_restore = slim.get_variables(scope=scope)
-                    renamed_variables = {
-                        var.op.name.split(new_scope + '/')[1]: var
-                        for var in variables_to_restore
-                    }
-                    init_assign_op, init_feed_dict = slim.assign_from_checkpoint(checkpoint_path, renamed_variables)
-
-            elif isinstance(checkpoints, str):
-                print("checkpoints is instance of string")
-                checkpoint_path = checkpoints
-                variables_to_restore = slim.get_model_variables()
-                init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
-                    checkpoint_path, variables_to_restore)
-
-        # Create an initial assignment function.
-        def InitAssignFn(sess):
-            sess.run(init_assign_op, init_feed_dict)
 
         # Create unique logging dir to avoid overwritting of old data (e.g.: when comparing different runs)
         now = datetime.datetime.now()
