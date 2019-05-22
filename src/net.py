@@ -443,8 +443,12 @@ class Net(object):
         # Update the global step if we are resuming training from a checkpoint
         # TODO: instead of parsing the model filename to get the step, get it from the checkpoint variables
         if checkpoints is not None:
-            def_global_step= tf.get_default_graph().get_tensor_by_name('global_step:0')
-            print("Retrieved global step from default graph: {}".format(def_global_step))
+            # def_global_step= tf.get_default_graph().get_tensor_by_name('global_step:0')
+            def_global_step = tf.Variable(int(checkpoints.split('-'[-1])), trainable=False, name='global_step')
+            sess = tf.Session()
+            sess.run(def_global_step.initializer)
+
+            print('global_step: {}'.format(tf.train.global_step(sess, def_global_step)))
 
         self.learning_rate = tf.train.piecewise_constant(
             self.global_step,
