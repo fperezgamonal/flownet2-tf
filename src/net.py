@@ -444,7 +444,7 @@ class Net(object):
         # TODO: instead of parsing the model filename to get the step, get it from the checkpoint variables
         if checkpoints is not None:
             # def_global_step= tf.get_default_graph().get_tensor_by_name('global_step:0')
-            def_global_step = tf.Variable(int(checkpoints.split('-'[-1])), trainable=False, name='global_step')
+            def_global_step = tf.Variable(int(checkpoints.split('-')[-1]), trainable=False, name='global_step')
             sess = tf.Session()
             sess.run(def_global_step.initializer)
 
