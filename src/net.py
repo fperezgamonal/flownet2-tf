@@ -446,11 +446,16 @@ class Net(object):
                 variables_to_restore = slim.get_model_variables()
                 init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
                     checkpoint_path, variables_to_restore)
-                step_number = int(checkpoint_path.split('-')[-1])
-                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
-                                                            dtype='int64')
-                # checkpoint_global_step_tensor = slim.get_variables_by_name("global_step")[0]  # returns a list
-                print("checkpoint_global_step_tensor: {}".format(checkpoint_global_step_tensor))
+                updated_step = slim.get_or_create_global_step()
+                # step_number = int(checkpoint_path.split('-')[-1])
+                # checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
+                #                                             dtype='int64')
+                # checkpoint_global_step_tensor = slim.get_variables_by_name("global_step")
+                # restorer = tf.train.Saver(checkpoint_global_step_tensor)
+                # with tf.Session() as sess:
+                #     restorer.restore(sess, checkpoint_path)
+                #     print("global_step: {}".format(global_step))
+                #     print("self.global_step: {}")
             else:
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
 
@@ -596,7 +601,7 @@ class Net(object):
                     train_op,
                     log_dir,
                     # session_config=tf.ConfigProto(allow_soft_placement=True),
-                    global_step=checkpoint_global_step_tensor,
+                    global_step=self.global_step,
                     save_summaries_secs=180,
                     number_of_steps=training_schedule['max_iter'],
                     init_fn=InitAssignFn,
