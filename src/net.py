@@ -440,6 +440,12 @@ class Net(object):
         else:
             tf.summary.image("image_b", input_b, max_outputs=2)
 
+        # Update the global step if we are resuming training from a checkpoint
+        # TODO: instead of parsing the model filename to get the step, get it from the checkpoint variables
+        if checkpoints is not None:
+            def_global_step= tf.get_default_graph().get_tensor_by_name('global_step:0')
+            print("Retrieved global step from default graph: {}".format(def_global_step))
+
         self.learning_rate = tf.train.piecewise_constant(
             self.global_step,
             [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
@@ -540,8 +546,6 @@ class Net(object):
                 variables_to_restore = slim.get_model_variables()
                 init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
                     checkpoint_path, variables_to_restore)
-                self.global_step = int(checkpoint_path.split('-')[-1])
-                print("Updated previous global step from checkpoint to iteration: {}".format(self.global_step))
 
         # Create an initial assignment function.
         def InitAssignFn(sess):
