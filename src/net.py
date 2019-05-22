@@ -447,6 +447,9 @@ class Net(object):
                 init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
                     checkpoint_path, variables_to_restore)
                 updated_step = slim.get_or_create_global_step()
+                print("updated_step: {}".format(updated_step))
+                print("self.global_step: {}".format(self.global_step))
+
                 # step_number = int(checkpoint_path.split('-')[-1])
                 # checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
                 #                                             dtype='int64')
