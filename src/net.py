@@ -449,6 +449,7 @@ class Net(object):
             sess.run(def_global_step.initializer)
 
             print('global_step: {}'.format(tf.train.global_step(sess, def_global_step)))
+            print('type(global_step): {}'.format(type(tf.train.global_step(sess, def_global_step))))
 
         self.learning_rate = tf.train.piecewise_constant(
             self.global_step,
