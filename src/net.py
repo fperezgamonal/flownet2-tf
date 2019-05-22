@@ -448,6 +448,10 @@ class Net(object):
                     checkpoint_path, variables_to_restore)
                 checkpoint_global_step_tensor = slim.get_variables_by_name("global_step")
                 print("checkpoint_global_step_tensor: {}".format(checkpoint_global_step_tensor))
+                sess = tf.Session()
+                sess.run(checkpoint_global_step_tensor)
+                print('checkpoint_global_step_tensor evaluated: {}'.format(tf.train.global_step(
+                    sess, checkpoint_global_step_tensor)))
 
         # Create an initial assignment function.
         def InitAssignFn(sess):
