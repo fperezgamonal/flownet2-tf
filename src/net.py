@@ -477,20 +477,20 @@ class Net(object):
                 step_number = int(checkpoint_path.split('-')[-1])
                 checkpoint_global_step_tensor_2 = tf.Variable(step_number, trainable=False, name='global_step',
                                                               dtype='int64')
-                checkpoint_global_step_tensor = slim.get_variables_by_name("global_step")[0]
-                print("checkpoint_global_step_tensor: {}".format(checkpoint_global_step_tensor))
+                # checkpoint_global_step_tensor = slim.get_variables_by_name("global_step")[0]
+                # print("checkpoint_global_step_tensor: {}".format(checkpoint_global_step_tensor))
                 print("checkpoint_global_step_tensor_2: {}".format(checkpoint_global_step_tensor_2))
-                self.global_step = checkpoint_global_step_tensor
-                print("self.global_step after assignment: {0}".format(self.global_step))
+                # self.global_step = checkpoint_global_step_tensor
+                # print("self.global_step after assignment: {0}".format(self.global_step))
                 self.global_step = checkpoint_global_step_tensor_2
                 print("self.global_step_2 after assignment: {0}".format(self.global_step))
 
                 sess = tf.Session()
                 sess.run(self.global_step.initializer)
                 print('self.global_step evaluated: {}'.format(tf.train.global_step(sess, self.global_step)))
-                sess.run(checkpoint_global_step_tensor.initializer)
-                print('self.checkpoint_global_step_tensor evaluated: {}'.format(tf.train.global_step(
-                    sess, checkpoint_global_step_tensor)))
+                # sess.run(checkpoint_global_step_tensor.initializer)
+                # print('self.checkpoint_global_step_tensor evaluated: {}'.format(tf.train.global_step(
+                #     sess, checkpoint_global_step_tensor)))
                 sess.run(checkpoint_global_step_tensor_2.initializer)
                 print('self.checkpoint_global_step_tensor_2 evaluated: {}'.format(tf.train.global_step(
                     sess, checkpoint_global_step_tensor_2)))
