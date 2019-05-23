@@ -5,6 +5,7 @@ import os
 import tensorflow as tf
 import numpy as np
 import glob
+import sys
 import datetime
 # from scipy.misc import imread, imsave
 import uuid
@@ -486,9 +487,11 @@ class Net(object):
                 #     restorer.restore(sess, checkpoint_path)
                 #     print("global_step: {}".format(global_step))
                 #     print("self.global_step: {}")
+
             else:
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
 
+        sys.stdout.flush()
         # Create an initial assignment function.
         def InitAssignFn(sess):
             sess.run(init_assign_op, init_feed_dict)
