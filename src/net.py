@@ -445,6 +445,7 @@ class Net(object):
         if log_verbosity:  # print loss and tfinfo to stdout
             tf.logging.set_verbosity(tf.logging.INFO)
         # Otherwise, info only printed through TensorBoard
+        print("checkpoints: {}".format(checkpoints))
 
         # TODO: WIP read checkpoints first to try to correctly restore global_step as creating it breaks training
         # NOTE: everything depends on global_step to be correctly reported, that is why is critical to get it right
