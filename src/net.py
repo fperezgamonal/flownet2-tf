@@ -470,17 +470,20 @@ class Net(object):
                 variables_to_restore = slim.get_model_variables()
                 init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
                     checkpoint_path, variables_to_restore)
-                updated_step = slim.get_or_create_global_step()
-                print("updated_step: {}".format(updated_step))
+                # updated_step = slim.get_or_create_global_step()
+                # print("updated_step: {}".format(updated_step))
                 print("self.global_step: {}".format(self.global_step))
 
-                # step_number = int(checkpoint_path.split('-')[-1])
-                # checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
-                #                                             dtype='int64')
+                step_number = int(checkpoint_path.split('-')[-1])
+                checkpoint_global_step_tensor_2 = tf.Variable(step_number, trainable=False, name='global_step',
+                                                              dtype='int64')
                 checkpoint_global_step_tensor = slim.get_variables_by_name("global_step")[0]
                 print("checkpoint_global_step_tensor: {}".format(checkpoint_global_step_tensor))
+                print("checkpoint_global_step_tensor_2: {}".format(checkpoint_global_step_tensor_2))
                 self.global_step = checkpoint_global_step_tensor
                 print("self.global_step after assignment: {0}".format(self.global_step))
+                self.global_step = checkpoint_global_step_tensor_2
+                print("self.global_step_2 after assignment: {0}".format(self.global_step))
 
                 sess = tf.Session()
                 sess.run(self.global_step.initializer)
@@ -488,6 +491,9 @@ class Net(object):
                 sess.run(checkpoint_global_step_tensor.initializer)
                 print('self.checkpoint_global_step_tensor evaluated: {}'.format(tf.train.global_step(
                     sess, checkpoint_global_step_tensor)))
+                sess.run(checkpoint_global_step_tensor_2.initializer)
+                print('self.checkpoint_global_step_tensor_2 evaluated: {}'.format(tf.train.global_step(
+                    sess, checkpoint_global_step_tensor_2)))
                 # restorer = tf.train.Saver(checkpoint_global_step_tensor)
 
                 # with tf.Session() as sess:
