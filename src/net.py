@@ -427,6 +427,21 @@ class Net(object):
 
     def train(self, log_dir, training_schedule_str, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
               checkpoints=None, input_type='image_pairs', log_verbosity=True):
+        # Add validation batches as input? Used only once every val_interval steps...?
+        """
+        runs training on the network from which this method is called.
+        :param log_dir:
+        :param training_schedule_str:
+        :param input_a:
+        :param out_flow:
+        :param input_b:
+        :param matches_a:
+        :param sparse_flow:
+        :param checkpoints:
+        :param input_type:
+        :param log_verbosity:
+        :return:
+        """
         if log_verbosity:  # print loss and tfinfo to stdout
             tf.logging.set_verbosity(tf.logging.INFO)
         # Otherwise, info only printed through TensorBoard
