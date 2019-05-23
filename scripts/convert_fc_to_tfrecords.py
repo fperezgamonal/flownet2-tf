@@ -3,7 +3,6 @@ import os
 import sys
 import numpy as np
 from progressbar import ProgressBar, Percentage, Bar
-# from scipy.misc import imread
 from imageio import imread
 import tensorflow as tf
 from math import ceil
@@ -146,10 +145,8 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
 
             if DEBUG:
                 print("Path to source images/flows are:")
-                print("img_a: {0}\nimg_b: {1}\nmch_a: {2}\nsp_flow: {3}\nflow: {4}\n".format(image_a_path, image_b_path,
-                                                                                             matches_a_path,
-                                                                                             sparse_flow_path,
-                                                                                             flow_path))
+                print("img_a: {0}\nimg_b: {1}\nmch_a: {2}\nsp_flow: {3}\nflow: {4}\n".format(
+                    image_a_path, image_b_path, matches_a_path, sparse_flow_path, flow_path))
 
             image_a = imread(image_a_path)
             image_b = imread(image_b_path)
@@ -258,7 +255,6 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
             writer.write(tf_example.SerializeToString())
             pbar.update(count + 1)
             count += 1
-    # writer.close()
 
 
 def main():

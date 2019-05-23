@@ -7,13 +7,12 @@ import numpy as np
 import glob
 import sys
 import datetime
-# from scipy.misc import imread, imsave
 import uuid
 from imageio import imread, imsave
 from .flowlib import flow_to_image, write_flow, read_flow
 from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FINETUNE_SINTEL_S1, FINETUNE_SINTEL_S2, \
-    FINETUNE_SINTEL_S3, FINETUNE_SINTEL_S4, FINETUNE_SINTEL_S5, FINETUNE_KITTI_S1, FINETUNE_KITTI_S2, FINETUNE_KITTI_S3, \
-    FINETUNE_KITTI_S4, FINETUNE_ROB, LONG_SCHEDULE_TMP
+    FINETUNE_SINTEL_S3, FINETUNE_SINTEL_S4, FINETUNE_SINTEL_S5, FINETUNE_KITTI_S1, FINETUNE_KITTI_S2,\
+    FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LONG_SCHEDULE_TMP
 slim = tf.contrib.slim
 
 VAL_INTERVAL = 1000  # each N samples, we evaluate the validation set
@@ -482,7 +481,15 @@ class Net(object):
                 print("checkpoint_global_step_tensor: {}".format(checkpoint_global_step_tensor))
                 self.global_step = checkpoint_global_step_tensor
                 print("self.global_step after assignment: {0}".format(self.global_step))
+
+                sess = tf.Session()
+                sess.run(self.global_step.initializer)
+                print('self.global_step evaluated: {}'.format(tf.train.global_step(sess, self.global_step)))
+                sess.run(checkpoint_global_step_tensor.initializer)
+                print('self.checkpoint_global_step_tensor evaluated: {}'.format(tf.train.global_step(
+                    sess, checkpoint_global_step_tensor)))
                 # restorer = tf.train.Saver(checkpoint_global_step_tensor)
+
                 # with tf.Session() as sess:
                 #     restorer.restore(sess, checkpoint_path)
                 #     print("global_step: {}".format(global_step))
@@ -492,6 +499,7 @@ class Net(object):
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
 
         sys.stdout.flush()
+
         # Create an initial assignment function.
         def InitAssignFn(sess):
             sess.run(init_assign_op, init_feed_dict)
@@ -503,13 +511,14 @@ class Net(object):
             tf.summary.image("matches_a", matches_a, max_outputs=1)
             # Convert sparse flow to image-like (ONLY for visualization)
             # not padding needed ! (we do it as a pre-processing step when creating the tfrecord)
-            sparse_flow_0 = sparse_flow[0, :, :, :]
-            sparse_flow_0 = tf.py_func(flow_to_image, [sparse_flow_0], tf.uint8)
-            sparse_flow_1 = sparse_flow[1, :, :, :]
-            sparse_flow_1 = tf.py_func(flow_to_image, [sparse_flow_1], tf.uint8)
-            sparse_flow_img = tf.stack([sparse_flow_0, sparse_flow_1], 0)
-
-            tf.summary.image("sparse_flow_img", sparse_flow_img, max_outputs=1)
+            # Sparse flow is very difficult to visualize (0 values are white) in TB (do not include it, lowering memory)
+            # sparse_flow_0 = sparse_flow[0, :, :, :]
+            # sparse_flow_0 = tf.py_func(flow_to_image, [sparse_flow_0], tf.uint8)
+            # sparse_flow_1 = sparse_flow[1, :, :, :]
+            # sparse_flow_1 = tf.py_func(flow_to_image, [sparse_flow_1], tf.uint8)
+            # sparse_flow_img = tf.stack([sparse_flow_0, sparse_flow_1], 0)
+            #
+            # tf.summary.image("sparse_flow_img", sparse_flow_img, max_outputs=1)
         else:
             tf.summary.image("image_b", input_b, max_outputs=1)
 
