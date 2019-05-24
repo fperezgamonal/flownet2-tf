@@ -623,7 +623,7 @@ class Net(object):
             total_loss,
             optimizer,
             summarize_gradients=False,
-            # global_step=self.global_step
+            global_step=self.global_step,
         )
 
         # Create unique logging dir to avoid overwritting of old data (e.g.: when comparing different runs)
@@ -658,6 +658,7 @@ class Net(object):
                     save_summaries_secs=180,
                     number_of_steps=training_schedule['max_iter'],
                     init_fn=InitAssignFn,
+                    # train_step_fn=train_step_fn,
                     # saver=saver,
                 )
             else:
@@ -668,6 +669,7 @@ class Net(object):
                     global_step=self.global_step,
                     save_summaries_secs=180,
                     number_of_steps=training_schedule['max_iter'],
+                    # train_step_fn=train_step_fn,
                     # saver=saver,
                 )
             print("Loss at the end of training is {}".format(final_loss))
