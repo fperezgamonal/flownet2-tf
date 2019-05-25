@@ -304,7 +304,7 @@ def main():
         print("Chosen dataset is 'MPI-Sintel (final + clean pass)'")
         train_name = 'sintel_train_all'
         val_name = 'sintel_val_all'
-        set_name = 'sintel'
+        set_name = 'sintel_all'
     # Add more datasets here (to change the final tfrecords name)
     # elif 'set_name' in FLAGS.data_dir:
     else:
