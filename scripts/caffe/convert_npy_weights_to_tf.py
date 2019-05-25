@@ -27,7 +27,7 @@ def main():
         sess.run(tf.global_variables_initializer())
         input_name = os.path.splitext(FLAGS.input)[0]
         save_path = saver.save(sess, input_name + '.ckpt', global_step=global_step)
-        print("Model saved in file: %s" % save_path)
+        print("Model saved in file: {}".format(save_path))
 
 
 if __name__ == '__main__':

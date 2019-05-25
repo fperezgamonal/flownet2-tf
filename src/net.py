@@ -15,6 +15,8 @@ from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FI
     FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LONG_SCHEDULE_TMP
 slim = tf.contrib.slim
 
+import resource
+
 VAL_INTERVAL = 1000  # each N samples, we evaluate the validation set
 
 
@@ -27,7 +29,7 @@ class Net(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, mode=Mode.TRAIN, debug=False):
-        self.global_step = slim.get_or_create_global_step()
+        # self.global_step = slim.get_or_create_global_step() messes things up for loading previous checkpoints
         self.mode = mode
         self.debug = debug
 
@@ -472,39 +474,36 @@ class Net(object):
                     checkpoint_path, variables_to_restore)
                 # updated_step = slim.get_or_create_global_step()
                 # print("updated_step: {}".format(updated_step))
-                print("self.global_step: {}".format(self.global_step))
+                # print("self.global_step: {}".format(self.global_step))
 
                 step_number = int(checkpoint_path.split('-')[-1])
-                checkpoint_global_step_tensor_2 = tf.Variable(step_number, trainable=False, name='global_step',
-                                                              dtype='int64')
+                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
+                                                            dtype='int64')
                 # checkpoint_global_step_tensor = slim.get_variables_by_name("global_step")[0]
                 # print("checkpoint_global_step_tensor: {}".format(checkpoint_global_step_tensor))
-                print("checkpoint_global_step_tensor_2: {}".format(checkpoint_global_step_tensor_2))
+                print("checkpoint_global_step_tensor: {}".format(checkpoint_global_step_tensor))
                 # self.global_step = checkpoint_global_step_tensor
                 # print("self.global_step after assignment: {0}".format(self.global_step))
-                self.global_step = checkpoint_global_step_tensor_2
-                print("self.global_step_2 after assignment: {0}".format(self.global_step))
+                # self.global_step = checkpoint_global_step_tensor_2
+                # print("self.global_step_2 after assignment: {0}".format(self.global_step))
 
                 sess = tf.Session()
-                sess.run(self.global_step.initializer)
-                print('self.global_step evaluated: {}'.format(tf.train.global_step(sess, self.global_step)))
+                # sess.run(self.global_step.initializer)
+                # print('self.global_step evaluated: {}'.format(tf.train.global_step(sess, self.global_step)))
                 # sess.run(checkpoint_global_step_tensor.initializer)
                 # print('self.checkpoint_global_step_tensor evaluated: {}'.format(tf.train.global_step(
                 #     sess, checkpoint_global_step_tensor)))
-                sess.run(checkpoint_global_step_tensor_2.initializer)
+                sess.run(checkpoint_global_step_tensor.initializer)
                 print('self.checkpoint_global_step_tensor_2 evaluated: {}'.format(tf.train.global_step(
-                    sess, checkpoint_global_step_tensor_2)))
-                # restorer = tf.train.Saver(checkpoint_global_step_tensor)
-
-                # with tf.Session() as sess:
-                #     restorer.restore(sess, checkpoint_path)
-                #     print("global_step: {}".format(global_step))
-                #     print("self.global_step: {}")
-
+                    sess, checkpoint_global_step_tensor)))
             else:
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
+        else:
+            checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype='int64')
 
-        sys.stdout.flush()
+        sys.stdout.flush()  # debug
+        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        print("(after loading checkpoint (if any)) Memory usage is: {0} GB".format(mem / 1e6))
 
         # Create an initial assignment function.
         def InitAssignFn(sess):
@@ -528,6 +527,9 @@ class Net(object):
         else:
             tf.summary.image("image_b", input_b, max_outputs=1)
 
+        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        print("(after adding TB summaries for images) Memory usage is: {0} GB".format(mem / 1e6))
+
         # Update the global step if we are resuming training from a checkpoint
         # TODO: instead of parsing the model filename to get the step, get it from the checkpoint variables
         # TODO: this is a quick fix, it does not work for stacked nets where the global step should be determined by the
@@ -544,7 +546,7 @@ class Net(object):
         #     print('self.global_step evaluated: {}'.format(tf.train.global_step(sess, self.global_step)))
 
         self.learning_rate = tf.train.piecewise_constant(
-            self.global_step,
+            checkpoint_global_step_tensor,
             [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
             training_schedule['learning_rates'])
         optimizer = tf.train.AdamOptimizer(
@@ -567,6 +569,9 @@ class Net(object):
         total_loss = self.loss(out_flow, predictions)
         tf.summary.scalar('loss', total_loss)
 
+        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        print("(after defining network and adding loss scalar to summary) Memory usage is: {0} GB".format(mem / 1e6))
+
         # Show the generated flow in TensorBoard
         if 'flow' in predictions:
             pred_flow_0 = predictions['flow'][0, :, :, :]
@@ -582,6 +587,9 @@ class Net(object):
         true_flow_1 = tf.py_func(flow_to_image, [true_flow_1], tf.uint8)
         true_flow_img = tf.stack([true_flow_0, true_flow_1], 0)
         tf.summary.image('true_flow', true_flow_img, max_outputs=1)
+
+        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        print("(after adding predicted and true flow to summary) Memory usage is: {0} GB".format(mem / 1e6))
 
         # Create saver 'restorer' for graph 'graph'
         # restorer = tf.train.Saver()  # gets ALL variables in 'graph'
@@ -618,20 +626,21 @@ class Net(object):
 
         # Create the train_op
         print("Creating training op...")
-        print("self.global_step before creating training op is: {}".format(self.global_step))
         train_op = slim.learning.create_train_op(
             total_loss,
             optimizer,
             summarize_gradients=False,
-            global_step=self.global_step,
+            global_step=checkpoints,
         )
+        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        print("(after defining train_op) Memory usage is: {0} GB".format(mem / 1e6))
 
         # Create unique logging dir to avoid overwritting of old data (e.g.: when comparing different runs)
         now = datetime.datetime.now()
         date_now = now.strftime('%d-%m-%y_%H-%M-%S')
         log_dir = os.path.join(log_dir, date_now)
+
         print("Starting training...")
-        print("self.global_step before starting training is: {}".format(self.global_step))
         if self.debug:
             with tf.Session() as sess:
                 sess.run(tf.global_variables_initializer())
@@ -639,7 +648,7 @@ class Net(object):
                 slim.learning.train_step(
                     sess,
                     train_op,
-                    self.global_step,
+                    checkpoint_global_step_tensor,
                     {
                         'should_trace': tf.constant(1),
                         'should_log': tf.constant(1),
@@ -649,12 +658,14 @@ class Net(object):
         else:
             # Explicitly create a Saver to specify maximum number of checkpoints to keep (and how frequently)
             # saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2)
+            mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            print("(before running slim.learning.train()) Memory usage is: {0} GB".format(mem / 1e6))
             if checkpoints is not None:
                 final_loss = slim.learning.train(
                     train_op,
                     log_dir,
                     # session_config=tf.ConfigProto(allow_soft_placement=True),
-                    global_step=self.global_step,
+                    global_step=checkpoint_global_step_tensor,
                     save_summaries_secs=180,
                     number_of_steps=training_schedule['max_iter'],
                     init_fn=InitAssignFn,
@@ -666,7 +677,7 @@ class Net(object):
                     train_op,
                     log_dir,
                     # session_config=tf.ConfigProto(allow_soft_placement=True),
-                    global_step=self.global_step,
+                    global_step=checkpoint_global_step_tensor,
                     save_summaries_secs=180,
                     number_of_steps=training_schedule['max_iter'],
                     # train_step_fn=train_step_fn,

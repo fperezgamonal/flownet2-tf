@@ -480,7 +480,7 @@ def main():
     proto = open(arch['DEPLOY_PROTOTXT']).readlines()
     for line in proto:
         for key, value in vars.items():
-            tag = "$%s$" % key
+            tag = "${}$".format(key)
             line = line.replace(tag, str(value))
         tmp.write(line)
     tmp.flush()

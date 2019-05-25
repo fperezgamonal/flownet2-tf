@@ -1,6 +1,7 @@
 from ..dataloader import load_batch
 from .flownet_s_interp import FlowNetS_interp
 import argparse
+import resource
 
 # TODO: consider enabling training sequentially with several schedules with only one call to 'train'
 # TODO: should load previous checkpoint to properly resume training
@@ -9,7 +10,11 @@ import argparse
 
 def main():
     # Create a new network
+    mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    print("(before initialising network) Memory usage is: {0} GB".format(mem/1e6))
     net = FlowNetS_interp()
+    mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    print("(after initialising network) Memory usage is: {0} GB".format(mem/1e6))
     if FLAGS.checkpoint is not None:
         checkpoints = FLAGS.checkpoint  # we want to define it as a string (only one checkpoint to load)
     else:
@@ -17,8 +22,12 @@ def main():
 
     if FLAGS.input_type == 'image_matches':
         print("Input_type: 'image_matches'")
+        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        print("(before loading batches) Memory usage is: {0} GB".format(mem / 1e6))
         input_a, matches_a, sparse_flow, flow = load_batch(FLAGS.dataset_config, 'train', net.global_step,
                                                            input_type=FLAGS.input_type)
+        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        print("(after loading batches) Memory usage is: {0} GB".format(mem / 1e6))
 
         # Train on the data
         net.train(

@@ -37,8 +37,7 @@ SHORT_SCHEDULE = {
     'max_iter': 600000,
 }
 
-# TODO: change default values (copied from Sshort)
-# Add learning rate disruptions to fine-tune on Sintel and Kitti from PWC-Net+ (from paper:
+# learning rate disruptions to fine-tune on Sintel and Kitti from PWC-Net+ (from paper:
 #  Models matter, so does training: an empirical study of CNNs for optical flow estimation"
 # The authors recently uploaded the caffe training protocols on:
 # github.com/NVlabs/PWC-Net/tree/master/Caffe/model/PWC-Net_plus (although only for KITTI and Sintel it seems...)
