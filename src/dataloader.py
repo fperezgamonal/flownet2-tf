@@ -4,6 +4,7 @@ import copy
 slim = tf.contrib.slim
 from math import exp
 from .dataset_configs import FLYING_CHAIRS_ALL_DATASET_CONFIG, SINTEL_FINAL_ALL_DATASET_CONFIG
+import resource
 
 _preprocessing_ops = tf.load_op_library(
     tf.resource_loader.get_path_to_datafile("./ops/build/preprocessing.so"))
@@ -81,18 +82,16 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
     dataset_config: A dataset_config defined in dataset_configs.py
     split_name: 'train'/'validate'
     """
-    print("_get_dataset input_type: {0}".format(input_type))
     with tf.name_scope('__get_dataset'):
         if split_name not in dataset_config['SIZES']:
-            raise ValueError('split name %s not recognized' % split_name)
+            raise ValueError('split name {} not recognized'.format(split_name))
 
         # Width and height accounting for needed padding to match network dimensions
-        IMAGE_HEIGHT, IMAGE_WIDTH = dataset_config['PADDED_IMAGE_HEIGHT'], dataset_config['PADDED_IMAGE_WIDTH']
+        image_height, image_width = dataset_config['PADDED_IMAGE_HEIGHT'], dataset_config['PADDED_IMAGE_WIDTH']
         reader = tf.TFRecordReader
         if input_type == 'image_matches':
             keys_to_features = {
                 'image_a': tf.FixedLenFeature([], tf.string),
-                'image_b': tf.FixedLenFeature([], tf.string),
                 'matches_a': tf.FixedLenFeature([], tf.string),
                 'sparse_flow': tf.FixedLenFeature([], tf.string),  # initial sparse flow (from matches)
                 'flow': tf.FixedLenFeature([], tf.string),
@@ -101,27 +100,22 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
                 'image_a': Image(
                     image_key='image_a',
                     dtype=tf.float64,
-                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 3],
-                    channels=3),
-                'image_b': Image(
-                    image_key='image_b',
-                    dtype=tf.float64,
-                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 3],
+                    shape=[image_height, image_width, 3],
                     channels=3),
                 'matches_a': Image(
                     image_key='matches_a',
                     dtype=tf.float64,
-                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 1],
+                    shape=[image_height, image_width, 1],
                     channels=1),
                 'sparse_flow': Image(
                     image_key='sparse_flow',
                     dtype=tf.float32,
-                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 2],
+                    shape=[image_height, image_width, 2],
                     channels=2),
                 'flow': Image(
                     image_key='flow',
                     dtype=tf.float32,
-                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 2],
+                    shape=[image_height, image_width, 2],
                     channels=2),
             }
         else:
@@ -134,17 +128,17 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
                 'image_a': Image(
                     image_key='image_a',
                     dtype=tf.float64,
-                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 3],
+                    shape=[image_height, image_width, 3],
                     channels=3),
                 'image_b': Image(
                     image_key='image_b',
                     dtype=tf.float64,
-                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 3],
+                    shape=[image_height, image_width, 3],
                     channels=3),
                 'flow': Image(
                     image_key='flow',
                     dtype=tf.float32,
-                    shape=[IMAGE_HEIGHT, IMAGE_WIDTH, 2],
+                    shape=[image_height, image_width, 2],
                     channels=2),
             }
 
@@ -257,7 +251,7 @@ def _generate_coeff(param, discount_coeff=tf.constant(1.0), default_value=tf.con
             tmp1 = tf.exp(tmp1)
         value = tmp1
     else:
-        raise ValueError('Unknown distribution type %s.' % rand_type)
+        raise ValueError('Unknown distribution type {}.'.format(rand_type))
     return value
 
 
@@ -274,7 +268,6 @@ def load_batch(dataset_config_str, split_name, global_step, input_type='image_pa
     elif dataset_config_str.lower() == 'sintel_clean':
         dataset_config = SINTEL_FINAL_ALL_DATASET_CONFIG  # must create tfrecords!
     elif dataset_config_str.lower() == 'sintel_final':
-        print("dataset_config is 'sintel_final' (OK)")
         dataset_config = SINTEL_FINAL_ALL_DATASET_CONFIG
     else:  # flying_chairs
         dataset_config = FLYING_CHAIRS_ALL_DATASET_CONFIG
@@ -283,17 +276,35 @@ def load_batch(dataset_config_str, split_name, global_step, input_type='image_pa
     reader_kwargs = {'options': tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.ZLIB)}
     with tf.name_scope('load_batch'):
         dataset = __get_dataset(dataset_config, split_name, input_type=input_type)
+        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        print("(after __get_dataset function) Memory usage is: {0} GB".format(mem / 1e6))
         data_provider = slim.dataset_data_provider.DatasetDataProvider(
             dataset,
             num_readers=num_threads,
             common_queue_capacity=512,  # this also broke training, we lowered it (og. value = 2048)
             common_queue_min=256,  # this also broke training, we lowered it (og. value = 1024)
             reader_kwargs=reader_kwargs)
+        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        print("(after creating dataset_provider) Memory usage is: {0} GB".format(mem / 1e6))
 
         if input_type == 'image_matches':
             image_b = None
             image_a, matches_a, sparse_flow, flow = data_provider.get(['image_a', 'matches_a', 'sparse_flow', 'flow'])
+
+            mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            print("(after getting data from_provider(.get)) Memory usage is: {0} GB".format(mem / 1e6))
+
+            print("Checking if conversion is really necessary")
+            print("batches have type:")
+            print("type(image_a[0]): {}, type(matches_a[0]): {}, type(sparse_flows[0]): {}, type(flow[0]): {}".format(
+                type(image_a[0]), type(matches_a[0]), type(sparse_flow[0]), type(flow[0])))
             image_a, matches_a, sparse_flow, flow = map(tf.to_float, [image_a, matches_a, sparse_flow, flow])
+            print("batches have type (after conversion with map function (heavy on ram):")
+            print("type(image_a[0]): {}, type(matches_a[0]): {}, type(sparse_flows[0]): {}, type(flow[0]): {}".format(
+                type(image_a[0]), type(matches_a[0]), type(sparse_flow[0]), type(flow[0])))
+
+            mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            print("(after casting batch to float with 'map()') Memory usage is: {0} GB".format(mem / 1e6))
 
         else:
             matches_a = None
@@ -302,7 +313,6 @@ def load_batch(dataset_config_str, split_name, global_step, input_type='image_pa
             image_a, image_b, flow = map(tf.to_float, [image_a, image_b, flow])
 
         if dataset_config['PREPROCESS']['scale']:
-            print("Should NOT enter here, image content already normalised")  # for debugging purposes only
             image_a = image_a / 255.0
             if not input_type == 'image_matches':
                 image_b = image_b / 255.0
@@ -314,8 +324,12 @@ def load_batch(dataset_config_str, split_name, global_step, input_type='image_pa
 
         if input_type == 'image_matches':
             image_bs = None
+            mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            print("(before expanding dims of each tensor tf.expand_dims) Memory usage is: {0} GB".format(mem / 1e6))
             image_as, matches_as, sparse_flows, flows = map(lambda x: tf.expand_dims(x, 0),
                                                             [image_a, matches_a, sparse_flow, flow])
+            mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            print("(after expanding dims of each tensor tf.expand_dims) Memory usage is: {0} GB".format(mem / 1e6))
         else:
             matches_as = None
             sparse_flows = None
@@ -405,10 +419,12 @@ def load_batch(dataset_config_str, split_name, global_step, input_type='image_pa
                                   enqueue_many=True,
                                   batch_size=dataset_config['BATCH_SIZE'],
                                   capacity=dataset_config['BATCH_SIZE'] * 4,
-                                  allow_smaller_final_batch=False)
+                                  allow_smaller_final_batch=False,
+                                  num_threads=num_threads)
         else:
             return tf.train.batch([image_as, image_bs, flows],
                                   enqueue_many=True,
                                   batch_size=dataset_config['BATCH_SIZE'],
                                   capacity=dataset_config['BATCH_SIZE'] * 4,
-                                  allow_smaller_final_batch=False)
+                                  allow_smaller_final_batch=False,
+                                  num_threads=num_threads)

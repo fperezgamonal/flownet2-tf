@@ -1,14 +1,13 @@
-# TODO: also add proper fine-tuning for each dataset (following PWC-Net+ findings!)
 # thanks to: https://arxiv.org/pdf/1809.05571.pdf (the code has not been updated yet but the paper is out!)
 # schedules reproduced (aside from long which was already provided) from og repo at: github.com/lmb-freiburg/flownet2
 # Must navigate to models and download models to get the text files (*proto.txt): one for 'long', 'fine' and 'short'
 LONG_SCHEDULE_TMP = {
-    'step_values': [134876, 334876, 534876, 734876],
-    'learning_rates': [0.0001, 0.00005, 0.000025, 0.0000125, 0.00000625],
+    'step_values': [132799, 332799],
+    'learning_rates': [0.000025, 0.0000125, 0.00000625],
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 1065124,
+    'max_iter': 532799,
 }
 LONG_SCHEDULE = {
     'step_values': [400000, 600000, 800000, 1000000],
@@ -38,8 +37,7 @@ SHORT_SCHEDULE = {
     'max_iter': 600000,
 }
 
-# TODO: change default values (copied from Sshort)
-# Add learning rate disruptions to fine-tune on Sintel and Kitti from PWC-Net+ (from paper:
+# learning rate disruptions to fine-tune on Sintel and Kitti from PWC-Net+ (from paper:
 #  Models matter, so does training: an empirical study of CNNs for optical flow estimation"
 # The authors recently uploaded the caffe training protocols on:
 # github.com/NVlabs/PWC-Net/tree/master/Caffe/model/PWC-Net_plus (although only for KITTI and Sintel it seems...)

@@ -177,8 +177,8 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 8,
     'PATHS': {
-        'train': './data/tfrecords/interp/fc_train_all.tfrecord',  # './data/tfrecords/fc_train_all.tfrecords',
-        'validate': './data/tfrecords/interp/fc_val_all.tfrecord',  #: './data/tfrecords/fc_val_all.tfrecords',
+        'train': '/datasets/GPI/optical_flow/TFrecords/interp/fc_train_all.tfrecord',
+        'validate': '/datasets/GPI/optical_flow/TFrecords/interp/fc_val_all.tfrecord',
         'sample': './data/tfrecords/fc_sample_all.tfrecords'  # does not exist (ignore)
     },
     'PREPROCESS': {
@@ -281,9 +281,134 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
         }
     }
 }
+
+# FlyingThings3D
+FLYING_THINGS_3D_ALL_DATASET_CONFIG = {
+    'IMAGE_HEIGHT': 384,
+    'IMAGE_WIDTH': 512,
+    'PADDED_IMAGE_HEIGHT': 384,
+    'PADDED_IMAGE_WIDTH': 768,
+    'ITEMS_TO_DESCRIPTIONS': {
+        'image_a': 'A 3-channel image.',
+        'image_b': 'A 3-channel image.',
+        'matches_a': 'A 1-channel matching mask (1s pixels matched, 0s not matched).',
+        'sparse_flow': 'A sparse flow initialised from a set of sparse matches.',
+        'flow': 'A 2-channel optical flow field.',
+    },
+    'SIZES': {
+        'train': 21817,
+        'validate': 4247,
+        'sample': 8,
+    },
+    'BATCH_SIZE': 4,
+    'PATHS': {
+        'train': '/datasets/GPI/optical_flow/TFrecords/interp/ft3d_train_all.tfrecord',
+        'validate': '/datasets/GPI/optical_flow/TFrecords/interp/ft3d_val_all.tfrecord',
+        'sample': './data/tfrecords/fc_sample_all.tfrecords'  # does not exist (ignore)
+    },
+    'PREPROCESS': {
+        'scale': False,
+        'crop_height': 384,
+        'crop_width': 768,
+        'image_a': {
+            'translate': {
+                'rand_type': "uniform_bernoulli",
+                'exp': False,
+                'mean': 0,
+                'spread': 0.4,
+                'prob': 1.0,
+            },
+            'rotate': {
+                'rand_type': "uniform_bernoulli",
+                'exp': False,
+                'mean': 0,
+                'spread': 0.4,
+                'prob': 1.0,
+            },
+            'zoom': {
+                'rand_type': "uniform_bernoulli",
+                'exp': True,
+                'mean': 0.2,
+                'spread': 0.4,
+                'prob': 1.0,
+            },
+            'squeeze': {
+                'rand_type': "uniform_bernoulli",
+                'exp': True,
+                'mean': 0,
+                'spread': 0.3,
+                'prob': 1.0,
+            },
+            'noise': {
+                'rand_type': "uniform_bernoulli",
+                'exp': False,
+                'mean': 0.03,
+                'spread': 0.03,
+                'prob': 1.0,
+            },
+        },
+        # All preprocessing to image A will be applied to image B in addition to the following.
+        'image_b': {
+            'translate': {
+                'rand_type': "gaussian_bernoulli",
+                'exp': False,
+                'mean': 0,
+                'spread': 0.03,
+                'prob': 1.0,
+            },
+            'rotate': {
+                'rand_type': "gaussian_bernoulli",
+                'exp': False,
+                'mean': 0,
+                'spread': 0.03,
+                'prob': 1.0,
+            },
+            'zoom': {
+                'rand_type': "gaussian_bernoulli",
+                'exp': True,
+                'mean': 0,
+                'spread': 0.03,
+                'prob': 1.0,
+            },
+            'gamma': {
+                'rand_type': "gaussian_bernoulli",
+                'exp': True,
+                'mean': 0,
+                'spread': 0.02,
+                'prob': 1.0,
+            },
+            'brightness': {
+                'rand_type': "gaussian_bernoulli",
+                'exp': False,
+                'mean': 0,
+                'spread': 0.02,
+                'prob': 1.0,
+            },
+            'contrast': {
+                'rand_type': "gaussian_bernoulli",
+                'exp': True,
+                'mean': 0,
+                'spread': 0.02,
+                'prob': 1.0,
+            },
+            'color': {
+                'rand_type': "gaussian_bernoulli",
+                'exp': True,
+                'mean': 0,
+                'spread': 0.02,
+                'prob': 1.0,
+            },
+            'coeff_schedule_param': {
+                'half_life': 50000,
+                'initial_coeff': 0.5,
+                'final_coeff': 1,
+            },
+        }
+    }
+}
 # Add here configs for other datasets. For instance, sintel/clean, sintel/final, slowflow, etc.
-# MPI-Sintel (Final pass only)
-SINTEL_FINAL_ALL_DATASET_CONFIG = {
+# MPI-Sintel (Final + clean pass)
+SINTEL_ALL_DATASET_CONFIG = {
     'IMAGE_HEIGHT': 436,
     'IMAGE_WIDTH': 1024,
     'PADDED_IMAGE_HEIGHT': 448,
@@ -296,19 +421,19 @@ SINTEL_FINAL_ALL_DATASET_CONFIG = {
         'flow': 'A 2-channel optical flow field.',
     },
     'SIZES': {
-        'train': 908,
+        'train': 1816,
         'validate': 133,
         'sample': 8,
     },
     'BATCH_SIZE': 4,
     'PATHS': {
-        'train': './data/tfrecords/interp/sintel_final_train_all.tfrecord',
-        'validate': './data/tfrecords/interp/sintel_final_val_all.tfrecord',
+        'train': '/datasets/GPI/optical_flow/TFrecords/interp/sintel_train_all.tfrecord',
+        'validate': '/datasets/GPI/optical_flow/TFrecords/interp/sintel_val_all.tfrecord',
         'sample': './data/tfrecords/fc_sample_all.tfrecords'  # does not exist (ignore)
     },
     'PREPROCESS': {
         'scale': False,
-        'crop_height': 320,
+        'crop_height': 384,
         'crop_width': 768,
         'image_a': {
             'translate': {
