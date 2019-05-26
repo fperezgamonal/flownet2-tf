@@ -12,6 +12,7 @@ FLAGS = None
 # Values defined here: https://lmb.informatik.uni-freiburg.de/resources/datasets/FlyingChairs.en.html#flyingchairs
 TRAIN = 1
 VAL = 2
+# Any other value means that some image is not used for a reason (e.g.: in FlyingThings3D, complicated examples)
 DEBUG = False  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
 
 
@@ -88,8 +89,9 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
             elif dataset == 'flying_things3D':
                 """
                     We have a stereo-pair but we will arbitrarily only use the 'left' view (any would be ok)
-                    By doing so, we can only copy the left ground truth and significantly reduce the storage burden.
-                    Also, we follow FlowNet2.0 training and discard a set of difficult sequences (1388, to be precise)
+                    By doing so, we can only copy the left (forward) ground truth and significantly reduce the storage
+                     burden.  Also, we follow FlowNet2.0 training and discard a set of difficult sequences (1388, 
+                     to be precise)
                 """
                 print("Setting format for 'FlyingThings3D'...")
                 image_a_path = os.path.join(FLAGS.data_dir, '{0:07d}.png'.format(i))
