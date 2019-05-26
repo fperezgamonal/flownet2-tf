@@ -284,10 +284,10 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
 
 # FlyingThings3D
 FLYING_THINGS_3D_ALL_DATASET_CONFIG = {
-    'IMAGE_HEIGHT': 384,
-    'IMAGE_WIDTH': 512,
-    'PADDED_IMAGE_HEIGHT': 384,
-    'PADDED_IMAGE_WIDTH': 768,
+    'IMAGE_HEIGHT': 540,
+    'IMAGE_WIDTH': 960,
+    'PADDED_IMAGE_HEIGHT': 576,
+    'PADDED_IMAGE_WIDTH': 960,
     'ITEMS_TO_DESCRIPTIONS': {
         'image_a': 'A 3-channel image.',
         'image_b': 'A 3-channel image.',
