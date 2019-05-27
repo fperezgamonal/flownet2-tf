@@ -630,7 +630,7 @@ class Net(object):
             total_loss,
             optimizer,
             summarize_gradients=False,
-            global_step=checkpoints,
+            global_step=checkpoint_global_step_tensor,
         )
         mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         print("(after defining train_op) Memory usage is: {0} GB".format(mem / 1e6))
