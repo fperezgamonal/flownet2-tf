@@ -502,8 +502,6 @@ class Net(object):
             checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype='int64')
 
         sys.stdout.flush()  # debug
-        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        print("(after loading checkpoint (if any)) Memory usage is: {0} GB".format(mem / 1e6))
 
         # Create an initial assignment function.
         def InitAssignFn(sess):
@@ -526,9 +524,6 @@ class Net(object):
             # tf.summary.image("sparse_flow_img", sparse_flow_img, max_outputs=1)
         else:
             tf.summary.image("image_b", input_b, max_outputs=1)
-
-        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        print("(after adding TB summaries for images) Memory usage is: {0} GB".format(mem / 1e6))
 
         # Update the global step if we are resuming training from a checkpoint
         # TODO: instead of parsing the model filename to get the step, get it from the checkpoint variables
@@ -569,9 +564,6 @@ class Net(object):
         total_loss = self.loss(out_flow, predictions)
         tf.summary.scalar('loss', total_loss)
 
-        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        print("(after defining network and adding loss scalar to summary) Memory usage is: {0} GB".format(mem / 1e6))
-
         # Show the generated flow in TensorBoard
         if 'flow' in predictions:
             pred_flow_0 = predictions['flow'][0, :, :, :]
@@ -587,9 +579,6 @@ class Net(object):
         true_flow_1 = tf.py_func(flow_to_image, [true_flow_1], tf.uint8)
         true_flow_img = tf.stack([true_flow_0, true_flow_1], 0)
         tf.summary.image('true_flow', true_flow_img, max_outputs=1)
-
-        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        print("(after adding predicted and true flow to summary) Memory usage is: {0} GB".format(mem / 1e6))
 
         # Create saver 'restorer' for graph 'graph'
         # restorer = tf.train.Saver()  # gets ALL variables in 'graph'
@@ -632,8 +621,6 @@ class Net(object):
             summarize_gradients=False,
             global_step=checkpoint_global_step_tensor,
         )
-        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        print("(after defining train_op) Memory usage is: {0} GB".format(mem / 1e6))
 
         # Create unique logging dir to avoid overwritting of old data (e.g.: when comparing different runs)
         now = datetime.datetime.now()
@@ -658,8 +645,6 @@ class Net(object):
         else:
             # Explicitly create a Saver to specify maximum number of checkpoints to keep (and how frequently)
             # saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2)
-            mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-            print("(before running slim.learning.train()) Memory usage is: {0} GB".format(mem / 1e6))
             if checkpoints is not None:
                 final_loss = slim.learning.train(
                     train_op,

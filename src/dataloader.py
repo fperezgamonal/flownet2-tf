@@ -277,23 +277,16 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
     reader_kwargs = {'options': tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.ZLIB)}
     with tf.name_scope('load_batch'):
         dataset = __get_dataset(dataset_config, split_name, input_type=input_type)
-        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        print("(after __get_dataset function) Memory usage is: {0} GB".format(mem / 1e6))
         data_provider = slim.dataset_data_provider.DatasetDataProvider(
             dataset,
             num_readers=num_threads,
             common_queue_capacity=512,  # this also broke training, we lowered it (og. value = 2048)
             common_queue_min=256,  # this also broke training, we lowered it (og. value = 1024)
             reader_kwargs=reader_kwargs)
-        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        print("(after creating dataset_provider) Memory usage is: {0} GB".format(mem / 1e6))
 
         if input_type == 'image_matches':
             image_b = None
             image_a, matches_a, sparse_flow, flow = data_provider.get(['image_a', 'matches_a', 'sparse_flow', 'flow'])
-
-            mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-            print("(after getting data from_provider(.get)) Memory usage is: {0} GB".format(mem / 1e6))
 
             print("Checking if conversion is really necessary")
             print("batches have type:")
@@ -303,9 +296,6 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             print("batches have type (after conversion with map function (heavy on ram):")
             print("type(image_a[0]): {}, type(matches_a[0]): {}, type(sparse_flows[0]): {}, type(flow[0]): {}".format(
                 type(image_a[0][0]), type(matches_a[0][0]), type(sparse_flow[0][0]), type(flow[0][0])))
-
-            mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-            print("(after casting batch to float with 'map()') Memory usage is: {0} GB".format(mem / 1e6))
 
         else:
             matches_a = None
@@ -325,12 +315,8 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
 
         if input_type == 'image_matches':
             image_bs = None
-            mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-            print("(before expanding dims of each tensor tf.expand_dims) Memory usage is: {0} GB".format(mem / 1e6))
             image_as, matches_as, sparse_flows, flows = map(lambda x: tf.expand_dims(x, 0),
                                                             [image_a, matches_a, sparse_flow, flow])
-            mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-            print("(after expanding dims of each tensor tf.expand_dims) Memory usage is: {0} GB".format(mem / 1e6))
         else:
             matches_as = None
             sparse_flows = None
