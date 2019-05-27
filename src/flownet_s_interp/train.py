@@ -10,7 +10,7 @@ import resource
 
 def main():
     # Create a new network
-    net = FlowNetS_interp(debug=True)
+    net = FlowNetS_interp()
     if FLAGS.checkpoint is not None:
         checkpoints = FLAGS.checkpoint  # we want to define it as a string (only one checkpoint to load)
     else:
