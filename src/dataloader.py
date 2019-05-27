@@ -100,12 +100,12 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
             items_to_handlers = {
                 'image_a': Image(
                     image_key='image_a',
-                    dtype=tf.float32,
+                    dtype=tf.float64,
                     shape=[image_height, image_width, 3],
                     channels=3),
                 'matches_a': Image(
                     image_key='matches_a',
-                    dtype=tf.float32,
+                    dtype=tf.float64,
                     shape=[image_height, image_width, 1],
                     channels=1),
                 'sparse_flow': Image(
@@ -128,12 +128,12 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
             items_to_handlers = {
                 'image_a': Image(
                     image_key='image_a',
-                    dtype=tf.float32,
+                    dtype=tf.float64,
                     shape=[image_height, image_width, 3],
                     channels=3),
                 'image_b': Image(
                     image_key='image_b',
-                    dtype=tf.float32,
+                    dtype=tf.float64,
                     shape=[image_height, image_width, 3],
                     channels=3),
                 'flow': Image(
@@ -288,14 +288,18 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             image_b = None
             image_a, matches_a, sparse_flow, flow = data_provider.get(['image_a', 'matches_a', 'sparse_flow', 'flow'])
             # tensors are already of type float (redundant conversion), remove when everything is tested
-            image_a, matches_a, sparse_flow, flow = map(tf.to_float, [image_a, matches_a, sparse_flow, flow])
-
+            # image_a, matches_a, sparse_flow, flow = map(tf.to_float, [image_a, matches_a, sparse_flow, flow])
+            # image_a, matches_a = map(tf.to_float, [image_a, matches_a])
+            image_a, matches_a = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a, matches_a])
         else:
             matches_a = None
             sparse_flow = None
             image_a, image_b, flow = data_provider.get(['image_a', 'image_b', 'flow'])
             # tensors are already of type float (redundant conversion), remove when everything is tested
-            image_a, image_b, flow = map(tf.to_float, [image_a, image_b, flow])
+            # image_a, image_b, flow = map(tf.to_float, [image_a, image_b, flow])
+            # Need all to be float32 for certain operations (flow is already of type float32)
+            # image_a, image_b = map(tf.to_float, [image_a, image_b])
+            image_a, image_b = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a, image_b])
 
         if dataset_config['PREPROCESS']['scale']:
             image_a = image_a / 255.0
