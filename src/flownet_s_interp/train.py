@@ -24,8 +24,7 @@ def main():
         print("Input_type: 'image_matches'")
         mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         print("(before loading batches) Memory usage is: {0} GB".format(mem / 1e6))
-        input_a, matches_a, sparse_flow, flow = load_batch(FLAGS.dataset_config, 'train', net.global_step,
-                                                           input_type=FLAGS.input_type)
+        input_a, matches_a, sparse_flow, flow = load_batch(FLAGS.dataset_config, 'train', input_type=FLAGS.input_type)
         mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         print("(after loading batches) Memory usage is: {0} GB".format(mem / 1e6))
 
@@ -42,8 +41,7 @@ def main():
         )
     else:
         print("Input_type: 'image_pairs'")
-        input_a, input_b, flow = load_batch(FLAGS.dataset_config, 'train', net.global_step,
-                                            input_type=FLAGS.input_type)
+        input_a, input_b, flow = load_batch(FLAGS.dataset_config, 'train', input_type=FLAGS.input_type)
 
         # Train on the data
         net.train(

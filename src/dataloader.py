@@ -262,7 +262,7 @@ def _generate_coeff(param, discount_coeff=tf.constant(1.0), default_value=tf.con
 # TODO: as it is, for each different data type, we require a different dataset config (OK!)
 # TODO: but we also require on TFRecords (HUGE!), better create one with all the required data!!
 # TODO: that is, image_a (img1), image_b (img2), matches_a, sparse_flow ==> make sure the mappings are OK
-def load_batch(dataset_config_str, split_name, global_step, input_type='image_pairs'):
+def load_batch(dataset_config_str, split_name, global_step=None, input_type='image_pairs'):
 
     if dataset_config_str.lower() == 'flying_things3d':
         dataset_config = FLYING_THINGS_3D_ALL_DATASET_CONFIG
