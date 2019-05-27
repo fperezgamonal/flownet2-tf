@@ -18,7 +18,7 @@ slim = tf.contrib.slim
 import resource
 
 VAL_INTERVAL = 1000  # each N samples, we evaluate the validation set
-
+DEBUG = True
 
 class Mode(Enum):
     TRAIN = 1
@@ -428,7 +428,7 @@ class Net(object):
                     write_flow(pred_flow, full_out_path)
 
     def train(self, log_dir, training_schedule_str, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
-              checkpoints=None, input_type='image_pairs', log_verbosity=False):
+              checkpoints=None, input_type='image_pairs', log_verbosity=True):
         # Add validation batches as input? Used only once every val_interval steps...?
         """
         runs training on the network from which this method is called.
@@ -446,8 +446,9 @@ class Net(object):
         """
         if log_verbosity:  # print loss and tfinfo to stdout
             tf.logging.set_verbosity(tf.logging.INFO)
+            if DEBUG:
+                tf.logging.set_verbosity(tf.logging.DEBUG)
         # Otherwise, info only printed through TensorBoard
-        print("checkpoints: {}".format(checkpoints))
 
         # TODO: WIP read checkpoints first to try to correctly restore global_step as creating it breaks training
         # NOTE: everything depends on global_step to be correctly reported, that is why is critical to get it right
