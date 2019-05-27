@@ -3,7 +3,8 @@ import tensorflow as tf
 import copy
 slim = tf.contrib.slim
 from math import exp
-from .dataset_configs import FLYING_CHAIRS_ALL_DATASET_CONFIG, SINTEL_FINAL_ALL_DATASET_CONFIG
+from .dataset_configs import FLYING_CHAIRS_ALL_DATASET_CONFIG, SINTEL_FINAL_ALL_DATASET_CONFIG,\
+    SINTEL_ALL_DATASET_CONFIG, FLYING_THINGS_3D_ALL_DATASET_CONFIG
 import resource
 
 _preprocessing_ops = tf.load_op_library(
@@ -263,12 +264,12 @@ def _generate_coeff(param, discount_coeff=tf.constant(1.0), default_value=tf.con
 # TODO: that is, image_a (img1), image_b (img2), matches_a, sparse_flow ==> make sure the mappings are OK
 def load_batch(dataset_config_str, split_name, global_step, input_type='image_pairs'):
 
-    if dataset_config_str.lower() == 'flying_things3D':
-        dataset_config = FLYING_CHAIRS_ALL_DATASET_CONFIG  # must create tfrecords!
-    elif dataset_config_str.lower() == 'sintel_clean':
-        dataset_config = SINTEL_FINAL_ALL_DATASET_CONFIG  # must create tfrecords!
+    if dataset_config_str.lower() == 'flying_things3d':
+        dataset_config = FLYING_THINGS_3D_ALL_DATASET_CONFIG
     elif dataset_config_str.lower() == 'sintel_final':
         dataset_config = SINTEL_FINAL_ALL_DATASET_CONFIG
+    elif dataset_config_str.lower() == 'sintel_all':  # clean + final
+        dataset_config = SINTEL_ALL_DATASET_CONFIG
     else:  # flying_chairs
         dataset_config = FLYING_CHAIRS_ALL_DATASET_CONFIG
 
@@ -297,11 +298,11 @@ def load_batch(dataset_config_str, split_name, global_step, input_type='image_pa
             print("Checking if conversion is really necessary")
             print("batches have type:")
             print("type(image_a[0]): {}, type(matches_a[0]): {}, type(sparse_flows[0]): {}, type(flow[0]): {}".format(
-                type(image_a[0]), type(matches_a[0]), type(sparse_flow[0]), type(flow[0])))
+                type(image_a[0][0]), type(matches_a[0][0]), type(sparse_flow[0][0]), type(flow[0][0])))
             image_a, matches_a, sparse_flow, flow = map(tf.to_float, [image_a, matches_a, sparse_flow, flow])
             print("batches have type (after conversion with map function (heavy on ram):")
             print("type(image_a[0]): {}, type(matches_a[0]): {}, type(sparse_flows[0]): {}, type(flow[0]): {}".format(
-                type(image_a[0]), type(matches_a[0]), type(sparse_flow[0]), type(flow[0])))
+                type(image_a[0][0]), type(matches_a[0][0]), type(sparse_flow[0][0]), type(flow[0][0])))
 
             mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
             print("(after casting batch to float with 'map()') Memory usage is: {0} GB".format(mem / 1e6))
