@@ -100,12 +100,12 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
             items_to_handlers = {
                 'image_a': Image(
                     image_key='image_a',
-                    dtype=tf.float64,
+                    dtype=tf.float32,
                     shape=[image_height, image_width, 3],
                     channels=3),
                 'matches_a': Image(
                     image_key='matches_a',
-                    dtype=tf.float64,
+                    dtype=tf.float32,
                     shape=[image_height, image_width, 1],
                     channels=1),
                 'sparse_flow': Image(
@@ -128,12 +128,12 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
             items_to_handlers = {
                 'image_a': Image(
                     image_key='image_a',
-                    dtype=tf.float64,
+                    dtype=tf.float32,
                     shape=[image_height, image_width, 3],
                     channels=3),
                 'image_b': Image(
                     image_key='image_b',
-                    dtype=tf.float64,
+                    dtype=tf.float32,
                     shape=[image_height, image_width, 3],
                     channels=3),
                 'flow': Image(
