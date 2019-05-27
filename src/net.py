@@ -630,7 +630,9 @@ class Net(object):
         print("Starting training...")
         if self.debug:
             debug_logdir = os.path.join(log_dir, 'debug')
-            print("debugging logdir is: {}".format(debug_logdir))
+            if not os.path.isdir(debug_logdir):
+                os.makedirs(debug_logdir)
+                print("debugging logdir is: {}".format(debug_logdir))
             with tf.Session() as sess:
                 sess.run(tf.global_variables_initializer())
                 tf.train.start_queue_runners(sess)
