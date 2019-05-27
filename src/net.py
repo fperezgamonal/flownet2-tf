@@ -56,7 +56,6 @@ class Net(object):
             training_schedule = SHORT_SCHEDULE
         # SINTEL
         elif training_schedule_str.lower() == 'sintel_s1':  # Fine-tune Sintel (stage 1)
-            print("training_schedule is 'sintel_s1! (OK)")
             training_schedule = FINETUNE_SINTEL_S1
         elif training_schedule_str.lower() == 'sintel_s2':
             training_schedule = FINETUNE_SINTEL_S2
