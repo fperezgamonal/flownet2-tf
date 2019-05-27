@@ -288,14 +288,14 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             image_b = None
             image_a, matches_a, sparse_flow, flow = data_provider.get(['image_a', 'matches_a', 'sparse_flow', 'flow'])
             # tensors are already of type float (redundant conversion), remove when everything is tested
-            # image_a, matches_a, sparse_flow, flow = map(tf.to_float, [image_a, matches_a, sparse_flow, flow])
+            image_a, matches_a, sparse_flow, flow = map(tf.to_float, [image_a, matches_a, sparse_flow, flow])
 
         else:
             matches_a = None
             sparse_flow = None
             image_a, image_b, flow = data_provider.get(['image_a', 'image_b', 'flow'])
             # tensors are already of type float (redundant conversion), remove when everything is tested
-            # image_a, image_b, flow = map(tf.to_float, [image_a, image_b, flow])
+            image_a, image_b, flow = map(tf.to_float, [image_a, image_b, flow])
 
         if dataset_config['PREPROCESS']['scale']:
             image_a = image_a / 255.0
