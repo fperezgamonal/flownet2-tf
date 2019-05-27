@@ -428,7 +428,7 @@ class Net(object):
                     write_flow(pred_flow, full_out_path)
 
     def train(self, log_dir, training_schedule_str, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
-              checkpoints=None, input_type='image_pairs', log_verbosity=True):
+              checkpoints=None, input_type='image_pairs', log_verbosity=False):
         # Add validation batches as input? Used only once every val_interval steps...?
         """
         runs training on the network from which this method is called.
