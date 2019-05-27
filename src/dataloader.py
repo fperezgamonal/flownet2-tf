@@ -291,11 +291,11 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             print("Checking if conversion is really necessary")
             print("batches have type:")
             print("type(image_a[0]): {}, type(matches_a[0]): {}, type(sparse_flows[0]): {}, type(flow[0]): {}".format(
-                type(image_a[0][0]), type(matches_a[0][0]), type(sparse_flow[0][0]), type(flow[0][0])))
+                image_a.dtype, matches_a.dtype, sparse_flow.dtype, flow.dtype))
             image_a, matches_a, sparse_flow, flow = map(tf.to_float, [image_a, matches_a, sparse_flow, flow])
             print("batches have type (after conversion with map function (heavy on ram):")
             print("type(image_a[0]): {}, type(matches_a[0]): {}, type(sparse_flows[0]): {}, type(flow[0]): {}".format(
-                type(image_a[0][0]), type(matches_a[0][0]), type(sparse_flow[0][0]), type(flow[0][0])))
+                image_a.dtype, matches_a.dtype, sparse_flow.dtype, flow.dtype))
 
         else:
             matches_a = None
