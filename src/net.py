@@ -445,9 +445,12 @@ class Net(object):
         :return:
         """
         if log_verbosity <= 1:  # print loss and tfinfo to stdout
+            print("Logging messages from 'INFO' level or worse")
             tf.logging.set_verbosity(tf.logging.INFO)
         else:  # debug info (more verbose)
+            print("Logging messages from 'DEBUG' level or worse (this is the most verbose)")
             tf.logging.set_verbosity(tf.logging.DEBUG)
+            print("Logging to tensorboard: {}".format(log_tensorboard))
 
         if checkpoints is not None:
             # Create the initial assignment op

@@ -97,4 +97,8 @@ if __name__ == '__main__':
     )
 
     FLAGS = parser.parse_args()
+    print("type(log_verbosity): {}, type(log_tensorboard): {}".format(type(FLAGS.log_verbosity),
+                                                                      type(FLAGS.log_tensorboard)))
+    print("log_verbosity: {}, log_tensorboard: {}".format(FLAGS.log_verbosity, FLAGS.log_tensorboard))
+
     main()
