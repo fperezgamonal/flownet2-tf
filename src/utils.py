@@ -22,7 +22,7 @@ def average_endpoint_error(labels, predictions):
 
         squared_difference = tf.square(tf.subtract(predictions, labels))
         # sum across channels: sum[(X - Y)^2] -> N, H, W, 1
-        loss = tf.reduce_sum(squared_difference, 3, keep_dims=True)
+        loss = tf.reduce_sum(squared_difference, 3, keepdims=True)
         loss = tf.sqrt(loss)
         return tf.reduce_sum(loss) / num_samples
 
