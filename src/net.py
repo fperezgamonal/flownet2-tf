@@ -567,20 +567,20 @@ class Net(object):
         # Show the generated flow in TensorBoard
         if 'flow' in predictions:
             pred_flow_0 = predictions['flow'][0, :, :, :]
-            # pred_flow_0 = tf.py_func(flow_to_image, [pred_flow_0], tf.uint8)
-            pred_flow_0 = tf.py_function(func=flow_to_image, inp=[pred_flow_0], Tout=tf.uint8)
+            pred_flow_0 = tf.py_func(flow_to_image, [pred_flow_0], tf.uint8)
+            # pred_flow_0 = tf.py_function(func=flow_to_image, inp=[pred_flow_0], Tout=tf.uint8)
             pred_flow_1 = predictions['flow'][1, :, :, :]
-            # pred_flow_1 = tf.py_func(flow_to_image, [pred_flow_1], tf.uint8)
-            pred_flow_1 = tf.py_function(func=flow_to_image, inp=[pred_flow_1], Tout=tf.uint8)
+            pred_flow_1 = tf.py_func(flow_to_image, [pred_flow_1], tf.uint8)
+            # pred_flow_1 = tf.py_function(func=flow_to_image, inp=[pred_flow_1], Tout=tf.uint8)
             pred_flow_img = tf.stack([pred_flow_0, pred_flow_1], 0)
             tf.summary.image('pred_flow', pred_flow_img, max_outputs=1)
 
         true_flow_0 = out_flow[0, :, :, :]
-        # true_flow_0 = tf.py_func(flow_to_image, [true_flow_0], tf.uint8)
-        true_flow_0 = tf.py_function(func=flow_to_image, inp=[true_flow_0], Tout=tf.uint8)
+        true_flow_0 = tf.py_func(flow_to_image, [true_flow_0], tf.uint8)
+        # true_flow_0 = tf.py_function(func=flow_to_image, inp=[true_flow_0], Tout=tf.uint8)
         true_flow_1 = out_flow[1, :, :, :]
-        # true_flow_1 = tf.py_func(flow_to_image, [true_flow_1], tf.uint8)
-        true_flow_1 = tf.py_function(func=flow_to_image, inp=[true_flow_1], Tout=tf.uint8)
+        true_flow_1 = tf.py_func(flow_to_image, [true_flow_1], tf.uint8)
+        # true_flow_1 = tf.py_function(func=flow_to_image, inp=[true_flow_1], Tout=tf.uint8)
         true_flow_img = tf.stack([true_flow_0, true_flow_1], 0)
         tf.summary.image('true_flow', true_flow_img, max_outputs=1)
 
