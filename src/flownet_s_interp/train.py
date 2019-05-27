@@ -30,6 +30,8 @@ def main():
             out_flow=flow,
             input_type=FLAGS.input_type,
             checkpoints=checkpoints,
+            log_verbosity=FLAGS.log_verbosity,
+            log_tensorboard=FLAGS.log_tensorboard,
         )
     else:
         print("Input_type: 'image_pairs'")
@@ -44,6 +46,8 @@ def main():
             out_flow=flow,
             input_type=FLAGS.input_type,
             checkpoints=checkpoints,
+            log_verbosity=FLAGS.log_verbosity,
+            log_tensorboard=FLAGS.log_tensorboard,
         )
 
 
@@ -76,6 +80,20 @@ if __name__ == '__main__':
         required=False,
         help='Training schedule (learning rate, weight decay, etc.)',
         default='long_schedule',
+    )
+    parser.add_argument(
+        '--log_verbosity',
+        type=int,
+        required=False,
+        help='integer that specifies tf.logging verbosity (if <=1, INFO msg, >1, DEBUG msg)',
+        default=1,
+    )
+    parser.add_argument(
+        '--log_tensorboard',
+        type=bool,
+        required=False,
+        help='Whether to log to Tensorboard or not (only stdout)',
+        default=True,
     )
 
     FLAGS = parser.parse_args()
