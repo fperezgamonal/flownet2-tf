@@ -568,16 +568,8 @@ class Net(object):
         if 'flow' in predictions:
             pred_flow_0 = predictions['flow'][0, :, :, :]
             pred_flow_0 = tf.py_func(flow_to_image, [pred_flow_0], tf.uint8)
-            pred_flow_0_bis = tf.py_function(flow_to_image, [pred_flow_0], tf.uint8)
-            print("pred_flow_0.shape: {} pred_flow_0_bis.shape: {}".format(pred_flow_0.shape, pred_flow_0_bis.shape))
-            print("pred_flow_0.dtype: {} pred_flow_0_bis.dtype: {}".format(pred_flow_0.dtype, pred_flow_0_bis.dtype))
-            print("are both tensors equal? {0}".format(tf.equal(pred_flow_0, pred_flow_0_bis)))
             pred_flow_1 = predictions['flow'][1, :, :, :]
             pred_flow_1 = tf.py_func(flow_to_image, [pred_flow_1], tf.uint8)
-            pred_flow_1_bis = tf.py_function(flow_to_image, [pred_flow_1], tf.uint8)
-            print("pred_flow_1.shape: {} pred_flow_1_bis.shape: {}".format(pred_flow_1.shape, pred_flow_1_bis.shape))
-            print("pred_flow_1.dtype: {} pred_flow_1_bis.dtype: {}".format(pred_flow_1.dtype, pred_flow_1_bis.dtype))
-            print("are both tensors equal? {0}".format(tf.equal(pred_flow_1, pred_flow_1_bis)))
             pred_flow_img = tf.stack([pred_flow_0, pred_flow_1], 0)
             tf.summary.image('pred_flow', pred_flow_img, max_outputs=1)
 
