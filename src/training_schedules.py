@@ -53,7 +53,7 @@ FINETUNE_SINTEL_S1 = {
 }
 
 FINETUNE_SINTEL_S2 = {
-    'step_values': [45000, 65000, 85000, 95000, 97500, 100000, 110000, 120000, 130000, 140000],
+    'step_values': [195000, 215000, 235000, 245000, 247500, 250000, 260000, 270000, 280000, 290000],
     'learning_rates': [3e-05, 1.5e-05, 7.5e-06, 3.75e-06, 1.875e-06, 9.375e-07, 4.6875e-07, 2.34375e-07, 1.171875e-07,
                        5.859375e-08, 2.9296875e-08],
     'momentum': 0.9,
@@ -61,6 +61,9 @@ FINETUNE_SINTEL_S2 = {
     'weight_decay': 0.0004,
     'max_iter': 150000,
 }
+# TODO: the fix worked so the global step is correctly resumed (change the other fine-tuning schedules accordingly)
+# NOTE: this means that if we want to do some of this fine-tuning in a different order, we have to:
+# * enable to restart from 0 or create a new config(!)
 
 FINETUNE_SINTEL_S3 = {
     'step_values': [45000, 65000, 85000, 95000, 97500, 100000, 110000, 120000, 130000, 140000],
