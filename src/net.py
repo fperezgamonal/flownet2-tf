@@ -511,6 +511,9 @@ class Net(object):
             self.learning_rate,
             training_schedule['momentum'],
             training_schedule['momentum2'])
+        if log_tensorboard:
+            # Add learning rate
+            tf.summary.scalar('learning_rate', self.learning_rate)
 
         if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
             inputs = {
