@@ -18,6 +18,7 @@ LONG_SCHEDULE = {
     'max_iter': 1200000,
 }
 # og repo adds a stepvalue at 500k iters but it is useless since it is equal to maxiter!
+# Resetting global_step after Slong so this step numbers are correct (started from 0)
 FINE_SCHEDULE = {
     'step_values': [200000, 300000, 400000],  # might not work if the optimizer reloads previous global step!
     'learning_rates': [0.00001, 0.000005, 0.0000025, 0.00000125],
@@ -66,39 +67,40 @@ FINETUNE_SINTEL_S2 = {
 # * enable to restart from 0 or create a new config(!)
 # * max_iter MUST also be changed as it is evaluated as an absolute value based of global_step (not relative to
 # the new training)
+# * IMPORTANT: reset checkpoint name - global_step to 0 BEFORE fine-tuning for this to work (after Sfine too!)
+# E.g.: 'path/to/model/model-543303.* to path/to/model/model-0.* (change all files: meta, data and ckpt)
 
 FINETUNE_SINTEL_S3 = {
-    'step_values': [45000, 65000, 85000, 95000, 97500, 100000, 110000, 120000, 130000, 140000],
+    'step_values': [345000, 365000, 385000, 395000, 397500, 400000, 410000, 420000, 430000, 440000],
     'learning_rates': [2e-05, 1e-05, 5e-06, 2.5e-06, 1.25e-06, 6.25e-07, 3.125e-07, 1.5625e-07, 7.8125e-08, 3.90625e-08,
                        1.953125e-08],
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 150000,
+    'max_iter': 450000,
 }
 
 FINETUNE_SINTEL_S4 = {
-    'step_values': [45000, 65000, 85000, 95000, 97500, 100000, 110000, 120000, 130000, 140000],
+    'step_values': [495000, 515000, 535000, 545000, 547500, 550000, 560000, 570000, 580000, 590000],
     'learning_rates': [1e-05, 5e-06, 2.5e-06, 1.25e-06, 6.25e-07, 3.125e-07, 1.5625e-07, 7.8125e-08, 3.90625e-08,
                        1.953125e-08, 9.765625e-09],
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 150000,
+    'max_iter': 600000,
 }
 
 FINETUNE_SINTEL_S5 = {
-    'step_values': [45000, 65000, 85000, 95000, 97500, 100000, 110000, 120000, 130000, 140000],
+    'step_values': [645000, 665000, 685000, 695000, 697500, 700000, 710000, 720000, 730000, 740000],
     'learning_rates': [5e-06, 2.5e-06, 1.25e-06, 6.25e-07, 3.125e-07, 1.5625e-07, 7.8125e-08, 3.90625e-08, 1.953125e-08,
                        9.765625e-09, 4.8828125e-09],
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 150000,
+    'max_iter': 750000,
 }
 
-
-
+# KITTI
 FINETUNE_KITTI_S1 = {
     'step_values': [45000, 65000, 85000, 95000, 97500, 100000, 110000, 120000, 130000, 140000],
     'learning_rates': [4e-05, 2e-05, 1e-05, 5e-06, 2.5e-06, 1.25e-06, 6.25e-07, 3.125e-07, 1.5625e-07, 7.8125e-08,
@@ -110,33 +112,33 @@ FINETUNE_KITTI_S1 = {
 }
 
 FINETUNE_KITTI_S2 = {
-    'step_values': [45000, 65000, 85000, 95000, 97500, 100000, 110000, 120000, 130000, 140000],
+    'step_values': [195000, 215000, 235000, 245000, 247500, 250000, 260000, 270000, 280000, 290000],
     'learning_rates': [4e-05, 2e-05, 1e-05, 5e-06, 2.5e-06, 1.25e-06, 6.25e-07, 3.125e-07, 1.5625e-07, 7.8125e-08,
                        3.90625e-08],
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 150000,
+    'max_iter': 300000,
 }
 
 FINETUNE_KITTI_S3 = {
-    'step_values': [45000, 65000, 85000, 95000, 97500, 100000, 110000, 120000, 130000, 140000],
+    'step_values': [345000, 365000, 385000, 395000, 397500, 400000, 410000, 420000, 430000, 440000],
     'learning_rates': [2e-05, 1e-05, 5e-06, 2.5e-06, 1.25e-06, 6.25e-07, 3.125e-07, 1.5625e-07, 7.8125e-08, 3.90625e-08,
                        1.953125e-08],
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 150000,
+    'max_iter': 450000,
 }
 
 FINETUNE_KITTI_S4 = {
-    'step_values': [45000, 65000, 85000, 95000, 97500, 100000, 110000, 120000, 130000, 140000],
+    'step_values': [495000, 515000, 535000, 545000, 547500, 550000, 560000, 570000, 580000, 590000],
     'learning_rates': [1e-05, 5e-06, 2.5e-06, 1.25e-06, 6.25e-07, 3.125e-07, 1.5625e-07, 7.8125e-08, 3.90625e-08,
                        1.953125e-08, 9.765625e-09],
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 150000,
+    'max_iter': 600000,
 }
 
 # Uses mixture of Sintel, KITTI and HD1K to fine-tune
