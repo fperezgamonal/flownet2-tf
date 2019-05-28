@@ -513,7 +513,7 @@ class Net(object):
             training_schedule['momentum2'])
         if log_tensorboard:
             # Add learning rate
-            tf.summary.scalar('learning_rate', self.learning_rate)  # should be the same as optimizer._lr (internal)
+            tf.summary.scalar('learning_rate', optimizer._lr)  # should be the same as optimizer._lr (internal)
 
         if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
             inputs = {
