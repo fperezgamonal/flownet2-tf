@@ -74,15 +74,15 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
             if dataset == 'flying_chairs':
                 if DEBUG:
                     print("Setting format for 'FlyingChairs'...")
-                image_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1.png'.format(i + 1))
-                image_b_path = os.path.join(FLAGS.data_dir, '{0:05d}_img2.png'.format(i + 1))
-                flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_flow.flo'.format(i + 1))
+                image_a_path = os.path.join(FLAGS.data_dir, '{0:04d}_img1.png'.format(i + 1))
+                image_b_path = os.path.join(FLAGS.data_dir, '{0:04d}_img2.png'.format(i + 1))
+                flow_path = os.path.join(FLAGS.data_dir, '{0:04d}_flow.flo'.format(i + 1))
                 if matcher == 'sift':
-                    matches_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_sift_mask.png'.format(i + 1))
-                    sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_sift_sparse_flow.flo'.format(i + 1))
+                    matches_a_path = os.path.join(FLAGS.data_dir, '{0:04d}_img1_sift_mask.png'.format(i + 1))
+                    sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:04d}_img1_sift_sparse_flow.flo'.format(i + 1))
                 elif matcher == 'deepmatching':
-                    matches_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_dm_mask.png'.format(i + 1))
-                    sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_dm_sparse_flow.flo'.format(i + 1))
+                    matches_a_path = os.path.join(FLAGS.data_dir, '{0:04d}_img1_dm_mask.png'.format(i + 1))
+                    sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:04d}_img1_dm_sparse_flow.flo'.format(i + 1))
                 # add more matchers if need be (more elif's)
                 else:
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
@@ -143,17 +143,17 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
             elif dataset == 'sintel_all':
                 print("Setting format for 'MPI-Sintel (final + clean pass)'...")
                 pass_dir = 'final'
-                image_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
-                image_b_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
-                flow_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.flo'.format(i+1))
+                image_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.png'.format(i+1))
+                image_b_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.png'.format(i+2))
+                flow_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i+1))
                 if matcher == 'sift':
-                    matches_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}_sift_mask.png'.format(i+1))
+                    matches_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}_sift_mask.png'.format(i+1))
                     sparse_flow_path = os.path.join(FLAGS.data_dir, pass_dir,
-                                                    'frame_{0:04d}_sift_sparse_flow.flo'.format(i+1))
+                                                    'frame_{0:05d}_sift_sparse_flow.flo'.format(i+1))
                 elif matcher == 'deepmatching':
-                    matches_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}_dm_mask.png'.format(i+1))
+                    matches_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}_dm_mask.png'.format(i+1))
                     sparse_flow_path = os.path.join(FLAGS.data_dir, pass_dir,
-                                                    'frame_{0:04d}_dm_sparse_flow.flo'.format(i+1))
+                                                    'frame_{0:05d}_dm_sparse_flow.flo'.format(i+1))
                 else:
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
             # Add more datasets here

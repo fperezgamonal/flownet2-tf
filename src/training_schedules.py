@@ -43,6 +43,9 @@ SHORT_SCHEDULE = {
 # The authors recently uploaded the caffe training protocols on:
 # github.com/NVlabs/PWC-Net/tree/master/Caffe/model/PWC-Net_plus (although only for KITTI and Sintel it seems...)
 # NOTE: they train in several stages (5 per model). Careful with overfitting as we use a smaller model (FlowNetS).
+# According to the paper, they only apply 5 learning rate disruptions while training on the mixed batch with samples
+# from kitti, sintel, hd1k (ROB challenge). For Sintel alone, only 2 disruptions with different lr occur
+# (opened an issue to clarify this)
 FINETUNE_SINTEL_S1 = {
     'step_values': [45000, 65000, 85000, 95000, 97500, 100000, 110000, 120000, 130000, 140000],
     'learning_rates': [5e-05, 2.5e-05, 1.25e-05, 6.25e-06, 3.125e-06, 1.5625e-06, 7.8125e-07, 3.90625e-07, 1.953125e-07,
@@ -93,6 +96,30 @@ FINETUNE_SINTEL_S4 = {
 FINETUNE_SINTEL_S5 = {
     'step_values': [645000, 665000, 685000, 695000, 697500, 700000, 710000, 720000, 730000, 740000],
     'learning_rates': [5e-06, 2.5e-06, 1.25e-06, 6.25e-07, 3.125e-07, 1.5625e-07, 7.8125e-08, 3.90625e-08, 1.953125e-08,
+                       9.765625e-09, 4.8828125e-09],
+    'momentum': 0.9,
+    'momentum2': 0.999,
+    'weight_decay': 0.0004,
+    'max_iter': 750000,
+}
+
+# concatenate all stages into only one (may fix reloading from checkpoint "problems")
+# CORRECTION: this is not valid since the weight decay will NOT have different value than expected
+# since it is applied only at the start and gradually changes instead of restarting it after each stage!
+# That is why in the original training schedules they have separate running scripts and proto.txt files
+# TODO: remove this step for the aforementioned reasons
+FINETUNE_SINTEL_ALL_STAGES = {
+    'step_values': [45000, 65000, 85000, 95000, 97500, 100000, 110000, 120000, 130000, 140000, 150000, 195000, 215000,
+                    235000, 245000, 247500, 250000, 260000, 270000, 280000, 290000, 300000, 345000, 365000, 385000,
+                    395000, 397500, 400000, 410000, 420000, 430000, 440000, 450000, 495000, 515000, 535000, 545000,
+                    547500, 550000, 560000, 570000, 580000, 590000, 600000, 645000, 665000, 685000, 695000, 697500,
+                    700000, 710000, 720000, 730000, 740000],
+    'learning_rates': [5e-05, 2.5e-05, 1.25e-05, 6.25e-06, 3.125e-06, 1.5625e-06, 7.8125e-07, 3.90625e-07, 1.953125e-07,
+                       9.765625e-08, 4.8828125e-08, 3e-05, 1.5e-05, 7.5e-06, 3.75e-06, 1.875e-06, 9.375e-07, 4.6875e-07,
+                       2.34375e-07, 1.171875e-07, 5.859375e-08, 2.9296875e-08, 2e-05, 1e-05, 5e-06, 2.5e-06, 1.25e-06,
+                       6.25e-07, 3.125e-07, 1.5625e-07, 7.8125e-08, 3.90625e-08, 1.953125e-08, 1e-05, 5e-06, 2.5e-06,
+                       1.25e-06, 6.25e-07, 3.125e-07, 1.5625e-07, 7.8125e-08, 3.90625e-08, 1.953125e-08, 9.765625e-09,
+                       5e-06, 2.5e-06, 1.25e-06, 6.25e-07, 3.125e-07, 1.5625e-07, 7.8125e-08, 3.90625e-08, 1.953125e-08,
                        9.765625e-09, 4.8828125e-09],
     'momentum': 0.9,
     'momentum2': 0.999,
