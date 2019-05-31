@@ -318,9 +318,9 @@ def main():
     # Actual conversion
     print("Generating TFRecords...")
     print("Current split: {}".format(train_name))
-    # convert_dataset(train_idxs, train_name, matcher=FLAGS.matcher, dataset=set_name)
+    convert_dataset(train_idxs, train_name, matcher=FLAGS.matcher, dataset=set_name)
     print("Current split: {}".format(val_name))
-    convert_dataset(val_idxs, val_name, matcher=FLAGS.matcher, dataset=set_name)
+    # convert_dataset(val_idxs, val_name, matcher=FLAGS.matcher, dataset=set_name)
 
 
 if __name__ == '__main__':
