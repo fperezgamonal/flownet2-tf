@@ -75,6 +75,13 @@ if __name__ == '__main__':
         help='type of input (def: frame 1 + frame 2), alternative: frame 1 + matches',
         default='image_matches'
     )
+    parser.add_argument(
+        '--compute_metrics',
+        type=bool,
+        required=False,
+        help='whether to compute error metrics or not (if True all available metrics are computed, check flowlib.py)',
+        default=True,
+    )
     FLAGS = parser.parse_args()
 
     # Verify arguments are valid

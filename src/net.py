@@ -250,7 +250,21 @@ class Net(object):
         return y_hat[0], y_hat[1]
 
     def test(self, checkpoint, input_a_path, input_b_path=None, matches_a_path=None, sparse_flow_path=None,
-             out_path='./', input_type='image_pairs', save_image=True, save_flo=True):
+             out_path='./', input_type='image_pairs', save_image=True, save_flo=True, compute_metrics=True):
+        """
+
+        :param checkpoint:
+        :param input_a_path:
+        :param input_b_path:
+        :param matches_a_path:
+        :param sparse_flow_path:
+        :param out_path:
+        :param input_type:
+        :param save_image:
+        :param save_flo:
+        :param compute_metrics:
+        :return:
+        """
         input_a = imread(input_a_path)
 
         if sparse_flow_path is not None and matches_a_path is not None and input_type == 'image_matches':
@@ -323,7 +337,8 @@ class Net(object):
 
     # TODO: double-check the number of columns of the txt file to ensure it is OK
     # Each line will define a set of inputs. By doing so, we reduce complexity and avoid errors due to "forced" sorting
-    def test_batch(self, checkpoint, image_paths, out_path, input_type='image_pairs', save_image=True, save_flo=True):
+    def test_batch(self, checkpoint, image_paths, out_path, input_type='image_pairs', save_image=True, save_flo=True,
+                   compute_metrics=True):
         """
         Run inference on a set of images defined in .txt files
         :param checkpoint: the path to the pre-trained model weights
@@ -332,6 +347,7 @@ class Net(object):
         :param input_type: whether we are dealing with two consecutive frames or one frame + matches (interpolation)
         :param save_image: whether to save a png visualization (Middlebury colour code) of the flow
         :param save_flo: whether to save the 'raw' .flo file (useful to compute errors and such)
+        :param compute_metrics:
         :return:
         """
         # Build Graph
@@ -368,9 +384,10 @@ class Net(object):
                 # Read + pre-process files
                 # Each line is split into a list with N elements (separator: blank space (" "))
                 path_inputs = path_list[img_idx].split(' ')
-                assert 2 <= len(path_inputs) <= 4, (
-                    'More paths than expected. Expected: I1+I2 (2), I1+MM+sparseflow(3) or all (4).')
-                if len(path_inputs) == 2:  # Only paths to image1 + image2 have been provided
+                assert 2 <= len(path_inputs) <= 6, (
+                    'More paths than expected. Expected: I1+I2 (2), I1+MM+SF(3), I1+MM+SF+GTF(4),'
+                    '  I1+MM+SF+GT+OCC_MSK+INVMASK(5 to 6)')
+                if len(path_inputs) == 2 and input_type == 'image_pairs':  # Only image1 + image2 have been provided
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
                     matches_0 = None
@@ -380,7 +397,30 @@ class Net(object):
                     frame_1 = None
                     matches_0 = imread(path_inputs[1])
                     sparse_flow_0 = read_flow(path_inputs[2])
-                else:  # path to all inputs (read all and decide what to use based on 'input_type'
+                elif len(path_inputs) == 3 and input_type == 'image_pairs':  # image1 + image2 + ground truth flow
+                    frame_0 = imread(path_inputs[0])
+                    frame_1 = imread(path_inputs[1])
+                    matches_0 = None
+                    sparse_flow_0 = None
+                    gt_flow_0 = read_flow(path_inputs[2])
+                elif len(path_inputs) == 4 and input_type == 'image_matches': # img1 + matches + sparse + gt flow
+                    frame_0 = imread(path_inputs[0])
+                    frame_1 = None
+                    matches_0 = imread(path_inputs[1])
+                    sparse_flow_0 = read_flow(path_inputs[2])
+                    gt_flow_0 = read_flow(path_inputs[3])
+                # img1 + img2 + gtflow + occ_mask
+                elif len(path_inputs) == 4 and input_type == 'image_pairs' and compute_metrics:
+                    frame_0 = imread(path_inputs[0])
+                    frame_1 = imread(path_inputs[1])
+                    matches_0 = None
+                    sparse_flow_0 = None
+                    gt_flow_0 = read_flow(path_inputs[3])
+                    occ_mask_0 = imread(path_inputs[4])
+
+                # finish adding extra conditions for invalid mask and occ_mask + image_matches
+                # img1 + img2 + gtflow + occ_mask
+                else:  # path to all inputs (read all and decide what to use based on 'input_type')
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
                     matches_0 = imread(path_inputs[2])

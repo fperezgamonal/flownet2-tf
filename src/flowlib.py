@@ -180,6 +180,7 @@ def segment_flow(flow):
     return seg
 
 
+# TODO: add other metrics available in the MATLAB script (EPEmat, EPEumat, S0-10, S10-40, S40+)
 def flow_error(tu, tv, u, v):
     """
     Calculate average end point error
