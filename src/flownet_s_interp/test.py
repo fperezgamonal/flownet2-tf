@@ -85,8 +85,8 @@ if __name__ == '__main__':
     FLAGS = parser.parse_args()
 
     # Verify arguments are valid
-    if not os.path.exists(FLAGS.image_paths):
-        raise ValueError('image_a path must exist')
+    if not os.path.exists(FLAGS.input_a):
+        raise ValueError('Path to input_a (first image) must exist')
     if not os.path.isdir(FLAGS.out):
         raise ValueError('out directory must exist')
     main()
