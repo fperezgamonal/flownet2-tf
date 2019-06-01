@@ -218,7 +218,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     metrics['EPEall'] = mepe
 
     # Check if there are any occluded pixels
-    if sum(occ_mask[:]) > 0:
+    if occ_mask.size:  # array is not empty
         # EPE-matched (pixels that are not occluded)
         # Always mask out invalid pixels (inv_mask == 1)
         # For matched we want to avoid the 1's
