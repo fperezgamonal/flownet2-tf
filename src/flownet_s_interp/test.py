@@ -47,14 +47,14 @@ if __name__ == '__main__':
         type=str,
         required=False,
         help='Path to matches mask',
-        default='frame_00186_dm_mask.png',
+        default='data/samples/sintel/frame_00186_dm_mask.png',
     )
     parser.add_argument(
         '--sparse_flow',
         type=str,
         required=False,
         help='Sparse flow initialized from sparse matches',
-        default='frame_00186_dm_sparse_flow.flo',
+        default='data/samples/sintel/frame_00186_dm_sparse_flow.flo',
     )
     parser.add_argument(
         '--out',
@@ -82,7 +82,7 @@ if __name__ == '__main__':
         type=str,
         required=False,
         help='Path to ground truth flow so we can compute error metrics',
-        default='frame_00186.flo',
+        default='data/samples/sintel/frame_00186.flo',
     )
     FLAGS = parser.parse_args()
 
