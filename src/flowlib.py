@@ -181,9 +181,132 @@ def segment_flow(flow):
 
 
 # TODO: add other metrics available in the MATLAB script (EPEmat, EPEumat, S0-10, S10-40, S40+)
+def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
+    """
+    Computes the metrics (if enough masks are provided) of MPI-Sintel (EPEall, EPEmat, EPEumat, S0-10, S10-40, S40+)
+        -NOTE: flow_error_mask discards the pixels with the passed value (i.e.: uses the 'complementary' mask).
+    Based on the original MATLAB code from Stefan Roth. Changed by Ferran Pérez Gamonal to compute MPI-Sintel metrics.
+    Ported here from MATLABs implementation (the original code can be found in the supplemental material of the
+    following publication: http://www.ipol.im/pub/art/2019/238/)
+    :param est_flow: estimated optical flow with shape: (height, width, 2)
+    :param gt_flow: ground truth optical flow with shape: (height, width, 2)
+    :return: dictionary with computed metrics (NaN if it cannot be computed, no masks)
+    """
+    metrics = dict([])
+    bord = 0
+    height, width, _ = gt_flow.shape
+    # Separate gt flow fields (horizontal + vertical)
+    of_gt_x = gt_flow[:, :, 0]
+    of_gt_y = gt_flow[:, :, 1]
+
+    # Separate est flow fields (horizontal + vertical)
+    of_est_x = est_flow[:, :, 0]
+    of_est_y = est_flow[:, :, 1]
+
+    if occ_mask is not None:
+        occ_mask = occ_mask == 255  # check that once read the value is 255
+    else:
+        occ_mask = np.full((height, width), False)
+
+    if inv_mask is not None:
+        inv_mask = inv_mask == 255  # check that once read the value is 255
+    else:
+        inv_mask = np.full((height, width), False)  # e.g.: every pixel has a valid flow
+
+    # EPE all
+    mepe = flow_error(of_gt_x, of_gt_y, of_est_x, of_est_y)
+    metrics['EPEall'] = mepe
+
+    # Check if there are any occluded pixels
+    if sum(occ_mask[:]) > 0:
+        # EPE-matched (pixels that are not occluded)
+        # Always mask out invalid pixels (inv_mask == 1)
+        # For matched we want to avoid the 1's
+        mat_occ_msk = occ_mask | inv_mask  # 0's are valid and non-occluded ==> gt_value=1 (rejected value)
+        mat_mepe = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, mat_occ_msk, 1, bord)
+
+        # EPE-unmatched (pixels that are occluded)
+        # " " " invalid pixels
+        # For unmatched we want to avoid the 0's
+        un_occ_msk = occ_mask & ~inv_mask  # 1's are valid and occluded
+        umat_mepe = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, un_occ_msk, 0, bord)
+    else:
+        mat_mepe = float('NaN')
+        umat_mepe = float('NaN')
+
+    metrics['EPEmat'] = mat_mepe
+    metrics['EPEumat'] = umat_mepe
+
+    # Masks for S0 - 10, S10 - 40 and S40 +)
+    l1_of = np.sqrt(of_gt_x ** 2 + of_gt_y ** 2)
+    disp_mask = l1_of
+    disp_mask[disp_mask < 10] = 0
+    disp_mask[disp_mask >= 10 & disp_mask <= 40] = 1
+    disp_mask[disp_mask > 40] = 2
+
+    # Actually compute S0 - 10, S10 - 40 and S40 +
+    pixels_disp_1 = sum(disp_mask[:] == 0)  # S0-10
+    pixels_disp_2 = sum(disp_mask[:] == 1)  # S10-40
+    pixels_disp_3 = sum(disp_mask[:] == 2)  # S40+
+
+    # Remember that flow_error_mask ignores the values equal to gt_value in the mask
+    # So, for S0-10, we want to pass only the pixels with a velocity within the 0-10 range
+    # We pass 1 in this position, -1 elsewhere (number different than the labels 0 through 2)
+    # ======= S0-10 =======
+    if pixels_disp_1 > 0:
+        # Compute  S0 - 10 nominally
+        msk_s010 = disp_mask
+        msk_s010[msk_s010 != 0] = -1
+        msk_s010[msk_s010 == 0] = 1
+        msk_s010[msk_s010 == -1] = 0
+        # Mask out invalid pixels(defined in the 'invalid' folder)
+        # % We want to take into account only the valid and values = 1 in msk_s010
+        msk_s010 = msk_s010 & ~inv_mask
+        s0_10 = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s010, 0, bord)
+    else:
+        s0_10 = float('NaN')
+
+    metrics['S0-10'] = s0_10
+
+    # ======= S10-40 =======
+    if pixels_disp_2 > 0:
+        # Compute S10 - 40 nominally
+        msk_s1040 = disp_mask  # have value 1
+        msk_s1040[msk_s1040 != 1] = -1
+        msk_s1040[msk_s1040 == -1] = 0
+
+        # Mask out the invalid pixels
+        # Same reasoning as s0 - 10 mask
+        msk_s1040 = msk_s1040 & ~inv_mask
+        # The desired pixels have already value 1, we are done.
+        s10_40 = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s1040, 0, bord)
+    else:
+        s10_40 = float('NaN')
+
+    metrics['S10-40'] = s10_40
+
+    # ======= S40+ =======
+    if pixels_disp_3 > 0:
+        # Compute S40+ nominally
+        msk_s40plus = disp_mask
+        msk_s40plus[msk_s40plus != 2] = -1
+        msk_s40plus[msk_s40plus == 2] = 1
+        msk_s40plus[msk_s40plus == -1] = 0
+        # Mask out the invalid pixels
+        # Same reasoning as s0 - 10 and s10 - 40 masks
+        msk_s40plus = msk_s40plus & ~inv_mask
+        s40plus = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s40plus, 0, bord)
+    else:
+        s40plus = float('NaN')
+
+    metrics['S40plus'] = s40plus
+
+    return metrics
+
+
 def flow_error(tu, tv, u, v):
     """
-    Calculate average end point error
+    Calculate average end point error (a.k.a. EPEall, 'all' as for all pixels in the image)
     :param tu: ground-truth horizontal flow map
     :param tv: ground-truth vertical flow map
     :param u:  estimated horizontal flow map
@@ -209,6 +332,63 @@ def flow_error(tu, tv, u, v):
     sv[idxUnknow] = 0
 
     ind2 = [(np.absolute(stu) > smallflow) | (np.absolute(stv) > smallflow)]
+    index_su = su[ind2]
+    index_sv = sv[ind2]
+    an = 1.0 / np.sqrt(index_su ** 2 + index_sv ** 2 + 1)
+    un = index_su * an
+    vn = index_sv * an
+
+    index_stu = stu[ind2]
+    index_stv = stv[ind2]
+    tn = 1.0 / np.sqrt(index_stu ** 2 + index_stv ** 2 + 1)
+    tun = index_stu * tn
+    tvn = index_stv * tn
+
+    '''
+    angle = un * tun + vn * tvn + (an * tn)
+    index = [angle == 1.0]
+    angle[index] = 0.999
+    ang = np.arccos(angle)
+    mang = np.mean(ang)
+    mang = mang * 180 / np.pi
+    '''
+
+    epe = np.sqrt((stu - su) ** 2 + (stv - sv) ** 2)
+    epe = epe[ind2]
+    mepe = np.mean(epe)
+    return mepe
+
+
+def flow_error_mask(tu, tv, u, v, mask=None, gt_value=0, bord=0):
+    """
+    Calculate average end point error
+    :param tu: ground-truth horizontal flow map
+    :param tv: ground-truth vertical flow map
+    :param u:  estimated horizontal flow map
+    :param v:  estimated vertical flow map
+    :param mask: binary mask that specifies a region of interest
+    :param gt_value: specifies if we ignore 0's or 1's in the computation of a certain metric
+    :return: End point error of the estimated flow
+    """
+    smallflow = 0.0
+    '''
+    stu = tu[bord+1:end-bord,bord+1:end-bord]
+    stv = tv[bord+1:end-bord,bord+1:end-bord]
+    su = u[bord+1:end-bord,bord+1:end-bord]
+    sv = v[bord+1:end-bord,bord+1:end-bord]
+    '''
+    stu = tu[:]
+    stv = tv[:]
+    su = u[:]
+    sv = v[:]
+
+    idxUnknown = (abs(stu[:]) > UNKNOWN_FLOW_THRESH) | (abs(stv[:]) > UNKNOWN_FLOW_THRESH | mask[:] == gt_value)
+    stu[idxUnknown] = 0
+    stv[idxUnknown] = 0
+    su[idxUnknown] = 0
+    sv[idxUnknown] = 0
+
+    ind2 = [(np.absolute(stu[:]) > smallflow) | (np.absolute(stv[:]) > smallflow)]
     index_su = su[ind2]
     index_sv = sv[ind2]
     an = 1.0 / np.sqrt(index_su ** 2 + index_sv ** 2 + 1)

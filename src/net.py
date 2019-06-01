@@ -9,7 +9,7 @@ import sys
 import datetime
 import uuid
 from imageio import imread, imsave
-from .flowlib import flow_to_image, write_flow, read_flow
+from .flowlib import flow_to_image, write_flow, read_flow, compute_all_metrics
 from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FINETUNE_SINTEL_S1, FINETUNE_SINTEL_S2, \
     FINETUNE_SINTEL_S3, FINETUNE_SINTEL_S4, FINETUNE_SINTEL_S5, FINETUNE_KITTI_S1, FINETUNE_KITTI_S2,\
     FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LONG_SCHEDULE_TMP
@@ -250,7 +250,8 @@ class Net(object):
         return y_hat[0], y_hat[1]
 
     def test(self, checkpoint, input_a_path, input_b_path=None, matches_a_path=None, sparse_flow_path=None,
-             out_path='./', input_type='image_pairs', save_image=True, save_flo=True, compute_metrics=True):
+             out_path='./', input_type='image_pairs', save_image=True, save_flo=True, compute_metrics=True,
+             gt_flow=None, occ_mask=None, inv_mask=None):
         """
 
         :param checkpoint:
@@ -335,10 +336,23 @@ class Net(object):
                 full_out_path = os.path.join(out_path, unique_name + '_flow.flo')
                 write_flow(pred_flow, full_out_path)
 
+            if compute_metrics:
+                if occ_mask is not None:
+                    occ_mask = imread(occ_mask)
+                if inv_mask is not None:
+                    inv_mask = imread(inv_mask)
+
+                # Compute all metrics
+                metrics = compute_all_metrics(pred_flow, gt_flow, occ_mask=occ_mask, inv_mask=inv_mask)
+                print("EPEall: {0:.2f}\tEPEmat: {1:.2f}\tEPEumat: {2:.2f}\n".format(
+                    metrics['EPEall'], metrics['EPEmat'], metrics['EPEumat']))
+                print("S0-10: {0:.2f}\tS10-40: {1:.2f}\tS40+: {2:.2f}\n".format(
+                    metrics['S0-10'], metrics['S10-40'], metrics['S40plus']))
+
     # TODO: double-check the number of columns of the txt file to ensure it is OK
     # Each line will define a set of inputs. By doing so, we reduce complexity and avoid errors due to "forced" sorting
     def test_batch(self, checkpoint, image_paths, out_path, input_type='image_pairs', save_image=True, save_flo=True,
-                   compute_metrics=True):
+                   compute_metrics=True, log_metrics2file=False):
         """
         Run inference on a set of images defined in .txt files
         :param checkpoint: the path to the pre-trained model weights
@@ -347,7 +361,8 @@ class Net(object):
         :param input_type: whether we are dealing with two consecutive frames or one frame + matches (interpolation)
         :param save_image: whether to save a png visualization (Middlebury colour code) of the flow
         :param save_flo: whether to save the 'raw' .flo file (useful to compute errors and such)
-        :param compute_metrics:
+        :param compute_metrics: whether to compute error metrics or not
+        :param log_metrics2file: whether to log the metrics to a file instead of printing them to stdout
         :return:
         """
         # Build Graph
@@ -397,34 +412,70 @@ class Net(object):
                     frame_1 = None
                     matches_0 = imread(path_inputs[1])
                     sparse_flow_0 = read_flow(path_inputs[2])
-                elif len(path_inputs) == 3 and input_type == 'image_pairs':  # image1 + image2 + ground truth flow
+
+                # image1 + image2 + ground truth flow
+                elif len(path_inputs) == 3 and input_type == 'image_pairs':
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
                     matches_0 = None
                     sparse_flow_0 = None
                     gt_flow_0 = read_flow(path_inputs[2])
-                elif len(path_inputs) == 4 and input_type == 'image_matches': # img1 + matches + sparse + gt flow
+
+                # img1 + matches + sparse + gt flow
+                elif len(path_inputs) == 4 and input_type == 'image_matches':
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
                     matches_0 = imread(path_inputs[1])
                     sparse_flow_0 = read_flow(path_inputs[2])
                     gt_flow_0 = read_flow(path_inputs[3])
+
                 # img1 + img2 + gtflow + occ_mask
                 elif len(path_inputs) == 4 and input_type == 'image_pairs' and compute_metrics:
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
                     matches_0 = None
                     sparse_flow_0 = None
+                    gt_flow_0 = read_flow(path_inputs[2])
+                    occ_mask_0 = imread(path_inputs[3])
+
+                # img1 + img2 + gtflow + occ_mask + inv_mask
+                elif len(path_inputs) == 5 and input_type == 'image_pairs' and compute_metrics:
+                    frame_0 = imread(path_inputs[0])
+                    frame_1 = imread(path_inputs[1])
+                    matches_0 = None
+                    sparse_flow_0 = None
+                    gt_flow_0 = read_flow(path_inputs[2])
+                    occ_mask_0 = imread(path_inputs[3])
+                    inv_mask_0 = imread(path_inputs[4])
+
+                # img1 + mtch + spflow + gt_flow + occ_mask
+                elif len(path_inputs) == 5 and input_type == 'image_matches' and compute_metrics:
+                    frame_0 = imread(path_inputs[0])
+                    frame_1 = None
+                    matches_0 = imread(path_inputs[1])
+                    sparse_flow_0 = read_flow(path_inputs[2])
                     gt_flow_0 = read_flow(path_inputs[3])
                     occ_mask_0 = imread(path_inputs[4])
 
-                # finish adding extra conditions for invalid mask and occ_mask + image_matches
-                # img1 + img2 + gtflow + occ_mask
+                # img1 + mtch + spflow + gt_flow + occ_mask + inv_mask
+                elif len(path_inputs) == 6 and input_type == 'image_matches' and compute_metrics:
+                    frame_0 = imread(path_inputs[0])
+                    frame_1 = None
+                    matches_0 = imread(path_inputs[1])
+                    sparse_flow_0 = read_flow(path_inputs[2])
+                    gt_flow_0 = read_flow(path_inputs[3])
+                    occ_mask_0 = imread(path_inputs[4])
+                    inv_mask_0 = imread(path_inputs[5])
+
+                # img1 + img2 + spflow + gtflow + occ_mask
                 else:  # path to all inputs (read all and decide what to use based on 'input_type')
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
                     matches_0 = imread(path_inputs[2])
                     sparse_flow_0 = read_flow(path_inputs[3])
+                    gt_flow_0 = read_flow(path_inputs[4])
+                    occ_mask_0 = imread(path_inputs[5])
+                    inv_mask_0 = imread(path_inputs[6])
 
                 frame_0, frame_1, matches_0, sparse_flow_0, x_adapt_info = self.adapt_x(frame_0, frame_1, matches_0,
                                                                                         sparse_flow_0)
@@ -464,6 +515,23 @@ class Net(object):
                 if save_flo:
                     full_out_path = os.path.join(out_path, unique_name + '_flow.flo')
                     write_flow(pred_flow, full_out_path)
+
+                if compute_metrics:
+                    # Compute all metrics
+                    metrics = compute_all_metrics(pred_flow, gt_flow_0, occ_mask=occ_mask_0, inv_mask=inv_mask_0)
+                    epe_string = "EPEall: {0:.2f}\tEPEmat: {1:.2f}\tEPEumat: {2:.2f}\n".format(
+                        metrics['EPEall'], metrics['EPEmat'], metrics['EPEumat'])
+                    s_string = "S0-10: {0:.2f}\tS10-40: {1:.2f}\tS40+: {2:.2f}\n".format(
+                        metrics['S0-10'], metrics['S10-40'], metrics['S40plus'])
+
+                    if log_metrics2file:
+                        basefile = image_paths.split()[-1]
+                        logfile = basefile.replace('.txt', '_metrics.log')
+                        with open(logfile, 'w') as logfile:
+                            logfile.writelines([epe_string, s_string])
+                    else:  # print to stdout
+                        print(epe_string)
+                        print(s_string)
 
     def train(self, log_dir, training_schedule_str, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
               checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True):
