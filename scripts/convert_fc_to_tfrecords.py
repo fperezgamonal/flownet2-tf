@@ -72,8 +72,6 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
         pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=len(indices)).start()
         for i in indices:
             if dataset == 'flying_chairs':
-                if DEBUG:
-                    print("Setting format for 'FlyingChairs'...")
                 image_a_path = os.path.join(FLAGS.data_dir, '{0:04d}_img1.png'.format(i + 1))
                 image_b_path = os.path.join(FLAGS.data_dir, '{0:04d}_img2.png'.format(i + 1))
                 flow_path = os.path.join(FLAGS.data_dir, '{0:04d}_flow.flo'.format(i + 1))
@@ -93,7 +91,6 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                      burden.  Also, we follow FlowNet2.0 training and discard a set of difficult sequences (1388, 
                      to be precise)
                 """
-                print("Setting format for 'FlyingThings3D'...")
                 image_a_path = os.path.join(FLAGS.data_dir, '{0:07d}.png'.format(i))
                 image_b_path = os.path.join(FLAGS.data_dir, '{0:07d}.png'.format(i + 1))
                 flow_path = os.path.join(FLAGS.data_dir, '{0:07d}.flo'.format(i))
@@ -108,7 +105,6 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
 
             elif dataset == 'sintel_clean':
-                print("Setting format for 'MPI-Sintel (clean pass)'...")
                 pass_dir = 'clean'
                 image_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
                 image_b_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
@@ -125,7 +121,6 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
 
             elif dataset == 'sintel_final':
-                print("Setting format for 'MPI-Sintel (final pass)'...")
                 pass_dir = 'final'
                 image_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
                 image_b_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
@@ -141,7 +136,6 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                 else:
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
             elif dataset == 'sintel_all':
-                print("Setting format for 'MPI-Sintel (final + clean pass)'...")
                 pass_dir = 'final'
                 image_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.png'.format(i+1))
                 image_b_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.png'.format(i+2))
@@ -205,8 +199,7 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                 print("OG shapes before padding (images-matches): ")
                 print("img_a: {0}\nimg_b: {1}\nmch_a: {2}".format(image_a.shape, image_b.shape, matches_a.shape))
             original_shape = image_a.shape
-            print("height_a % divisor: {} % {} = {}".format(height_a, divisor, height_a % divisor))
-            print("width_a % divisor: {} % {} = {}".format(width_a, divisor, width_a % divisor))
+
             if height_a % divisor != 0 or width_a % divisor != 0:
                 if DEBUG:
                     print("{}x{} dimensions are not both multiple of {}, must pad...".format(height_a, width_a,
