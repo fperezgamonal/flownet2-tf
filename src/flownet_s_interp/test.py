@@ -15,7 +15,6 @@ def main():
         net.test(
             checkpoint='./checkpoints/FlowNetS/flownet-S.ckpt-0',
             input_a_path=FLAGS.input_a,
-            input_b_path=None,
             matches_a_path=FLAGS.matches_a,
             out_path=FLAGS.out,
             input_type=FLAGS.input_type,
@@ -40,31 +39,26 @@ if __name__ == '__main__':
         type=str,
         required=False,
         help='Path to first image',
-        default='data/samples/0img0.ppm'
-    )
-    parser.add_argument(
-        '--input_b',
-        type=str,
-        required=False,
-        help='Path to second image',
-        default='data/samples/0img1.ppm'
+        default='data/samples/sintel/frame_00186.png',
     )
     parser.add_argument(
         '--matches_a',
         type=str,
         required=False,
         help='Path to matches mask',
+        default='frame_00186_dm_mask.png',
     )
     parser.add_argument(
         '--sparse_flow',
         type=str,
         required=False,
         help='Sparse flow initialized from sparse matches',
+        default='frame_00186_dm_sparse_flow.flo',
     )
     parser.add_argument(
         '--out',
         type=str,
-        required=True,
+        required=False,
         help='Path to the output folder where the final flow (and/or) visualisation will be stored',
         default='./'
     )
@@ -87,6 +81,5 @@ if __name__ == '__main__':
     # Verify arguments are valid
     if not os.path.exists(FLAGS.input_a):
         raise ValueError('Path to input_a (first image) must exist')
-    if not os.path.isdir(FLAGS.out):
-        raise ValueError('out directory must exist')
+    
     main()
