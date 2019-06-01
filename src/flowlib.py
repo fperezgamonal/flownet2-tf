@@ -382,7 +382,7 @@ def flow_error_mask(tu, tv, u, v, mask=None, gt_value=0, bord=0):
     su = u[:]
     sv = v[:]
 
-    idxUnknown = (abs(stu[:]) > UNKNOWN_FLOW_THRESH) | (abs(stv[:]) > UNKNOWN_FLOW_THRESH | mask[:] == gt_value)
+    idxUnknown = (abs(stu[:]) > UNKNOWN_FLOW_THRESH) | (abs(stv[:]) > UNKNOWN_FLOW_THRESH) | (mask[:] == gt_value)
     stu[idxUnknown] = 0
     stv[idxUnknown] = 0
     su[idxUnknown] = 0
