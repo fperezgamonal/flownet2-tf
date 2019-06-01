@@ -72,15 +72,15 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
         pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=len(indices)).start()
         for i in indices:
             if dataset == 'flying_chairs':
-                image_a_path = os.path.join(FLAGS.data_dir, '{0:04d}_img1.png'.format(i + 1))
-                image_b_path = os.path.join(FLAGS.data_dir, '{0:04d}_img2.png'.format(i + 1))
-                flow_path = os.path.join(FLAGS.data_dir, '{0:04d}_flow.flo'.format(i + 1))
+                image_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1.png'.format(i + 1))
+                image_b_path = os.path.join(FLAGS.data_dir, '{0:05d}_img2.png'.format(i + 1))
+                flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_flow.flo'.format(i + 1))
                 if matcher == 'sift':
-                    matches_a_path = os.path.join(FLAGS.data_dir, '{0:04d}_img1_sift_mask.png'.format(i + 1))
-                    sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:04d}_img1_sift_sparse_flow.flo'.format(i + 1))
+                    matches_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_sift_mask.png'.format(i + 1))
+                    sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_sift_sparse_flow.flo'.format(i + 1))
                 elif matcher == 'deepmatching':
-                    matches_a_path = os.path.join(FLAGS.data_dir, '{0:04d}_img1_dm_mask.png'.format(i + 1))
-                    sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:04d}_img1_dm_sparse_flow.flo'.format(i + 1))
+                    matches_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_dm_mask.png'.format(i + 1))
+                    sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_dm_sparse_flow.flo'.format(i + 1))
                 # add more matchers if need be (more elif's)
                 else:
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
