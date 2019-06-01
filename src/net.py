@@ -340,6 +340,7 @@ class Net(object):
                 write_flow(pred_flow, full_out_path)
 
             if compute_metrics and gt_flow is not None:
+                gt_flow = read_flow(gt_flow)
                 if occ_mask is not None:
                     occ_mask = imread(occ_mask)
                 if inv_mask is not None:
