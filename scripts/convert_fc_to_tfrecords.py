@@ -291,7 +291,7 @@ def main():
         print("Chosen dataset is 'FlyingThings3D'")
         train_name = 'ft3d_train_all'
         val_name = 'ft3d_val_all'
-        set_name = 'flying_things3d'
+        set_name = 'flying_things3D'
     elif 'sintel_clean' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'sintel_clean':
         print("Chosen dataset is 'MPI-Sintel (clean pass)'")
         train_name = 'sintel_clean_train_all'
@@ -320,7 +320,7 @@ def main():
     print("Current split: {}".format(train_name))
     convert_dataset(train_idxs, train_name, matcher=FLAGS.matcher, dataset=set_name)
     print("Current split: {}".format(val_name))
-    # convert_dataset(val_idxs, val_name, matcher=FLAGS.matcher, dataset=set_name)
+    convert_dataset(val_idxs, val_name, matcher=FLAGS.matcher, dataset=set_name)
 
 
 if __name__ == '__main__':
