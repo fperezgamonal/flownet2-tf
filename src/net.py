@@ -9,7 +9,7 @@ import sys
 import datetime
 import uuid
 from imageio import imread, imsave
-from .flowlib import flow_to_image, write_flow, read_flow, compute_all_metrics
+from .flowlib import flow_to_image, write_flow, read_flow, compute_all_metrics, get_metrics
 from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FINETUNE_SINTEL_S1, FINETUNE_SINTEL_S2, \
     FINETUNE_SINTEL_S3, FINETUNE_SINTEL_S4, FINETUNE_SINTEL_S5, FINETUNE_KITTI_S1, FINETUNE_KITTI_S2,\
     FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LONG_SCHEDULE_TMP
@@ -22,7 +22,6 @@ VAL_INTERVAL = 1000  # each N samples, we evaluate the validation set
 class Mode(Enum):
     TRAIN = 1
     TEST = 2
-
 
 class Net(object):
     __metaclass__ = abc.ABCMeta
@@ -348,10 +347,8 @@ class Net(object):
 
                 # Compute all metrics
                 metrics = compute_all_metrics(pred_flow, gt_flow, occ_mask=occ_mask, inv_mask=inv_mask)
-                print("EPEall: {0:.4f}\tEPEmat: {1:.2f}\tEPEumat: {2:.4f}\n".format(
-                    metrics['EPEall'], metrics['EPEmat'], metrics['EPEumat']))
-                print("S0-10: {0:.4f}\tS10-40: {1:.4f}\tS40+: {2:.4f}\n".format(
-                    metrics['S0-10'], metrics['S10-40'], metrics['S40plus']))
+                all_metrics, mat_metrics, umat_metrics, dis_metrics = get_metrics(metrics)
+                print("{0}\n{1}\n{2}\n{3}".format(all_metrics, mat_metrics, umat_metrics, dis_metrics))
 
     # TODO: double-check the number of columns of the txt file to ensure it is OK
     # Each line will define a set of inputs. By doing so, we reduce complexity and avoid errors due to "forced" sorting
@@ -523,19 +520,15 @@ class Net(object):
                 if compute_metrics:
                     # Compute all metrics
                     metrics = compute_all_metrics(pred_flow, gt_flow_0, occ_mask=occ_mask_0, inv_mask=inv_mask_0)
-                    epe_string = "EPEall: {0:.4f}\tEPEmat: {1:.4f}\tEPEumat: {2:.4f}\n".format(
-                        metrics['EPEall'], metrics['EPEmat'], metrics['EPEumat'])
-                    s_string = "S0-10: {0:.4f}\tS10-40: {1:.2f}\tS40+: {2:.4f}\n".format(
-                        metrics['S0-10'], metrics['S10-40'], metrics['S40plus'])
+                    all_metrics, mat_metrics, umat_metrics, dis_metrics = get_metrics(metrics)
 
                     if log_metrics2file:
                         basefile = image_paths.split()[-1]
                         logfile = basefile.replace('.txt', '_metrics.log')
                         with open(logfile, 'w') as logfile:
-                            logfile.writelines([epe_string, s_string])
+                            logfile.writelines([all_metrics, mat_metrics, umat_metrics, dis_metrics])
                     else:  # print to stdout
-                        print(epe_string)
-                        print(s_string)
+                        print("{0}\n{1}\n{2}\n{3}".format(all_metrics, mat_metrics, umat_metrics, dis_metrics))
 
     def train(self, log_dir, training_schedule_str, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
               checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True):

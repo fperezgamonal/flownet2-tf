@@ -180,6 +180,18 @@ def segment_flow(flow):
     return seg
 
 
+def get_metrics(metrics):
+    all_string = "(all)\tMANG = {0:.4f}\tSTDANG = {1:.4f}\tMEPE = {2:.4f}".format(
+        metrics['mangall'], metrics['stdangall'], metrics['EPEall'])
+    mat_string = "(mat)\tMANG = {0:.4f}\tSTDANG = {1:.4f}\tMEPE = {2:.4f}".format(
+        metrics['mangmat'], metrics['stdangmat'], metrics['EPEmat'])
+    umat_string = "(umt)\tMANG = {0:.4f}\tSTDANG = {1:.4f}\tMEPE = {2:.4f}".format(
+        metrics['mangumat'], metrics['stdangumat'], metrics['EPEumat'])
+    dis_string = "(dis)\tS0-10 = {0:.4f}\tS10-40 = {1:.2f}\tS40+ = {2:.4f}".format(
+        metrics['S0-10'], metrics['S10-40'], metrics['S40plus'])
+    return all_string, mat_string, umat_string, dis_string
+
+
 # TODO: add other metrics available in the MATLAB script (EPEmat, EPEumat, S0-10, S10-40, S40+)
 def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     """
