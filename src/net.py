@@ -264,6 +264,9 @@ class Net(object):
         :param save_image:
         :param save_flo:
         :param compute_metrics:
+        :param gt_flow:
+        :param occ_mask:
+        :param inv_mask:
         :return:
         """
         input_a = imread(input_a_path)
@@ -336,7 +339,7 @@ class Net(object):
                 full_out_path = os.path.join(out_path, unique_name + '_flow.flo')
                 write_flow(pred_flow, full_out_path)
 
-            if compute_metrics:
+            if compute_metrics and gt_flow is not None:
                 if occ_mask is not None:
                     occ_mask = imread(occ_mask)
                 if inv_mask is not None:

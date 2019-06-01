@@ -18,7 +18,8 @@ def main():
             matches_a_path=FLAGS.matches_a,
             out_path=FLAGS.out,
             input_type=FLAGS.input_type,
-            sparse_flow_path=FLAGS.sparse_flow
+            sparse_flow_path=FLAGS.sparse_flow,
+            gt_flow=FLAGS.gt_flow,
         )
     elif os.path.isfile(FLAGS.input_a) and FLAGS.input_a[:-4] is '.txt':  # txt with image list (batch-like)
         net.test_batch(
@@ -75,6 +76,13 @@ if __name__ == '__main__':
         required=False,
         help='whether to compute error metrics or not (if True all available metrics are computed, check flowlib.py)',
         default=True,
+    )
+    parser.add_argument(
+        '--gt_flow',
+        type=str,
+        required=False,
+        help='Path to ground truth flow so we can compute error metrics',
+        default='frame_00186.flo',
     )
     FLAGS = parser.parse_args()
 
