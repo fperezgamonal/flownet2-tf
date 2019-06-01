@@ -150,7 +150,7 @@ class Net(object):
 
             if sparse_flow is not None and matches_a is not None:
                 matches_a = np.pad(matches_a, padding, mode='constant', constant_values=0.)
-                sparse_flow = np.pad(input_b, padding, mode='constant', constant_values=0.)
+                sparse_flow = np.pad(sparse_flow, padding, mode='constant', constant_values=0.)
             else:
                 input_b = np.pad(input_b, padding, mode='constant', constant_values=0.)
         else:

@@ -81,5 +81,5 @@ if __name__ == '__main__':
     # Verify arguments are valid
     if not os.path.exists(FLAGS.input_a):
         raise ValueError('Path to input_a (first image) must exist')
-    
+
     main()
