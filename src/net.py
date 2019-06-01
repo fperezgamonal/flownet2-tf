@@ -348,9 +348,9 @@ class Net(object):
 
                 # Compute all metrics
                 metrics = compute_all_metrics(pred_flow, gt_flow, occ_mask=occ_mask, inv_mask=inv_mask)
-                print("EPEall: {0:.2f}\tEPEmat: {1:.2f}\tEPEumat: {2:.2f}\n".format(
+                print("EPEall: {0:.4f}\tEPEmat: {1:.2f}\tEPEumat: {2:.4f}\n".format(
                     metrics['EPEall'], metrics['EPEmat'], metrics['EPEumat']))
-                print("S0-10: {0:.2f}\tS10-40: {1:.2f}\tS40+: {2:.2f}\n".format(
+                print("S0-10: {0:.4f}\tS10-40: {1:.4f}\tS40+: {2:.4f}\n".format(
                     metrics['S0-10'], metrics['S10-40'], metrics['S40plus']))
 
     # TODO: double-check the number of columns of the txt file to ensure it is OK
@@ -523,9 +523,9 @@ class Net(object):
                 if compute_metrics:
                     # Compute all metrics
                     metrics = compute_all_metrics(pred_flow, gt_flow_0, occ_mask=occ_mask_0, inv_mask=inv_mask_0)
-                    epe_string = "EPEall: {0:.2f}\tEPEmat: {1:.2f}\tEPEumat: {2:.2f}\n".format(
+                    epe_string = "EPEall: {0:.4f}\tEPEmat: {1:.4f}\tEPEumat: {2:.4f}\n".format(
                         metrics['EPEall'], metrics['EPEmat'], metrics['EPEumat'])
-                    s_string = "S0-10: {0:.2f}\tS10-40: {1:.2f}\tS40+: {2:.2f}\n".format(
+                    s_string = "S0-10: {0:.4f}\tS10-40: {1:.2f}\tS40+: {2:.4f}\n".format(
                         metrics['S0-10'], metrics['S10-40'], metrics['S40plus'])
 
                     if log_metrics2file:

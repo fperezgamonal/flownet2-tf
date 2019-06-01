@@ -214,8 +214,10 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         inv_mask = np.full((height, width), False)  # e.g.: every pixel has a valid flow
 
     # EPE all
-    mepe = flow_error(of_gt_x, of_gt_y, of_est_x, of_est_y)
+    mang, stdang, mepe = flow_error(of_gt_x, of_gt_y, of_est_x, of_est_y)
     metrics['EPEall'] = mepe
+    metrics['mangall'] = mang
+    metrics['stdangall'] = stdang
 
     # Check if there are any occluded pixels
     if occ_mask.size:  # array is not empty
@@ -223,19 +225,28 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         # Always mask out invalid pixels (inv_mask == 1)
         # For matched we want to avoid the 1's
         mat_occ_msk = occ_mask | inv_mask  # 0's are valid and non-occluded ==> gt_value=1 (rejected value)
-        mat_mepe = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, mat_occ_msk, 1, bord)
+        mat_mang, mat_stdang, mat_mepe = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, mat_occ_msk, True, bord)
 
         # EPE-unmatched (pixels that are occluded)
         # " " " invalid pixels
         # For unmatched we want to avoid the 0's
         un_occ_msk = occ_mask & ~inv_mask  # 1's are valid and occluded
-        umat_mepe = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, un_occ_msk, 0, bord)
+        umat_mang, umat_stdang, umat_mepe = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, un_occ_msk, False,
+                                                            bord)
     else:
         mat_mepe = float('NaN')
         umat_mepe = float('NaN')
+        mat_mang = float('NaN')
+        umat_mang = float('NaN')
+        mat_stdang = float('NaN')
+        umat_stdang= float('NaN')
 
     metrics['EPEmat'] = mat_mepe
+    metrics['mangmat'] = mat_mang
+    metrics['stdangmat'] = mat_stdang
     metrics['EPEumat'] = umat_mepe
+    metrics['mangumat'] = umat_mang
+    metrics['stdangumat'] = umat_stdang
 
     # Masks for S0 - 10, S10 - 40 and S40 +)
     l1_of = np.sqrt(of_gt_x ** 2 + of_gt_y ** 2)
@@ -263,9 +274,8 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         msk_s010 = msk_s010 == 1  # convert to bool! (True/False in python)
         # Mask out invalid pixels(defined in the 'invalid' folder)
         # % We want to take into account only the valid and values = 1 in msk_s010
-        print("type(inv_mask): {0}".format(inv_mask.dtype))
         msk_s010 = (msk_s010) & (~inv_mask)
-        s0_10 = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s010, False, bord)
+        _, _, s0_10 = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s010, False, bord)
     else:
         s0_10 = float('NaN')
 
@@ -283,7 +293,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         # Same reasoning as s0 - 10 mask
         msk_s1040 = (msk_s1040) & (~inv_mask)
         # The desired pixels have already value 1, we are done.
-        s10_40 = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s1040, False, bord)
+        _, _, s10_40 = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s1040, False, bord)
     else:
         s10_40 = float('NaN')
 
@@ -300,7 +310,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         # Mask out the invalid pixels
         # Same reasoning as s0 - 10 and s10 - 40 masks
         msk_s40plus = (msk_s40plus) & (~inv_mask)
-        s40plus = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s40plus, False, bord)
+        _, _, s40plus = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s40plus, False, bord)
     else:
         s40plus = float('NaN')
 
@@ -349,19 +359,18 @@ def flow_error(tu, tv, u, v):
     tun = index_stu * tn
     tvn = index_stv * tn
 
-    '''
     angle = un * tun + vn * tvn + (an * tn)
     index = [angle == 1.0]
     angle[index] = 0.999
     ang = np.arccos(angle)
     mang = np.mean(ang)
     mang = mang * 180 / np.pi
-    '''
+    stdang = np.std(ang * 180 / np.pi)
 
     epe = np.sqrt((stu - su) ** 2 + (stv - sv) ** 2)
     epe = epe[ind2]
     mepe = np.mean(epe)
-    return mepe
+    return mang, stdang, mepe
 
 
 def flow_error_mask(tu, tv, u, v, mask=None, gt_value=False, bord=0):
@@ -406,19 +415,18 @@ def flow_error_mask(tu, tv, u, v, mask=None, gt_value=False, bord=0):
     tun = index_stu * tn
     tvn = index_stv * tn
 
-    '''
     angle = un * tun + vn * tvn + (an * tn)
     index = [angle == 1.0]
     angle[index] = 0.999
     ang = np.arccos(angle)
     mang = np.mean(ang)
     mang = mang * 180 / np.pi
-    '''
+    stdang = np.std(ang * 180 / np.pi)
 
     epe = np.sqrt((stu - su) ** 2 + (stv - sv) ** 2)
     epe = epe[ind2]
     mepe = np.mean(epe)
-    return mepe
+    return mang, stdang, mepe
 
 
 def flow_to_image(flow):
