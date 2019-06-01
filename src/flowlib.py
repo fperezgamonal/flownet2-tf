@@ -262,7 +262,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         msk_s010[msk_s010 == -1] = 0
         # Mask out invalid pixels(defined in the 'invalid' folder)
         # % We want to take into account only the valid and values = 1 in msk_s010
-        msk_s010 = msk_s010 & ~inv_mask
+        msk_s010 = (msk_s010) & (~inv_mask)
         s0_10 = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s010, 0, bord)
     else:
         s0_10 = float('NaN')
@@ -278,7 +278,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
 
         # Mask out the invalid pixels
         # Same reasoning as s0 - 10 mask
-        msk_s1040 = msk_s1040 & ~inv_mask
+        msk_s1040 = (msk_s1040) & (~inv_mask)
         # The desired pixels have already value 1, we are done.
         s10_40 = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s1040, 0, bord)
     else:
@@ -295,7 +295,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         msk_s40plus[msk_s40plus == -1] = 0
         # Mask out the invalid pixels
         # Same reasoning as s0 - 10 and s10 - 40 masks
-        msk_s40plus = msk_s40plus & ~inv_mask
+        msk_s40plus = (msk_s40plus) & (~inv_mask)
         s40plus = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s40plus, 0, bord)
     else:
         s40plus = float('NaN')
