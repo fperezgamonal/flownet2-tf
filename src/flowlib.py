@@ -245,15 +245,16 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     disp_mask[disp_mask > 40] = 2
 
     # Actually compute S0 - 10, S10 - 40 and S40 +
-    pixels_disp_1 = sum(disp_mask[:] == 0)  # S0-10
-    pixels_disp_2 = sum(disp_mask[:] == 1)  # S10-40
-    pixels_disp_3 = sum(disp_mask[:] == 2)  # S40+
+    # Note: not correct (ambiguous truth evaluation) in Python (used "number in array") instead
+    # pixels_disp_1 = sum(disp_mask[:] == 0)  # S0-10
+    # pixels_disp_2 = sum(disp_mask[:] == 1)  # S10-40
+    # pixels_disp_3 = sum(disp_mask[:] == 2)  # S40+
 
     # Remember that flow_error_mask ignores the values equal to gt_value in the mask
     # So, for S0-10, we want to pass only the pixels with a velocity within the 0-10 range
     # We pass 1 in this position, -1 elsewhere (number different than the labels 0 through 2)
     # ======= S0-10 =======
-    if pixels_disp_1 > 0:
+    if 0 in disp_mask[:]:
         # Compute  S0 - 10 nominally
         msk_s010 = disp_mask
         msk_s010[msk_s010 != 0] = -1
@@ -269,7 +270,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     metrics['S0-10'] = s0_10
 
     # ======= S10-40 =======
-    if pixels_disp_2 > 0:
+    if 1 in disp_mask[:]:
         # Compute S10 - 40 nominally
         msk_s1040 = disp_mask  # have value 1
         msk_s1040[msk_s1040 != 1] = -1
@@ -286,7 +287,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     metrics['S10-40'] = s10_40
 
     # ======= S40+ =======
-    if pixels_disp_3 > 0:
+    if 2 in disp_mask[:]:
         # Compute S40+ nominally
         msk_s40plus = disp_mask
         msk_s40plus[msk_s40plus != 2] = -1
