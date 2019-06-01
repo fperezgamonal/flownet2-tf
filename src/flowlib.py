@@ -262,7 +262,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         msk_s010[msk_s010 == -1] = 0
         # Mask out invalid pixels(defined in the 'invalid' folder)
         # % We want to take into account only the valid and values = 1 in msk_s010
-        print("type(msk_s010): {0}".format(type(msk_s010)))
+        print("type(msk_s010): {0}".format(msk_s010.dtype))
         msk_s010 = (msk_s010) & (~inv_mask)
         s0_10 = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s010, 0, bord)
     else:
