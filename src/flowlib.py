@@ -265,7 +265,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     l1_of = np.sqrt(of_gt_x ** 2 + of_gt_y ** 2)
     disp_mask = l1_of
     disp_mask[np.asarray(disp_mask < 10).nonzero()] = 0
-    disp_mask[np.asarray(disp_mask >= 10).nonzero() & np.asarray(disp_mask <= 40).nonzero()] = 1
+    disp_mask[(disp_mask >= 10) & (disp_mask <= 40)] = 1
     # careful & takes precedence to <=/>=/== (use parenthesis)
     disp_mask[disp_mask > 40] = 2
 
