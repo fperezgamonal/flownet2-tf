@@ -84,6 +84,20 @@ if __name__ == '__main__':
         help='Path to ground truth flow so we can compute error metrics',
         default='data/samples/sintel/frame_00186.flo',
     )
+    parser.add_argument(
+        '--occ_mask',
+        type=str,
+        required=False,
+        help='Path to occlusions mask (1s indicate pixel is occluded, 0 otherwise)',
+        default='data/samples/sintel/frame_00186_occ_mask.png',
+    )
+    parser.add_argument(
+        '--inv_mask',
+        type=str,
+        required=False,
+        help='Path to invalid mask with pixels that should not be considered when computing metrics = 1(invalid flow)',
+        default='data/samples/sintel/frame_00186_inv_mask.png',
+    )
     FLAGS = parser.parse_args()
 
     # Verify arguments are valid

@@ -12,9 +12,10 @@ import numpy as np
 import matplotlib.colors as cl
 import matplotlib.pyplot as plt
 from PIL import Image
+from imageio import imread
 
 
-UNKNOWN_FLOW_THRESH = 1e7
+UNKNOWN_FLOW_THRESH = 1e9
 SMALLFLOW = 0.0
 LARGEFLOW = 1e8
 DEBUG = False  # flag to print out verbose information like: range of optical flow, dimensions of matrix, etc.
@@ -407,18 +408,18 @@ def flow_error_mask(tu, tv, u, v, mask=None, gt_value=False, bord=0):
     :return: End point error of the estimated flow
     """
     smallflow = 0.0
-    '''
-    stu = tu[bord+1:end-bord,bord+1:end-bord]
-    stv = tv[bord+1:end-bord,bord+1:end-bord]
-    su = u[bord+1:end-bord,bord+1:end-bord]
-    sv = v[bord+1:end-bord,bord+1:end-bord]
-    '''
+
+    # stu = tu[bord+1:end-bord,bord+1:end-bord]
+    # stv = tv[bord+1:end-bord,bord+1:end-bord]
+    # su = u[bord+1:end-bord,bord+1:end-bord]
+    # sv = v[bord+1:end-bord,bord+1:end-bord]
+
     stu = tu[:]
     stv = tv[:]
     su = u[:]
     sv = v[:]
 
-    idxUnknown = (abs(stu[:]) > UNKNOWN_FLOW_THRESH) | (abs(stv[:]) > UNKNOWN_FLOW_THRESH) | (mask[:] == gt_value)
+    idxUnknown = (abs(stu) > UNKNOWN_FLOW_THRESH) | (abs(stv) > UNKNOWN_FLOW_THRESH) | (mask == gt_value)
     stu[idxUnknown] = 0
     stv[idxUnknown] = 0
     su[idxUnknown] = 0
@@ -732,3 +733,40 @@ def make_color_wheel():
     colorwheel[col:col+MR, 0] = 255
 
     return colorwheel
+
+
+def test_error_metrics(est_path, gt_path, occ_path=None, inv_path=None):
+    """
+    Function to test that the flow error metrics are computed correctly (checking against OG Matlab implementation)
+    :param est_path: path to predicted/estimated flow
+    :param gt_path: path to the corresponding ground truth flow
+    :param occ_path: path to the occlusions mask (Sintel and Kitti, although Kitti requires more complex bool logic)
+    :param inv_path: path to the invalid pixels mask (Sintel and Kitti)
+    :return: nothing, prints metrics to stdout for debugging
+    """
+    # Read flows and masks
+    est_flow = read_flow(est_path)
+    gt_flow = read_flow(gt_path)
+    if occ_path is not None:
+        occ_mask = imread(occ_path)
+    else:
+        occ_mask = None
+    if inv_path is not None:
+        inv_mask = imread(inv_path)
+    else:
+        inv_mask = None
+
+    # Call compute_all_metrics
+    metrics = compute_all_metrics(est_flow, gt_flow, occ_mask=occ_mask, inv_mask=inv_mask)  # main debugging
+    # Get metrics properly formatted and print them out
+    all_metrics, mat_metrics, umat_metrics, dis_metrics = get_metrics(metrics)
+    print("{0}\n{1}\n{2}\n{3}".format(all_metrics, mat_metrics, umat_metrics, dis_metrics))
+
+
+if __name__ == '__main__':
+    # Test error function
+    path_to_est_flow = 'data/samples/sintel/frame_00186_flow.flo'
+    path_to_gt_flow = 'data/samples/sintel/frame_00186.flo'
+    path_to_occ_mask = 'data/samples/sintel/frame_00186_occ_mask.png'
+    path_to_inv_mask = 'data/samples/sintel/frame_00186_inv_mask.png'
+    test_error_metrics(path_to_est_flow, path_to_gt_flow, occ_path=path_to_occ_mask, inv_path=path_to_inv_mask)
