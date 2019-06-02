@@ -6,6 +6,7 @@ from .flownet_s_interp import FlowNetS_interp
 FLAGS = None
 
 
+# TODO: update other architectures test.py and train.py scripts according to FlownetS + interp
 def main():
     # Create a new network
     net = FlowNetS_interp(mode=Mode.TEST)
@@ -20,6 +21,11 @@ def main():
             input_type=FLAGS.input_type,
             sparse_flow_path=FLAGS.sparse_flow,
             gt_flow=FLAGS.gt_flow,
+            save_flo=FLAGS.save_flo,
+            save_image=FLAGS.save_image,
+            compute_metrics=FLAGS.compute_metrics,
+            occ_mask=FLAGS.occ_mask,
+            inv_mask=FLAGS.inv_mask,
         )
     elif os.path.isfile(FLAGS.input_a) and FLAGS.input_a[:-4] is '.txt':  # txt with image list (batch-like)
         net.test_batch(
@@ -27,12 +33,15 @@ def main():
             image_paths=FLAGS.input_a,
             out_path=FLAGS.out,
             input_type=FLAGS.input_type,
+            save_flo=FLAGS.save_flo,
+            save_image=FLAGS.save_image,
+            compute_metrics=FLAGS.compute_metrics,
+            log_metrics2file=FLAGS.log_metrics2file,
         )
     else:
         raise ValueError("'input_a' is not valid, should be a path to a folder or a single image")
 
 
-# TODO: compute default matching masks and sparse_flow for repo example
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -71,11 +80,32 @@ if __name__ == '__main__':
         default='image_matches'
     )
     parser.add_argument(
+        '--save_image',
+        type=bool,
+        required=False,
+        help='whether to save an colour-coded image of the predicted flow or not',
+        default=True,
+    )
+    parser.add_argument(
+        '--save_flo',
+        type=bool,
+        required=False,
+        help='whether to save the raw predicted flow in .flo format (see Middlebury specification for more details)',
+        default=True,
+    )
+    parser.add_argument(
         '--compute_metrics',
         type=bool,
         required=False,
         help='whether to compute error metrics or not (if True all available metrics are computed, check flowlib.py)',
         default=True,
+    )
+    parser.add_argument(
+        '--log_metrics2file',
+        type=bool,
+        required=False,
+        help='whether to log the metrics to a file instead of printing them to stdout',
+        default=False,
     )
     parser.add_argument(
         '--gt_flow',
