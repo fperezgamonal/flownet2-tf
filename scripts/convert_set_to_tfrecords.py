@@ -310,10 +310,19 @@ def main():
 
     # Actual conversion
     print("Generating TFRecords...")
-    print("Current split: {}".format(train_name))
-    convert_dataset(train_idxs, train_name, matcher=FLAGS.matcher, dataset=set_name)
-    print("Current split: {}".format(val_name))
-    convert_dataset(val_idxs, val_name, matcher=FLAGS.matcher, dataset=set_name)
+    if FLAGS.specify_split == 'train':  # only create train split
+        print("Current split: {}".format(train_name))
+        convert_dataset(train_idxs, train_name, matcher=FLAGS.matcher, dataset=set_name)
+
+    elif FLAGS.specify_split == 'val':  # only create validation split
+        print("Current split: {}".format(val_name))
+        convert_dataset(val_idxs, val_name, matcher=FLAGS.matcher, dataset=set_name)
+
+    else:  # create both
+        print("Current split: {}".format(train_name))
+        convert_dataset(train_idxs, train_name, matcher=FLAGS.matcher, dataset=set_name)
+        print("Current split: {}".format(val_name))
+        convert_dataset(val_idxs, val_name, matcher=FLAGS.matcher, dataset=set_name)
 
 
 if __name__ == '__main__':
@@ -349,6 +358,13 @@ if __name__ == '__main__':
         required=False,
         help='Default matcher selected (deepmatching)',
         default='deepmatching'
+    )
+    parser.add_argument(
+        '--specify_split',
+        type=str,
+        required=False,
+        help='Specify that we only want one split: train or val',
+        default='all'
     )
     FLAGS = parser.parse_args()
 
