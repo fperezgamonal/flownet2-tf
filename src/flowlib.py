@@ -246,12 +246,13 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         umat_mang, umat_stdang, umat_mepe = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, un_occ_msk, False,
                                                             bord)
     else:
-        mat_mepe = float('NaN')
-        umat_mepe = float('NaN')
-        mat_mang = float('NaN')
-        umat_mang = float('NaN')
-        mat_stdang = float('NaN')
-        umat_stdang= float('NaN')
+        # No occluded pixels (umat = 0, mat = all)
+        mat_mepe = mepe
+        umat_mepe = 0
+        mat_mang = mang
+        umat_mang = 0
+        mat_stdang = stdang
+        umat_stdang= 0
 
     metrics['EPEmat'] = mat_mepe
     metrics['mangmat'] = mat_mang
@@ -263,8 +264,9 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     # Masks for S0 - 10, S10 - 40 and S40 +)
     l1_of = np.sqrt(of_gt_x ** 2 + of_gt_y ** 2)
     disp_mask = l1_of
-    disp_mask[disp_mask < 10] = 0
-    disp_mask[(disp_mask >= 10) & (disp_mask <= 40)] = 1  # careful & takes precedence to <=/>=/== (use parenthesis)
+    disp_mask[np.asarray(disp_mask < 10).nonzero()] = 0
+    disp_mask[np.asarray(disp_mask >= 10).nonzero() & np.asarray(disp_mask <= 40).nonzero()] = 1
+    # careful & takes precedence to <=/>=/== (use parenthesis)
     disp_mask[disp_mask > 40] = 2
 
     # Actually compute S0 - 10, S10 - 40 and S40 +
@@ -281,7 +283,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         # Compute  S0 - 10 nominally
         msk_s010 = disp_mask
         msk_s010[np.asarray(msk_s010 != 0).nonzero()] = -1
-        msk_s010[np.asarray(msk_s010 == 0).nonzero()] = 1
+        msk_s010[(msk_s010 == 0)] = 1
         msk_s010[np.asarray(msk_s010 == -1).nonzero()] = 0
         msk_s010 = msk_s010 == 1  # convert to bool! (True/False in python)
         # Mask out invalid pixels(defined in the 'invalid' folder)
@@ -289,7 +291,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         msk_s010 = (msk_s010) & (~inv_mask)
         _, _, s0_10 = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s010, False, bord)
     else:
-        s0_10 = float('NaN')
+        s0_10 = 0
 
     metrics['S0-10'] = s0_10
 
@@ -297,8 +299,8 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     if 1 in disp_mask[:]:
         # Compute S10 - 40 nominally
         msk_s1040 = disp_mask  # have value 1
-        msk_s1040[msk_s1040 != 1] = -1
-        msk_s1040[msk_s1040 == -1] = 0
+        msk_s1040[np.asarray(msk_s1040 != 1).nonzero()] = -1
+        msk_s1040[np.asarray(msk_s1040 == -1).nonzero()] = 0
         msk_s1040 = msk_s1040 == -1
 
         # Mask out the invalid pixels
@@ -307,7 +309,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         # The desired pixels have already value 1, we are done.
         _, _, s10_40 = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s1040, False, bord)
     else:
-        s10_40 = float('NaN')
+        s10_40 = 0
 
     metrics['S10-40'] = s10_40
 
@@ -315,16 +317,16 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     if 2 in disp_mask[:]:
         # Compute S40+ nominally
         msk_s40plus = disp_mask
-        msk_s40plus[msk_s40plus != 2] = -1
-        msk_s40plus[msk_s40plus == 2] = 1
-        msk_s40plus[msk_s40plus == -1] = 0
+        msk_s40plus[np.asarray(msk_s40plus != 2).nonzero()] = -1
+        msk_s40plus[np.asarray(msk_s40plus == 2).nonzero()] = 1
+        msk_s40plus[np.asarray(msk_s40plus == -1).nonzero()] = 0
         msk_s40plus = msk_s40plus == 1
         # Mask out the invalid pixels
         # Same reasoning as s0 - 10 and s10 - 40 masks
         msk_s40plus = (msk_s40plus) & (~inv_mask)
         _, _, s40plus = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s40plus, False, bord)
     else:
-        s40plus = float('NaN')
+        s40plus = 0
 
     metrics['S40plus'] = s40plus
 
