@@ -282,10 +282,14 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     if 0 in disp_mask[:]:
         # Compute  S0 - 10 nominally
         msk_s010 = disp_mask
-        msk_s010[np.asarray(msk_s010 != 0).nonzero()] = -1
-        msk_s010[(msk_s010 == 0)] = 1
-        msk_s010[np.asarray(msk_s010 == -1).nonzero()] = 0
-        msk_s010 = msk_s010 == 1  # convert to bool! (True/False in python)
+        # msk_s010[np.asarray(msk_s010 != 0).nonzero()] = -1
+        # msk_s010[(msk_s010 == 0)] = 1
+        # msk_s010[np.asarray(msk_s010 == -1).nonzero()] = 0
+        # msk_s010 = msk_s010 == 1  # convert to bool! (True/False in python)
+        # We want 1's only where 0's (pixels with velocity in range 0-10) in disp_mask, 0 elsewhere
+        # Numpy has np.where(condition, value_where_cond_is_met, value_elsewhere)
+        # And accepts bools
+        msk_s010 = np.where(msk_s010 == 0, True, False)
         # Mask out invalid pixels(defined in the 'invalid' folder)
         # % We want to take into account only the valid and values = 1 in msk_s010
         msk_s010 = (msk_s010) & (~inv_mask)
@@ -299,9 +303,11 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     if 1 in disp_mask[:]:
         # Compute S10 - 40 nominally
         msk_s1040 = disp_mask  # have value 1
-        msk_s1040[np.asarray(msk_s1040 != 1).nonzero()] = -1
-        msk_s1040[np.asarray(msk_s1040 == -1).nonzero()] = 0
-        msk_s1040 = msk_s1040 == -1
+        # msk_s1040[np.asarray(msk_s1040 != 1).nonzero()] = -1
+        # msk_s1040[np.asarray(msk_s1040 == -1).nonzero()] = 0
+        # msk_s1040 = msk_s1040 == -1
+        # np.where() to the rescue
+        msk_s1040 = np.where(msk_s1040 == 1, True, False)
 
         # Mask out the invalid pixels
         # Same reasoning as s0 - 10 mask
@@ -317,10 +323,12 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     if 2 in disp_mask[:]:
         # Compute S40+ nominally
         msk_s40plus = disp_mask
-        msk_s40plus[np.asarray(msk_s40plus != 2).nonzero()] = -1
-        msk_s40plus[np.asarray(msk_s40plus == 2).nonzero()] = 1
-        msk_s40plus[np.asarray(msk_s40plus == -1).nonzero()] = 0
-        msk_s40plus = msk_s40plus == 1
+        # msk_s40plus[np.asarray(msk_s40plus != 2).nonzero()] = -1
+        # msk_s40plus[np.asarray(msk_s40plus == 2).nonzero()] = 1
+        # msk_s40plus[np.asarray(msk_s40plus == -1).nonzero()] = 0
+        # msk_s40plus = msk_s40plus == 1
+        msk_s40plus = np.where(msk_s40plus == 2, True, False)
+
         # Mask out the invalid pixels
         # Same reasoning as s0 - 10 and s10 - 40 masks
         msk_s40plus = (msk_s40plus) & (~inv_mask)
