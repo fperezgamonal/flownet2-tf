@@ -182,15 +182,25 @@ def segment_flow(flow):
 
 
 def get_metrics(metrics):
-    all_string = "(all)\tMANG = {0:.4f}\tSTDANG = {1:.4f}\tMEPE = {2:.4f}".format(
-        metrics['mangall'], metrics['stdangall'], metrics['EPEall'])
-    mat_string = "(mat)\tMANG = {0:.4f}\tSTDANG = {1:.4f}\tMEPE = {2:.4f}".format(
-        metrics['mangmat'], metrics['stdangmat'], metrics['EPEmat'])
-    umat_string = "(umt)\tMANG = {0:.4f}\tSTDANG = {1:.4f}\tMEPE = {2:.4f}".format(
-        metrics['mangumat'], metrics['stdangumat'], metrics['EPEumat'])
-    dis_string = "(dis)\tS0-10 = {0:.4f}\tS10-40 = {1:.2f}\tS40+ = {2:.4f}".format(
-        metrics['S0-10'], metrics['S10-40'], metrics['S40plus'])
-    return all_string, mat_string, umat_string, dis_string
+    dash = "-" * 50
+    line = '_' * 50
+    title_str = "{:^50}".format('MPI-Sintel Flow Error Metrics')
+    headers = '{:<5s}{:^15s}{:^15s}{:^15s}'.format('Mask', 'MANG', 'STDANG', 'MEPE')
+    all_string = '{:<5s}{:^15.4f}{:^15.4f}{:^15.4f}'.format('(all)', metrics['mangall'], metrics['stdangall'],
+                                                            metrics['EPEall'])
+    mat_string = '{:<5s}{:^15.4f}{:^15.4f}{:^15.4f}'.format('(mat)', metrics['mangmat'], metrics['stdangmat'],
+                                                            metrics['EPEmat'])
+    umat_string = '{:<5s}{:^15.4f}{:^15.4f}{:^15.4f}'.format('(umt)', metrics['mangumat'], metrics['stdangumat'],
+                                                             metrics['EPEumat'])
+    dis_headers = '{:<5s}{:^15s}{:^15s}{:^15s}'.format('', 'S0-10', 'S10-40', 'S40+')
+
+    dis_string = '{:<5s}{:^15.4f}{:^15.4f}{:^15.4f}'.format('(dis)', metrics['S0-10'], metrics['S10-40'],
+                                                            metrics['S40plus'])
+
+    final_string_formatted = "{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10}\n{11}".format(
+        line, title_str, line, headers, dash, all_string, mat_string, umat_string, line, dis_headers, dash, dis_string)
+
+    return final_string_formatted
 
 
 # TODO: add other metrics available in the MATLAB script (EPEmat, EPEumat, S0-10, S10-40, S40+)
@@ -203,7 +213,9 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     following publication: http://www.ipol.im/pub/art/2019/238/)
     :param est_flow: estimated optical flow with shape: (height, width, 2)
     :param gt_flow: ground truth optical flow with shape: (height, width, 2)
-    :return: dictionary with computed metrics (NaN if it cannot be computed, no masks)
+    :param occ_mask: (optional) occlusions mask (1s specify that a pixel is occluded, 0 otherwise)
+    :param inv_mask: (optional) invalid mask that specifies which pixels have invalid flow (not considered for error)
+    :return: dictionary with computed metrics (0 if it cannot be computed, no masks)
     """
     metrics = dict([])
     bord = 0
@@ -227,7 +239,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         inv_mask = np.full((height, width), False)  # e.g.: every pixel has a valid flow
 
     # EPE all
-    mang, stdang, mepe = flow_error(of_gt_x, of_gt_y, of_est_x, of_est_y)
+    mang, stdang, mepe = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, inv_mask, True, bord)
     metrics['EPEall'] = mepe
     metrics['mangall'] = mang
     metrics['stdangall'] = stdang
@@ -342,6 +354,8 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     return metrics
 
 
+# TODO: should index with tuple not directly with a list of indices/logical values
+# A[idx] ==> A[tuple(idx)] : maybe due to idx being multi-dimensional and not a column/row vector?
 def flow_error(tu, tv, u, v):
     """
     Calculate average end point error (a.k.a. EPEall, 'all' as for all pixels in the image)
@@ -363,21 +377,21 @@ def flow_error(tu, tv, u, v):
     su = u[:]
     sv = v[:]
 
-    idxUnknow = (abs(stu) > UNKNOWN_FLOW_THRESH) | (abs(stv) > UNKNOWN_FLOW_THRESH)
-    stu[idxUnknow] = 0
-    stv[idxUnknow] = 0
-    su[idxUnknow] = 0
-    sv[idxUnknow] = 0
+    idxUnknown = (abs(stu) > UNKNOWN_FLOW_THRESH) | (abs(stv) > UNKNOWN_FLOW_THRESH)
+    stu[idxUnknown] = 0
+    stv[idxUnknown] = 0
+    su[idxUnknown] = 0
+    sv[idxUnknown] = 0
 
     ind2 = [(np.absolute(stu) > smallflow) | (np.absolute(stv) > smallflow)]
-    index_su = su[ind2]
-    index_sv = sv[ind2]
+    index_su = su[tuple(ind2)]
+    index_sv = sv[tuple(ind2)]
     an = 1.0 / np.sqrt(index_su ** 2 + index_sv ** 2 + 1)
     un = index_su * an
     vn = index_sv * an
 
-    index_stu = stu[ind2]
-    index_stv = stv[ind2]
+    index_stu = stu[tuple(ind2)]
+    index_stv = stv[tuple(ind2)]
     tn = 1.0 / np.sqrt(index_stu ** 2 + index_stv ** 2 + 1)
     tun = index_stu * tn
     tvn = index_stv * tn
@@ -391,7 +405,7 @@ def flow_error(tu, tv, u, v):
     stdang = np.std(ang * 180 / np.pi)
 
     epe = np.sqrt((stu - su) ** 2 + (stv - sv) ** 2)
-    epe = epe[ind2]
+    epe = epe[tuple(ind2)]
     mepe = np.mean(epe)
     return mang, stdang, mepe
 
@@ -420,13 +434,15 @@ def flow_error_mask(tu, tv, u, v, mask=None, gt_value=False, bord=0):
     sv = v[:]
 
     idxUnknown = (abs(stu) > UNKNOWN_FLOW_THRESH) | (abs(stv) > UNKNOWN_FLOW_THRESH) | (mask == gt_value)
-    stu[idxUnknown] = 0
-    stv[idxUnknown] = 0
-    su[idxUnknown] = 0
-    sv[idxUnknown] = 0
+    # stu[idxUnknown] = 0
+    # stv[idxUnknown] = 0
+    # su[idxUnknown] = 0
+    # sv[idxUnknown] = 0
 
-    ind2 = [(np.absolute(stu[:]) > smallflow) | (np.absolute(stv[:]) > smallflow)]
-    index_su = su[ind2]
+    # ind2 = [(np.absolute(stu[:]) >= smallflow) | (np.absolute(stv[:]) >= smallflow)]
+    ind2 = (abs(stu) >= smallflow) | (abs(stv) >= smallflow)
+    ind2 = (idxUnknown < 1) & ind2
+    index_su = su[ind2]  # should be updated to A[tuple(idx_list)]
     index_sv = sv[ind2]
     an = 1.0 / np.sqrt(index_su ** 2 + index_sv ** 2 + 1)
     un = index_su * an
@@ -438,10 +454,10 @@ def flow_error_mask(tu, tv, u, v, mask=None, gt_value=False, bord=0):
     tun = index_stu * tn
     tvn = index_stv * tn
 
-    angle = un * tun + vn * tvn + (an * tn)
-    index = [angle == 1.0]
-    angle[index] = 0.999
-    ang = np.arccos(angle)
+    # angle = un * tun + vn * tvn + (an * tn)
+    # index = [angle == 1.0]
+    # angle[index] = 0.999
+    ang = np.arccos(un * tun + vn * tvn + (an * tn))
     mang = np.mean(ang)
     mang = mang * 180 / np.pi
     stdang = np.std(ang * 180 / np.pi)
@@ -759,14 +775,14 @@ def test_error_metrics(est_path, gt_path, occ_path=None, inv_path=None):
     # Call compute_all_metrics
     metrics = compute_all_metrics(est_flow, gt_flow, occ_mask=occ_mask, inv_mask=inv_mask)  # main debugging
     # Get metrics properly formatted and print them out
-    all_metrics, mat_metrics, umat_metrics, dis_metrics = get_metrics(metrics)
-    print("{0}\n{1}\n{2}\n{3}".format(all_metrics, mat_metrics, umat_metrics, dis_metrics))
+    final_string_formated = get_metrics(metrics)
+    print(final_string_formated)
 
 
 if __name__ == '__main__':
     # Test error function
-    path_to_est_flow = 'data/samples/sintel/frame_00186_flow.flo'
-    path_to_gt_flow = 'data/samples/sintel/frame_00186.flo'
-    path_to_occ_mask = 'data/samples/sintel/frame_00186_occ_mask.png'
-    path_to_inv_mask = 'data/samples/sintel/frame_00186_inv_mask.png'
+    path_to_est_flow = '../data/samples/sintel/frame_00186_flow.flo'
+    path_to_gt_flow = '../data/samples/sintel/frame_00186.flo'
+    path_to_occ_mask = '../data/samples/sintel/frame_00186_occ_mask.png'
+    path_to_inv_mask = '../data/samples/sintel/frame_00186_inv_mask.png'
     test_error_metrics(path_to_est_flow, path_to_gt_flow, occ_path=path_to_occ_mask, inv_path=path_to_inv_mask)

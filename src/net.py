@@ -347,8 +347,8 @@ class Net(object):
 
                 # Compute all metrics
                 metrics = compute_all_metrics(pred_flow, gt_flow, occ_mask=occ_mask, inv_mask=inv_mask)
-                all_metrics, mat_metrics, umat_metrics, dis_metrics = get_metrics(metrics)
-                print("{0}\n{1}\n{2}\n{3}".format(all_metrics, mat_metrics, umat_metrics, dis_metrics))
+                final_str_formated = get_metrics(metrics)
+                print(final_str_formated)
 
     # TODO: double-check the number of columns of the txt file to ensure it is OK
     # Each line will define a set of inputs. By doing so, we reduce complexity and avoid errors due to "forced" sorting
@@ -520,15 +520,15 @@ class Net(object):
                 if compute_metrics:
                     # Compute all metrics
                     metrics = compute_all_metrics(pred_flow, gt_flow_0, occ_mask=occ_mask_0, inv_mask=inv_mask_0)
-                    all_metrics, mat_metrics, umat_metrics, dis_metrics = get_metrics(metrics)
+                    final_str_formated = get_metrics(metrics)
 
                     if log_metrics2file:
                         basefile = image_paths.split()[-1]
                         logfile = basefile.replace('.txt', '_metrics.log')
                         with open(logfile, 'w') as logfile:
-                            logfile.writelines([all_metrics, mat_metrics, umat_metrics, dis_metrics])
+                            logfile.write(final_str_formated)
                     else:  # print to stdout
-                        print("{0}\n{1}\n{2}\n{3}".format(all_metrics, mat_metrics, umat_metrics, dis_metrics))
+                        print(final_str_formated)
 
     def train(self, log_dir, training_schedule_str, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
               checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True):
