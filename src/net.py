@@ -531,7 +531,7 @@ class Net(object):
                         print(final_str_formated)
 
     def train(self, log_dir, training_schedule_str, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
-              checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True):
+              checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True, lr_range_test=False):
         # Add validation batches as input? Used only once every val_interval steps...?
         """
         runs training on the network from which this method is called.
@@ -608,10 +608,20 @@ class Net(object):
             else:
                 tf.summary.image("image_b", input_b, max_outputs=1)
 
-        self.learning_rate = tf.train.piecewise_constant(
-            checkpoint_global_step_tensor,
-            [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
-            training_schedule['learning_rates'])
+        if lr_range_test:  # learning rate range test to bound max/min optimal learning rate (2015, Leslie N. Smith)
+            start_lr = 1e-10
+            decay_steps = 100
+            decay_rate = 1.30  # i.e. it exponentially increase, does not decay
+            self.learning_rate = tf.train.exponential_decay(
+                start_lr, global_step=0,
+                decay_steps=decay_steps, decay_rate=decay_rate)
+        else:
+
+            self.learning_rate = tf.train.piecewise_constant(
+                checkpoint_global_step_tensor,
+                [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
+                training_schedule['learning_rates'])
+
         # As suggested in https://arxiv.org/abs/1711.05101, weight decay is not properly implemented for Adam
         # They implement L2 regularization. The next expression applied to tf.train.AdamOptimizer effectively
         # decouples weight decay from weight update (decays weight BEFORE updating gradients)

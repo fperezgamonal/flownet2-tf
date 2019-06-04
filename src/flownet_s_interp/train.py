@@ -32,6 +32,7 @@ def main():
             checkpoints=checkpoints,
             log_verbosity=FLAGS.log_verbosity,
             log_tensorboard=FLAGS.log_tensorboard,
+            lr_range_test=FLAGS.lr_range_test,
         )
     else:
         print("Input_type: 'image_pairs'")
@@ -48,6 +49,7 @@ def main():
             checkpoints=checkpoints,
             log_verbosity=FLAGS.log_verbosity,
             log_tensorboard=FLAGS.log_tensorboard,
+            lr_range_test=FLAGS.lr_range_test,
         )
 
 
@@ -80,6 +82,13 @@ if __name__ == '__main__':
         required=False,
         help='Training schedule (learning rate, weight decay, etc.)',
         default='long_schedule',
+    )
+    parser.add_argument(
+        '--lr_range_test',
+        type=bool,
+        required=False,
+        help='Whether or not to do a learning rate range test (exponentially) to find a good lr range',
+        default=False,
     )
     parser.add_argument(
         '--log_verbosity',

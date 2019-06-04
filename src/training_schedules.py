@@ -1,13 +1,10 @@
 # thanks to: https://arxiv.org/pdf/1809.05571.pdf (the code has not been updated yet but the paper is out!)
 # schedules reproduced (aside from long which was already provided) from og repo at: github.com/lmb-freiburg/flownet2
 # Must navigate to models and download models to get the text files (*proto.txt): one for 'long', 'fine' and 'short'
-LONG_SCHEDULE_TMP = {
-    'step_values': [132799, 332799],
-    'learning_rates': [0.000025, 0.0000125, 0.00000625],
+LR_RANGE_TEST = {  # steps and learning rates defined by a step-wise curve with (exponential) decay (increasing)
     'momentum': 0.9,
     'momentum2': 0.999,
-    'weight_decay': 0.0004,
-    'max_iter': 532799,
+    'max_iter': 3000,  # around 10 minutes (aprox. 5 iters/s)
 }
 LONG_SCHEDULE = {
     'step_values': [400000, 600000, 800000, 1000000],
