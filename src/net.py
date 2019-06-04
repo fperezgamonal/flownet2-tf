@@ -609,12 +609,17 @@ class Net(object):
                 tf.summary.image("image_b", input_b, max_outputs=1)
 
         if lr_range_test:  # learning rate range test to bound max/min optimal learning rate (2015, Leslie N. Smith)
-            start_lr = 1e-10
-            decay_steps = 18
-            decay_rate = 1.15  # i.e. it exponentially increase, does not decay
-            learning_rate = tf.train.exponential_decay(
-                start_lr, global_step=checkpoint_global_step_tensor,
-                decay_steps=decay_steps, decay_rate=decay_rate)
+            # start_lr = 1e-10
+            # decay_steps = 18
+            # decay_rate = 1.15  # i.e. it exponentially increase, does not decay
+            # learning_rate = tf.train.exponential_decay(
+            #     start_lr, global_step=checkpoint_global_step_tensor,
+            #     decay_steps=decay_steps, decay_rate=decay_rate)
+            # Temporally do the same (not necessarily always)
+            learning_rate = tf.train.piecewise_constant(
+                checkpoint_global_step_tensor,
+                [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
+                training_schedule['learning_rates'])
         else:
 
             learning_rate = tf.train.piecewise_constant(
@@ -708,13 +713,18 @@ class Net(object):
         else:
             # Explicitly create a Saver to specify maximum number of checkpoints to keep (and how frequently)
             # saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2)
+            if lr_range_test:
+                save_summaries_secs = 30
+            else:
+                save_summaries_secs = 180
+
             if checkpoints is not None:
                 final_loss = slim.learning.train(
                     train_op,
                     log_dir,
                     # session_config=tf.ConfigProto(allow_soft_placement=True),
                     global_step=checkpoint_global_step_tensor,
-                    save_summaries_secs=180,
+                    save_summaries_secs=save_summaries_secs,
                     number_of_steps=training_schedule['max_iter'],
                     init_fn=InitAssignFn,
                     # train_step_fn=train_step_fn,
@@ -726,7 +736,7 @@ class Net(object):
                     log_dir,
                     # session_config=tf.ConfigProto(allow_soft_placement=True),
                     global_step=checkpoint_global_step_tensor,
-                    save_summaries_secs=180,
+                    save_summaries_secs=save_summaries_secs,
                     number_of_steps=training_schedule['max_iter'],
                     # train_step_fn=train_step_fn,
                     # saver=saver,

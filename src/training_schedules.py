@@ -1,7 +1,18 @@
+import numpy as np
 # thanks to: https://arxiv.org/pdf/1809.05571.pdf (the code has not been updated yet but the paper is out!)
 # schedules reproduced (aside from long which was already provided) from og repo at: github.com/lmb-freiburg/flownet2
 # Must navigate to models and download models to get the text files (*proto.txt): one for 'long', 'fine' and 'short'
+step_values = list(np.round(np.linspace(1, 3000, 350)).astype('int'))
+step_values.pop(-1)  # remove last as we do not change the lr when we finish
+learning_rates = []
+lr = 1e-10
+for step in step_values:
+    lr = lr * 1.07
+    learning_rates.append(lr)
+
 LR_RANGE_TEST = {  # steps and learning rates defined by a step-wise curve with (exponential) decay (increasing)
+    'step_values': step_values,
+    'learning_rates': learning_rates,
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,  # for now leave it like og schedules
