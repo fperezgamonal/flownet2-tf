@@ -610,14 +610,14 @@ class Net(object):
 
         if lr_range_test:  # learning rate range test to bound max/min optimal learning rate (2015, Leslie N. Smith)
             start_lr = 1e-10
-            decay_steps = 100
-            decay_rate = 1.30  # i.e. it exponentially increase, does not decay
-            self.learning_rate = tf.train.exponential_decay(
+            decay_steps = 10
+            decay_rate = 1.50  # i.e. it exponentially increase, does not decay
+            learning_rate = tf.train.exponential_decay(
                 start_lr, global_step=checkpoint_global_step_tensor,
                 decay_steps=decay_steps, decay_rate=decay_rate)
         else:
 
-            self.learning_rate = tf.train.piecewise_constant(
+            learning_rate = tf.train.piecewise_constant(
                 checkpoint_global_step_tensor,
                 [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
                 training_schedule['learning_rates'])
@@ -627,14 +627,14 @@ class Net(object):
         # decouples weight decay from weight update (decays weight BEFORE updating gradients)
         # It only has the desired effects for optimizers that DO NOT depend on the value of 'var' in the update step
         optimizer = tf.train.AdamOptimizer(
-            self.learning_rate,
+            learning_rate,
             training_schedule['momentum'],
             training_schedule['momentum2'])
 
         # AdamW = tf.contrib.opt.extend_with_decoupled_weight_decay(optimizer)
         if log_tensorboard:
             # Add learning rate
-            tf.summary.scalar('learning_rate', optimizer._lr)  # self.learning_rate does not update
+            tf.summary.scalar('learning_rate', optimizer._lr)  # self.learning_rate does not
 
         if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
             inputs = {
