@@ -1,17 +1,13 @@
 from ..dataloader import load_batch
 from .flownet_s_interp import FlowNetS_interp
 import argparse
-import resource
-
-# TODO: consider enabling training sequentially with several schedules with only one call to 'train'
-# TODO: should load previous checkpoint to properly resume training
-# TODO: sometimes we want the flexibility of deciding whether we want to use all finetuning steps or only a few
 
 
+# TODO: update traning scripts for all other architectures with latest changes
 def main():
     # Create a new network
     net = FlowNetS_interp()
-    if FLAGS.checkpoint is not None:
+    if FLAGS.checkpoint is not None and FLAGS.checkpoint:  # the second checks if the string is NOT empty
         checkpoints = FLAGS.checkpoint  # we want to define it as a string (only one checkpoint to load)
     else:
         checkpoints = None  # double-check None
