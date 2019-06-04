@@ -613,7 +613,7 @@ class Net(object):
             decay_steps = 100
             decay_rate = 1.30  # i.e. it exponentially increase, does not decay
             self.learning_rate = tf.train.exponential_decay(
-                start_lr, global_step=0,
+                start_lr, global_step=checkpoint_global_step_tensor,
                 decay_steps=decay_steps, decay_rate=decay_rate)
         else:
 
@@ -634,7 +634,7 @@ class Net(object):
         # AdamW = tf.contrib.opt.extend_with_decoupled_weight_decay(optimizer)
         if log_tensorboard:
             # Add learning rate
-            tf.summary.scalar('learning_rate', optimizer._lr)  # should be the same as optimizer._lr (internal)
+            tf.summary.scalar('learning_rate', optimizer._lr)  # self.learning_rate does not update
 
         if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
             inputs = {
