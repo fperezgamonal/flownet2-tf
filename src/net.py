@@ -612,10 +612,16 @@ class Net(object):
             checkpoint_global_step_tensor,
             [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
             training_schedule['learning_rates'])
+        # As suggested in https://arxiv.org/abs/1711.05101, weight decay is not properly implemented for Adam
+        # They implement L2 regularization. The next expression applied to tf.train.AdamOptimizer effectively
+        # decouples weight decay from weight update (decays weight BEFORE updating gradients)
+        # It only has the desired effects for optimizers that DO NOT depend on the value of 'var' in the update step
         optimizer = tf.train.AdamOptimizer(
             self.learning_rate,
             training_schedule['momentum'],
             training_schedule['momentum2'])
+
+        # AdamW = tf.contrib.opt.extend_with_decoupled_weight_decay(optimizer)
         if log_tensorboard:
             # Add learning rate
             tf.summary.scalar('learning_rate', optimizer._lr)  # should be the same as optimizer._lr (internal)

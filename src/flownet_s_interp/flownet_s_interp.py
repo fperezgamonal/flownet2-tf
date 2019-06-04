@@ -6,7 +6,7 @@ import tensorflow as tf
 slim = tf.contrib.slim
 
 
-# Modified FlowNetS: same architecture BUT different input: first image + matches between first and second image
+# Modified FlowNetS: same architecture BUT different input: first image + matches location + sparse flow
 class FlowNetS_interp(Net):
 
     def __init__(self, mode=Mode.TRAIN, debug=False):
@@ -29,7 +29,9 @@ class FlowNetS_interp(Net):
                                            inputs['brightness_error']], axis=3)
             else:
                 # TODO: consider permutating order
-                concat_inputs = tf.concat([inputs['input_a'], inputs['sparse_flow'], inputs['matches_a']], axis=3)
+                concat_inputs = tf.concat([inputs['input_a'],
+                                           inputs['sparse_flow'] * 0.05,  # normalised as predicted flow (makes sense)
+                                           inputs['matches_a']], axis=3)
             with slim.arg_scope([slim.conv2d, slim.conv2d_transpose],
                                 # Only backprop this network if trainable
                                 trainable=trainable,

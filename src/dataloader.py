@@ -94,7 +94,7 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
             keys_to_features = {
                 'image_a': tf.FixedLenFeature([], tf.string),
                 'matches_a': tf.FixedLenFeature([], tf.string),
-                'sparse_flow': tf.FixedLenFeature([], tf.string),  # initial sparse flow (from matches)
+                'sparse_flow': tf.FixedLenFeature([], tf.string),
                 'flow': tf.FixedLenFeature([], tf.string),
             }
             items_to_handlers = {
