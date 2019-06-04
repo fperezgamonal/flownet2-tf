@@ -4,6 +4,7 @@
 LR_RANGE_TEST = {  # steps and learning rates defined by a step-wise curve with (exponential) decay (increasing)
     'momentum': 0.9,
     'momentum2': 0.999,
+    'weight_decay': 0.0004,  # for now leave it like og schedules
     'max_iter': 3000,  # around 10 minutes (aprox. 5 iters/s)
 }
 LONG_SCHEDULE = {
