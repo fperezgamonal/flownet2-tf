@@ -12,7 +12,7 @@ from imageio import imread, imsave
 from .flowlib import flow_to_image, write_flow, read_flow, compute_all_metrics, get_metrics
 from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FINETUNE_SINTEL_S1, FINETUNE_SINTEL_S2, \
     FINETUNE_SINTEL_S3, FINETUNE_SINTEL_S4, FINETUNE_SINTEL_S5, FINETUNE_KITTI_S1, FINETUNE_KITTI_S2,\
-    FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LONG_SCHEDULE_TMP
+    FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LR_RANGE_TEST
 slim = tf.contrib.slim
 
 import resource
@@ -75,9 +75,9 @@ class Net(object):
         # ROB (robust challenge: mix of Sintel, KITTI, HD1K and Middlebury
         elif training_schedule_str.lower() == 'rob':
             training_schedule = FINETUNE_ROB
-        # TMP FIX TO RESUME BROKEN TRAINING (GLOBAL STEP IS NOT PROPERLY RESUMED!)
-        elif training_schedule_str.lower() == 'long_tmp':
-            training_schedule = LONG_SCHEDULE_TMP
+        # Learning rate range test
+        elif training_schedule_str.lower() == 'lr_range_test':
+            training_schedule = LR_RANGE_TEST
         else:  # long schedule as default
             training_schedule = LONG_SCHEDULE  # Normally applied from scratch on FlyingChairs
 
