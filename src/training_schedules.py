@@ -16,7 +16,7 @@ LR_RANGE_TEST = {  # steps and learning rates defined by a step-wise curve with 
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0,  # remove it as we are ONLY exponentially trying diff. lrs
-    'max_iter': 9875,  # around 30 minutes (aprox. 5 iters/s), enough to diverge probably (intended!)
+    'max_iter': 9855,  # around 30 minutes (aprox. 5 iters/s), enough to diverge probably (intended!)
 }
 LONG_SCHEDULE = {
     'step_values': [400000, 600000, 800000, 1000000],
