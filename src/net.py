@@ -610,7 +610,7 @@ class Net(object):
 
         if lr_range_test:  # learning rate range test to bound max/min optimal learning rate (2015, Leslie N. Smith)
             start_lr = 1e-10
-            decay_steps = 130
+            decay_steps = 115
             decay_rate = 1.2  # i.e. it exponentially increase, does not decay
             learning_rate = tf.train.exponential_decay(
                 start_lr, global_step=checkpoint_global_step_tensor,
