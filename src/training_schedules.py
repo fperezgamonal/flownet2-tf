@@ -18,7 +18,9 @@ CLR_SCHEDULE = {
     'gamma': 0.99994,
     'mode': 'triangular',
     'weight_decay': 0.0,
-    'max_iter': 60000,
+    'max_iter': 100000,
+    'momentum': 0.9,
+    'momentum2': 0.999,
 }
 
 LR_RANGE_TEST = {  # steps and learning rates defined by a step-wise curve with (exponential) decay (increasing)
