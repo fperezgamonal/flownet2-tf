@@ -34,128 +34,6 @@ note that one step = one batch of data processed, ~not~ an entire epoch
 },
 """
 
-FLYING_CHAIRS_DATASET_CONFIG = {
-    'IMAGE_HEIGHT': 384,
-    'IMAGE_WIDTH': 512,
-    'PADDED_IMAGE_HEIGHT': 384,
-    'PADDED_IMAGE_WIDTH': 512,
-    'ITEMS_TO_DESCRIPTIONS': {
-        'image_a': 'A 3-channel image.',
-        'image_b': 'A 3-channel image.',
-        'flow': 'A 2-channel optical flow field',
-    },
-    'SIZES': {
-        'train': 22232,
-        'validate': 640,
-        'sample': 8,
-    },
-    'BATCH_SIZE': 8,
-    'PATHS': {
-        'train': './data/tfrecords/fc_train.tfrecords',
-        'validate': './data/tfrecords/fc_val.tfrecords',
-        'sample': './data/tfrecords/fc_sample.tfrecords',
-    },
-    'PREPROCESS': {
-        'scale': False,
-        'crop_height': 320,
-        'crop_width': 448,
-        'image_a': {
-            'translate': {
-                'rand_type': "uniform_bernoulli",
-                'exp': False,
-                'mean': 0,
-                'spread': 0.4,
-                'prob': 1.0,
-            },
-            'rotate': {
-                'rand_type': "uniform_bernoulli",
-                'exp': False,
-                'mean': 0,
-                'spread': 0.4,
-                'prob': 1.0,
-            },
-            'zoom': {
-                'rand_type': "uniform_bernoulli",
-                'exp': True,
-                'mean': 0.2,
-                'spread': 0.4,
-                'prob': 1.0,
-            },
-            'squeeze': {
-                'rand_type': "uniform_bernoulli",
-                'exp': True,
-                'mean': 0,
-                'spread': 0.3,
-                'prob': 1.0,
-            },
-            # 'noise': {
-            #     'rand_type': "uniform_bernoulli",
-            #     'exp': False,
-            #     'mean': 0.03,
-            #     'spread': 0.03,
-            #     'prob': 1.0,
-            # },
-        },
-        # All preprocessing to image A will be applied to image B in addition to the following.
-        'image_b': {
-            'translate': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': False,
-                'mean': 0,
-                'spread': 0.03,
-                'prob': 1.0,
-            },
-            'rotate': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': False,
-                'mean': 0,
-                'spread': 0.03,
-                'prob': 1.0,
-            },
-            'zoom': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': True,
-                'mean': 0,
-                'spread': 0.03,
-                'prob': 1.0,
-            },
-            'gamma': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': True,
-                'mean': 0,
-                'spread': 0.02,
-                'prob': 1.0,
-            },
-            'brightness': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': False,
-                'mean': 0,
-                'spread': 0.02,
-                'prob': 1.0,
-            },
-            'contrast': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': True,
-                'mean': 0,
-                'spread': 0.02,
-                'prob': 1.0,
-            },
-            'color': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': True,
-                'mean': 0,
-                'spread': 0.02,
-                'prob': 1.0,
-            },
-            'coeff_schedule_param': {
-                'half_life': 50000,
-                'initial_coeff': 0.5,
-                'final_coeff': 1,
-            },
-        }
-    },
-}
-
 # Contains all the information necessary to deal with the two input types considered: a pair of images or first image,
 # matching mask (location) + sparse flow
 FLYING_CHAIRS_ALL_DATASET_CONFIG = {
@@ -173,13 +51,11 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
     'SIZES': {
         'train': 22232,
         'validate': 640,
-        'sample': 8,
     },
     'BATCH_SIZE': 8,
     'PATHS': {
         'train': '/datasets/GPI/optical_flow/TFrecords/interp/fc_train_all.tfrecord',
         'validate': '/datasets/GPI/optical_flow/TFrecords/interp/fc_val_all.tfrecord',
-        'sample': './data/tfrecords/fc_sample_all.tfrecords'  # does not exist (ignore)
     },
     'PREPROCESS': {
         'scale': False,
@@ -296,15 +172,13 @@ FLYING_THINGS_3D_ALL_DATASET_CONFIG = {
         'flow': 'A 2-channel optical flow field.',
     },
     'SIZES': {
-        'train': 21817,
-        'validate': 4247,
-        'sample': 8,
+        'train': 19640,
+        'validate': 3824,
     },
     'BATCH_SIZE': 4,
     'PATHS': {
         'train': '/datasets/GPI/optical_flow/TFrecords/interp/ft3d_train_all.tfrecord',
         'validate': '/datasets/GPI/optical_flow/TFrecords/interp/ft3d_val_all.tfrecord',
-        'sample': './data/tfrecords/fc_sample_all.tfrecords'  # does not exist (ignore)
     },
     'PREPROCESS': {
         'scale': False,
@@ -421,15 +295,13 @@ SINTEL_ALL_DATASET_CONFIG = {
         'flow': 'A 2-channel optical flow field.',
     },
     'SIZES': {
-        'train': 1816,
-        'validate': 133,
-        'sample': 8,
+        'train': 9151,
+        'validate': 1259,
     },
     'BATCH_SIZE': 4,
     'PATHS': {
         'train': '/datasets/GPI/optical_flow/TFrecords/interp/sintel_train_all.tfrecord',
         'validate': '/datasets/GPI/optical_flow/TFrecords/interp/sintel_val_all.tfrecord',
-        'sample': './data/tfrecords/fc_sample_all.tfrecords'  # does not exist (ignore)
     },
     'PREPROCESS': {
         'scale': False,
@@ -556,13 +428,11 @@ SINTEL_FINAL_ALL_DATASET_CONFIG = {
     'SIZES': {
         'train': 1816,
         'validate': 133,
-        'sample': 8,
     },
     'BATCH_SIZE': 4,
     'PATHS': {
         'train': '/datasets/GPI/optical_flow/TFrecords/interp/sintel_final_train_all.tfrecord',
         'validate': '/datasets/GPI/optical_flow/TFrecords/interp/sintel_final_val_all.tfrecord',
-        'sample': './data/tfrecords/fc_sample_all.tfrecords'  # does not exist (ignore)
     },
     'PREPROCESS': {
         'scale': False,
