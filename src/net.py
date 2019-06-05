@@ -14,9 +14,10 @@ from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FI
     FINETUNE_SINTEL_S3, FINETUNE_SINTEL_S4, FINETUNE_SINTEL_S5, FINETUNE_KITTI_S1, FINETUNE_KITTI_S2,\
     FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LR_RANGE_TEST
 slim = tf.contrib.slim
-from utils.cyclic_learning_rate import clr
+from .cyclic_learning_rate import clr
 
 VAL_INTERVAL = 1000  # each N samples, we evaluate the validation set
+
 
 class Mode(Enum):
     TRAIN = 1
