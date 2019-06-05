@@ -10,6 +10,17 @@
 #     learning_rates.append(lr)
 # learning_rates.insert(0, 1e-10)
 
+CLR_SCHEDULE = {
+    'learning_rates': 'clr',
+    'min_lr': 4.25e-6,
+    'max_lr': 4.9e-4,
+    'step_size': 5558,  # 2-10 times the number of iterations per epoch (nº samples/batch_size): (min, max) 5558-27790
+    'gamma': 0.99994,
+    'mode': 'triangular',
+    'weight_decay': 0.0,
+    'max_iter': 60000,
+}
+
 LR_RANGE_TEST = {  # steps and learning rates defined by a step-wise curve with (exponential) decay (increasing)
     # 'step_values': step_values,
     # 'learning_rates': learning_rates,

@@ -12,7 +12,7 @@ from imageio import imread, imsave
 from .flowlib import flow_to_image, write_flow, read_flow, compute_all_metrics, get_metrics
 from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FINETUNE_SINTEL_S1, FINETUNE_SINTEL_S2, \
     FINETUNE_SINTEL_S3, FINETUNE_SINTEL_S4, FINETUNE_SINTEL_S5, FINETUNE_KITTI_S1, FINETUNE_KITTI_S2,\
-    FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LR_RANGE_TEST
+    FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LR_RANGE_TEST, CLR_SCHEDULE
 slim = tf.contrib.slim
 from .cyclic_learning_rate import clr
 
@@ -22,6 +22,33 @@ VAL_INTERVAL = 1000  # each N samples, we evaluate the validation set
 class Mode(Enum):
     TRAIN = 1
     TEST = 2
+
+
+# def train_step_fn(sess, train_op, global_step, train_step_kwargs):
+#     """
+#     slim.learning.train_step():
+#       train_step_kwargs = {summary_writer:, should_log:, should_stop:}
+#
+#     usage: slim.learning.train( train_op, logdir,
+#                                 train_step_fn=train_step_fn,)
+#     """
+#     if hasattr(train_step_fn, 'step'):
+#         train_step_fn.step += 1  # or use global_step.eval(session=sess)
+#     else:
+#         train_step_fn.step = global_step.eval(sess)
+#
+#     # calc training losses
+#     total_loss, should_stop = slim.learning.train_step(sess, train_op, global_step, train_step_kwargs)
+#
+#     # validate on interval
+#     if train_step_fn.step % VAL_INTERVAL == 0:
+#         validate_loss, validation_delta = sess.run([val_loss, summary_validation_delta])
+#         print(">> global step {}:    train={}   validation={}  delta={}".format(train_step_fn.step,
+#                                                                                 total_loss, validate_loss,
+#                                                                                 validate_loss - total_loss))
+#
+#     return [total_loss, should_stop]
+
 
 class Net(object):
     __metaclass__ = abc.ABCMeta
@@ -52,6 +79,8 @@ class Net(object):
             training_schedule = FINE_SCHEDULE
         elif training_schedule_str.lower() == 'short':  # quicker schedule to train on FlyingChairs (or any dataset)
             training_schedule = SHORT_SCHEDULE
+        elif training_schedule_str.lower() == 'clr':  # cyclical learning rate
+            training_schedule = CLR_SCHEDULE
         # SINTEL
         elif training_schedule_str.lower() == 'sintel_s1':  # Fine-tune Sintel (stage 1)
             training_schedule = FINETUNE_SINTEL_S1
@@ -745,7 +774,7 @@ class Net(object):
                     save_summaries_secs=save_summaries_secs,
                     number_of_steps=training_schedule['max_iter'],
                     init_fn=InitAssignFn,
-                    # train_step_fn=train_step_fn,
+                    train_step_fn=train_step_fn,
                     # saver=saver,
                 )
             else:
@@ -756,7 +785,7 @@ class Net(object):
                     global_step=checkpoint_global_step_tensor,
                     save_summaries_secs=save_summaries_secs,
                     number_of_steps=training_schedule['max_iter'],
-                    # train_step_fn=train_step_fn,
+                    train_step_fn=train_step_fn,
                     # saver=saver,
                 )
             print("Loss at the end of training is {}".format(final_loss))
