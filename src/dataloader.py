@@ -290,7 +290,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             # tensors are already of type float (redundant conversion), remove when everything is tested
             # image_a, matches_a, sparse_flow, flow = map(tf.to_float, [image_a, matches_a, sparse_flow, flow])
             # image_a, matches_a = map(tf.to_float, [image_a, matches_a])
-            image_a, matches_a = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a, matches_a])
+            image_a, matches_a = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a, matches_a])  # flow is float32
         else:
             matches_a = None
             sparse_flow = None

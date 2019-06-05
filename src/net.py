@@ -610,8 +610,8 @@ class Net(object):
 
         if lr_range_test:  # learning rate range test to bound max/min optimal learning rate (2015, Leslie N. Smith)
             start_lr = 1e-10
-            decay_steps = 100
-            decay_rate = 1.3  # i.e. it exponentially increase, does not decay
+            decay_steps = 130
+            decay_rate = 1.2  # i.e. it exponentially increase, does not decay
             learning_rate = tf.train.exponential_decay(
                 start_lr, global_step=checkpoint_global_step_tensor,
                 decay_steps=decay_steps, decay_rate=decay_rate)
@@ -639,7 +639,7 @@ class Net(object):
         # AdamW = tf.contrib.opt.extend_with_decoupled_weight_decay(optimizer)
         if log_tensorboard:
             # Add learning rate
-            tf.summary.scalar('learning_rate', optimizer._lr)  # self.learning_rate does not
+            tf.summary.scalar('learning_rate', learning_rate)
 
         if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
             inputs = {
