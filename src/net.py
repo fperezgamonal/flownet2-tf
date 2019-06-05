@@ -609,17 +609,17 @@ class Net(object):
                 tf.summary.image("image_b", input_b, max_outputs=1)
 
         if lr_range_test:  # learning rate range test to bound max/min optimal learning rate (2015, Leslie N. Smith)
-            # start_lr = 1e-10
-            # decay_steps = 18
-            # decay_rate = 1.15  # i.e. it exponentially increase, does not decay
-            # learning_rate = tf.train.exponential_decay(
-            #     start_lr, global_step=checkpoint_global_step_tensor,
-            #     decay_steps=decay_steps, decay_rate=decay_rate)
+            start_lr = 1e-10
+            decay_steps = 100
+            decay_rate = 1.3  # i.e. it exponentially increase, does not decay
+            learning_rate = tf.train.exponential_decay(
+                start_lr, global_step=checkpoint_global_step_tensor,
+                decay_steps=decay_steps, decay_rate=decay_rate)
             # Temporally do the same (not necessarily always)
-            learning_rate = tf.train.piecewise_constant(
-                checkpoint_global_step_tensor,
-                [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
-                training_schedule['learning_rates'])
+            # learning_rate = tf.train.piecewise_constant(
+            #     checkpoint_global_step_tensor,
+            #     [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
+            #     training_schedule['learning_rates'])
         else:
 
             learning_rate = tf.train.piecewise_constant(

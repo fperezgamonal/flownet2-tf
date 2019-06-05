@@ -1,22 +1,22 @@
-import numpy as np
+# import numpy as np
 # thanks to: https://arxiv.org/pdf/1809.05571.pdf (the code has not been updated yet but the paper is out!)
 # schedules reproduced (aside from long which was already provided) from og repo at: github.com/lmb-freiburg/flownet2
 # Must navigate to models and download models to get the text files (*proto.txt): one for 'long', 'fine' and 'short'
-step_values = list(np.round(np.linspace(1, 2999, 50)).astype('int'))
-learning_rates = []
-lr = 1e-10
-for step in step_values:
-    lr = lr * 1.58
-    learning_rates.append(lr)
-learning_rates.insert(0, 1e-10)
+# step_values = list(np.round(np.linspace(1, 2999, 50)).astype('int'))
+# learning_rates = []
+# lr = 1e-10
+# for step in step_values:
+#     lr = lr * 1.58
+#     learning_rates.append(lr)
+# learning_rates.insert(0, 1e-10)
 
 LR_RANGE_TEST = {  # steps and learning rates defined by a step-wise curve with (exponential) decay (increasing)
-    'step_values': step_values,
-    'learning_rates': learning_rates,
+    # 'step_values': step_values,
+    # 'learning_rates': learning_rates,
     'momentum': 0.9,
     'momentum2': 0.999,
-    'weight_decay': 0.0004,  # for now leave it like og schedules
-    'max_iter': 3000,  # around 10 minutes (aprox. 5 iters/s)
+    'weight_decay': 0.0,  # remove it as we are ONLY exponentially trying diff. lrs
+    'max_iter': 10000,  # around 30 minutes (aprox. 5 iters/s), enough to diverge probably (intended!)
 }
 LONG_SCHEDULE = {
     'step_values': [400000, 600000, 800000, 1000000],
