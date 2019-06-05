@@ -13,7 +13,7 @@ def main():
         checkpoints = None  # double-check None
 
     if FLAGS.lr_range_test:   # initialise test values (for exponentially increasing lr to be tested)
-        lr_range_dict = {'initial_lr': FLAGS.initial_lr, 'decay_rate': FLAGS.decay_rate,
+        lr_range_dict = {'start_lr': FLAGS.start_lr, 'decay_rate': FLAGS.decay_rate,
                          'decay_steps': FLAGS.decay_steps}
     else:
         lr_range_dict = None
@@ -95,7 +95,7 @@ if __name__ == '__main__':
         default=False,
     )
     parser.add_argument(
-        '--initial_lr',
+        '--start_lr',
         type=float,
         required=False,
         help='Initial/starting learning rate for the range finder',
