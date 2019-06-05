@@ -1,0 +1,3 @@
+[submodule "src/cyclic_learning_rate"]
+	path = src/cyclic_learning_rate
+	url = https://github.com/fperezgamonal/cyclic-learning-rate
