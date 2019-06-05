@@ -14,8 +14,7 @@ from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FI
     FINETUNE_SINTEL_S3, FINETUNE_SINTEL_S4, FINETUNE_SINTEL_S5, FINETUNE_KITTI_S1, FINETUNE_KITTI_S2,\
     FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LR_RANGE_TEST
 slim = tf.contrib.slim
-
-import resource
+from utils.cyclic_learning_rate import clr
 
 VAL_INTERVAL = 1000  # each N samples, we evaluate the validation set
 
@@ -629,6 +628,15 @@ class Net(object):
             #     checkpoint_global_step_tensor,
             #     [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
             #     training_schedule['learning_rates'])
+        elif isinstance(training_schedule['learning_rates'], str):  # we are using a non-piecewise learning
+            # cyclical learning rate forked from: https://github.com/mhmoodlan/cyclic-learning-rate
+            if training_schedule['learning_rates'].lower() == 'clr':
+                learning_rate = clr.cyclic_learning_rate(checkpoint_global_step_tensor,
+                                                         training_schedule['min_lr'], training_schedule['max_lr'],
+                                                         training_schedule['step_size'], training_schedule['gamma'],
+                                                         training_schedule['mode'])
+
+            # add other policies (1-cycle), cosine-decay, etc.
         else:
 
             learning_rate = tf.train.piecewise_constant(
