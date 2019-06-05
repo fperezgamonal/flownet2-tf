@@ -774,7 +774,7 @@ class Net(object):
                     save_summaries_secs=save_summaries_secs,
                     number_of_steps=training_schedule['max_iter'],
                     init_fn=InitAssignFn,
-                    train_step_fn=train_step_fn,
+                    # train_step_fn=train_step_fn,
                     # saver=saver,
                 )
             else:
@@ -785,7 +785,7 @@ class Net(object):
                     global_step=checkpoint_global_step_tensor,
                     save_summaries_secs=save_summaries_secs,
                     number_of_steps=training_schedule['max_iter'],
-                    train_step_fn=train_step_fn,
+                    # train_step_fn=train_step_fn,
                     # saver=saver,
                 )
             print("Loss at the end of training is {}".format(final_loss))
