@@ -531,7 +531,8 @@ class Net(object):
                         print(final_str_formated)
 
     def train(self, log_dir, training_schedule_str, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
-              checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True, lr_range_test=False):
+              checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True, lr_range_test=False,
+              lr_range_dict=None):
         # Add validation batches as input? Used only once every val_interval steps...?
         """
         runs training on the network from which this method is called.
@@ -546,6 +547,8 @@ class Net(object):
         :param input_type:
         :param log_verbosity:
         :param log_tensorboard:
+        :param lr_range_test:
+        :param lr_range_dict:
 
         :return:
         """
@@ -609,9 +612,15 @@ class Net(object):
                 tf.summary.image("image_b", input_b, max_outputs=1)
 
         if lr_range_test:  # learning rate range test to bound max/min optimal learning rate (2015, Leslie N. Smith)
-            start_lr = 1e-10
-            decay_steps = 115
-            decay_rate = 1.2  # i.e. it exponentially increase, does not decay
+            if lr_range_test is not None:  # use the input params
+                start_lr = lr_range_dict['start_lr']
+                decay_steps = lr_range_dict['decay_steps']
+                decay_rate = lr_range_dict['decay_rate']  # > 1 so it exponentially increases, does not decay
+            else:  # use default values
+                start_lr = 1e-10
+                decay_steps = 110
+                decay_rate = 1.25
+
             learning_rate = tf.train.exponential_decay(
                 start_lr, global_step=checkpoint_global_step_tensor,
                 decay_steps=decay_steps, decay_rate=decay_rate)
@@ -714,7 +723,7 @@ class Net(object):
             # Explicitly create a Saver to specify maximum number of checkpoints to keep (and how frequently)
             # saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2)
             if lr_range_test:
-                save_summaries_secs = 30
+                save_summaries_secs = 10
             else:
                 save_summaries_secs = 180
 

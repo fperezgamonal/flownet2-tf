@@ -12,6 +12,12 @@ def main():
     else:
         checkpoints = None  # double-check None
 
+    if FLAGS.lr_range_test:   # initialise test values (for exponentially increasing lr to be tested)
+        lr_range_dict = {'initial_lr': FLAGS.initial_lr, 'decay_rate': FLAGS.decay_rate,
+                         'decay_steps': FLAGS.decay_steps}
+    else:
+        lr_range_dict = None
+
     if FLAGS.input_type == 'image_matches':
         print("Input_type: 'image_matches'")
         input_a, matches_a, sparse_flow, flow = load_batch(FLAGS.dataset_config, 'train', input_type=FLAGS.input_type)
@@ -29,6 +35,7 @@ def main():
             log_verbosity=FLAGS.log_verbosity,
             log_tensorboard=FLAGS.log_tensorboard,
             lr_range_test=FLAGS.lr_range_test,
+            lr_range_dict=lr_range_dict,
         )
     else:
         print("Input_type: 'image_pairs'")
@@ -46,6 +53,7 @@ def main():
             log_verbosity=FLAGS.log_verbosity,
             log_tensorboard=FLAGS.log_tensorboard,
             lr_range_test=FLAGS.lr_range_test,
+            lr_range_dict=lr_range_dict,
         )
 
 
@@ -85,6 +93,27 @@ if __name__ == '__main__':
         required=False,
         help='Whether or not to do a learning rate range test (exponentially) to find a good lr range',
         default=False,
+    )
+    parser.add_argument(
+        '--initial_lr',
+        type=float,
+        required=False,
+        help='Initial/starting learning rate for the range finder',
+        default=1e-10,
+    )
+    parser.add_argument(
+        '--decay_rate',
+        type=float,
+        required=False,
+        help='decay_rate of the exponentially increasing learning rate to test range',
+        default=1.25,
+    )
+    parser.add_argument(
+        '--decay_steps',
+        type=float,
+        required=False,
+        help='Normalising constant in the exponent of the e^(x) that controls the slope',
+        default=110,
     )
     parser.add_argument(
         '--log_verbosity',
