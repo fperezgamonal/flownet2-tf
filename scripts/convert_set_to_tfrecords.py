@@ -220,6 +220,9 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
             if DEBUG:
                 print("NEW shapes after padding (images-matches): ")
                 print("img_a: {0}\nimg_b: {1}\nmch_a: {2}".format(image_a.shape, image_b.shape, matches_a.shape))
+                print("img_a has range: ({}, {})".format(np.min(image_a), np.max(image_a)))
+                print("matches_a has range: ({}, {})".format(np.min(matches_a), np.max(matches_a)))
+                print("img_b has range: ({}, {})".format(np.min(image_b), np.max(image_b)))
 
             image_a_raw = image_a.tostring()
             image_b_raw = image_b.tostring()
@@ -237,12 +240,14 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                 ("Fatal: both flows should have matching dimensions but instead have: out_flow.shape: {0},"
                  " sparse_flow: {1}".format(flow.shape, sparse_flow.shape))
 
-            assert flow_ch == 2, ("Expected flow field to have 2 channels (horizontal + vertical) but it has: {0}".format(
-                flow_ch))
+            assert flow_ch == 2, ("Expected flow field to have 2 channels (horizontal + vertical) but it has: "
+                                  "{0}".format(flow_ch))
 
             if DEBUG:
                 print("OG shapes before padding (flows): ")
                 print("sparse_flow: {0}\nflow: {1}".format(sparse_flow.shape, flow.shape))
+                print("sparse_flow has range: ({}, {})".format(np.min(sparse_flow), np.max(sparse_flow)))
+                print("and after normalisation: ({}, {})".format(np.min(sparse_flow)/20, np.max(sparse_flow)/20))
 
             # Pad if necessary (like above or to be more precise like 'apply_y' (net.py))
             if flow_height % divisor != 0 or flow_width % divisor != 0:
