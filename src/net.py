@@ -379,7 +379,7 @@ class Net(object):
                 final_str_formated = get_metrics(metrics)
                 print(final_str_formated)
 
-    # TODO: double-check the number of columns of the txt file to ensure it is OK
+    # TODO: double-check the number of columns of the txt file to ensure it is properly formatted
     # Each line will define a set of inputs. By doing so, we reduce complexity and avoid errors due to "forced" sorting
     def test_batch(self, checkpoint, image_paths, out_path, input_type='image_pairs', save_image=True, save_flo=True,
                    compute_metrics=True, log_metrics2file=False):
@@ -432,6 +432,17 @@ class Net(object):
                 assert 2 <= len(path_inputs) <= 6, (
                     'More paths than expected. Expected: I1+I2 (2), I1+MM+SF(3), I1+MM+SF+GTF(4),'
                     '  I1+MM+SF+GT+OCC_MSK+INVMASK(5 to 6)')
+
+                # TODO: check if putting the if statements that check the length under fewer external ifs is simpler
+                # Something like:
+                #   if(input_type=='image_pairs'):
+                #       if compute_metrics:
+                #           if len(...)
+                #           (...)
+                #       else:
+                #           if len(...)
+                #   elif input_....
+
                 if len(path_inputs) == 2 and input_type == 'image_pairs':  # Only image1 + image2 have been provided
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
@@ -561,7 +572,7 @@ class Net(object):
 
     def train(self, log_dir, training_schedule_str, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
               checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True, lr_range_test=False,
-              lr_range_dict=None):
+              train_params_dict=None):
         # Add validation batches as input? Used only once every val_interval steps...?
         """
         runs training on the network from which this method is called.
@@ -577,7 +588,7 @@ class Net(object):
         :param log_verbosity:
         :param log_tensorboard:
         :param lr_range_test:
-        :param lr_range_dict:
+        :param train_params_dict:
 
         :return:
         """
@@ -642,9 +653,9 @@ class Net(object):
 
         if lr_range_test:  # learning rate range test to bound max/min optimal learning rate (2015, Leslie N. Smith)
             if lr_range_test is not None:  # use the input params
-                start_lr = lr_range_dict['start_lr']
-                decay_steps = lr_range_dict['decay_steps']
-                decay_rate = lr_range_dict['decay_rate']  # > 1 so it exponentially increases, does not decay
+                start_lr = train_params_dict['start_lr']
+                decay_steps = train_params_dict['decay_steps']
+                decay_rate = train_params_dict['decay_rate']  # > 1 so it exponentially increases, does not decay
             else:  # use default values
                 start_lr = 1e-10
                 decay_steps = 110
@@ -653,18 +664,16 @@ class Net(object):
             learning_rate = tf.train.exponential_decay(
                 start_lr, global_step=checkpoint_global_step_tensor,
                 decay_steps=decay_steps, decay_rate=decay_rate)
-            # Temporally do the same (not necessarily always)
-            # learning_rate = tf.train.piecewise_constant(
-            #     checkpoint_global_step_tensor,
-            #     [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
-            #     training_schedule['learning_rates'])
+
         elif isinstance(training_schedule['learning_rates'], str):  # we are using a non-piecewise learning
             # cyclical learning rate forked from: https://github.com/mhmoodlan/cyclic-learning-rate
             if training_schedule['learning_rates'].lower() == 'clr':
-                learning_rate = clr.cyclic_learning_rate(checkpoint_global_step_tensor,
-                                                         training_schedule['min_lr'], training_schedule['max_lr'],
-                                                         training_schedule['step_size'], training_schedule['gamma'],
-                                                         training_schedule['mode'])
+                learning_rate = clr.cyclic_learning_rate(
+                    checkpoint_global_step_tensor, train_params_dict['clr_min_lr'], train_params_dict['clr_max_lr'],
+                    train_params_dict['clr_stepsize'], train_params_dict['clr_gamma'], train_params_dict['clr_mode'],
+                )
+            # Change max_iter to correspond to the end of the last cycle (in fact is still approximate but closer)
+            training_schedule['max_iter'] = 2 * train_params_dict['clr_stepsize'] * train_params_dict['clr_num_cycles']
 
             # add other policies (1-cycle), cosine-decay, etc.
         else:
@@ -678,6 +687,7 @@ class Net(object):
         # They implement L2 regularization. The next expression applied to tf.train.AdamOptimizer effectively
         # decouples weight decay from weight update (decays weight BEFORE updating gradients)
         # It only has the desired effects for optimizers that DO NOT depend on the value of 'var' in the update step
+        # TODO: try AdamW and see if it improves convergence (smaller loss and speed)
         optimizer = tf.train.AdamOptimizer(
             learning_rate,
             training_schedule['momentum'],
@@ -765,6 +775,10 @@ class Net(object):
             else:
                 save_summaries_secs = 180
 
+            # If max_steps is passed as a parameter, it overrides max_iter which is configured in training_schedules.py
+            if 'max_steps' in train_params_dict:
+                training_schedule['max_iter'] = train_params_dict['max_steps']
+
             if checkpoints is not None:
                 final_loss = slim.learning.train(
                     train_op,
@@ -790,8 +804,7 @@ class Net(object):
                 )
             print("Loss at the end of training is {}".format(final_loss))
 
-    # TODO: add the option to resume training from checkpoint (saver) ==> fine-tuning
-    # TODO: see the 'scope' of the checkpoint option in the train function, seems like it does not load the whole chkpt
-    # TODO: if we restore a checkpoint, can we use it to properly save the state with the correct global step?
-    # Or we may overwrite it by mistake?! By now, use the default checkpoint
+    # TODO: manually inspect if ALL optimizer variables are properly resumed (loss explodes for a few iterations)
+    # It is not clear if Adam can only save some variables or all
+    #  See: https://www.tensorflow.org/alpha/guide/checkpoints#manually_inspecting_checkpoints
     # def finetuning(...)

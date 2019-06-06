@@ -12,11 +12,27 @@ def main():
     else:
         checkpoints = None  # double-check None
 
-    if FLAGS.lr_range_test:   # initialise test values (for exponentially increasing lr to be tested)
-        lr_range_dict = {'start_lr': FLAGS.start_lr, 'decay_rate': FLAGS.decay_rate,
-                         'decay_steps': FLAGS.decay_steps}
+    # initialise range test values (exponentially increasing lr to be tested)
+    if FLAGS.lr_range_test and FLAGS.training_schedule.lower() == 'lr_range_test':
+        train_params_dict = {'start_lr': FLAGS.start_lr,
+                             'decay_rate': FLAGS.decay_rate,
+                             'decay_steps': FLAGS.decay_steps,
+                             }
+    # Initialise CLR parameters (define dictionary). Note that if max_iter=stepsize we have a linear range test!
+    elif FLAGS.training_schedule.lower() == 'clr':
+        train_params_dict = {'clr_min_lr': FLAGS.clr_min_lr,
+                             'clr_max_lr': FLAGS.clr_max_lr,
+                             'clr_stepsize': FLAGS.clr_stepsize,
+                             'clr_num_cycles': FLAGS.clr_num_cycles,
+                             'clr_gamma': FLAGS.clr_gamma,
+                             'clr_mode': FLAGS.clr_mode,
+                             }
     else:
-        lr_range_dict = None
+        train_params_dict = None
+
+    # Add max_steps if the user wishes to overwrite the config in training_schedules.py
+    if FLAGS.max_steps is not None:
+        train_params_dict['max_steps'] = FLAGS.max_steps
 
     if FLAGS.input_type == 'image_matches':
         print("Input_type: 'image_matches'")
@@ -35,7 +51,7 @@ def main():
             log_verbosity=FLAGS.log_verbosity,
             log_tensorboard=FLAGS.log_tensorboard,
             lr_range_test=FLAGS.lr_range_test,
-            lr_range_dict=lr_range_dict,
+            train_params_dict=train_params_dict,
         )
     else:
         print("Input_type: 'image_pairs'")
@@ -53,10 +69,12 @@ def main():
             log_verbosity=FLAGS.log_verbosity,
             log_tensorboard=FLAGS.log_tensorboard,
             lr_range_test=FLAGS.lr_range_test,
-            lr_range_dict=lr_range_dict,
+            train_params_dict=train_params_dict,
         )
 
 
+# TODO: think a better way to generate the dictionaries of training parameters (not fixed, step-wise policies)
+# Instead of defining so many input arguments and then creating the dict.
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -87,6 +105,7 @@ if __name__ == '__main__':
         help='Training schedule (learning rate, weight decay, etc.)',
         default='long_schedule',
     )
+    # ==== Learning rate range test parameters ====
     parser.add_argument(
         '--lr_range_test',
         type=bool,
@@ -115,6 +134,63 @@ if __name__ == '__main__':
         help='Normalising constant in the exponent of the e^(x) that controls the slope',
         default=110,
     )
+    # ==== Cyclic Learning Rate (CLR) parameters ====
+    parser.add_argument(
+        '--clr_min_lr',
+        type=float,
+        required=False,
+        help='Lower bound (minimum learning rate) of Cyclic Learning Rate policy',
+        default=4.25e-6,  # flying chairs, find exploring exponential range from 1e-10 up to aprox. 1e-3 (diverged)
+    )
+    parser.add_argument(
+        '--clr_max_lr',
+        type=float,
+        required=False,
+        help='Upper bound (maximum learning rate) of Cyclic Learning Rate policy',
+        default=1e-4,  # same as above
+    )
+    parser.add_argument(
+        '--clr_stepsize',
+        type=int,
+        required=False,
+        help='Length of half-cycle (recommended to be 2-10x training iters=#train_ex/batch_size)',
+        default=11116,  # 4x for flying chairs (22232/8=2779, 2779*4=11116)
+    )
+    parser.add_argument(
+        '--clr_num_cycles',
+        type=int,
+        required=False,
+        help='Number of cycles to perform (defines max_iters as 2*stepsize*num_cycles)',
+        default=4,
+    )
+    parser.add_argument(
+        '--clr_gamma',
+        type=float,
+        required=False,
+        help="Exponential weighting factor (close to 1) that decays the learning rate as iterations grow (only used "
+             "if mode: 'exponential'",
+        default=0.99994,
+    )
+    parser.add_argument(
+        '--clr_mode',
+        type=str,
+        required=False,
+        help="Type of cyclic learning rate: 'triangular', 'triangular2' or 'exponential' (see Leslie N.Smith paper "
+             "for more information)",
+        default=5,
+    )
+    # Overrides value defined in selected schedule training_schedules.py
+    parser.add_argument(
+        '--max_steps',
+        type=int,
+        required=False,
+        help="Maximum number of iterations to train for (Careful, this overrides the setting of the current training "
+             "schedule defined in training_schedules.py)",
+        default=None,
+    )
+
+    # TODO: see why DEBUG mode cannot be activated (only INFO)
+    # ==== Logging ====
     parser.add_argument(
         '--log_verbosity',
         type=int,
