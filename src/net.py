@@ -665,15 +665,21 @@ class Net(object):
                 start_lr, global_step=checkpoint_global_step_tensor,
                 decay_steps=decay_steps, decay_rate=decay_rate)
 
+        # maybe this "shield" of checking the fixed config is not needed (3 checks)
         elif isinstance(training_schedule['learning_rates'], str):  # we are using a non-piecewise learning
             # cyclical learning rate forked from: https://github.com/mhmoodlan/cyclic-learning-rate
-            if training_schedule['learning_rates'].lower() == 'clr':
+            if training_schedule['learning_rates'].lower() == 'clr' and training_schedule_str == 'clr':
                 learning_rate = clr.cyclic_learning_rate(
                     checkpoint_global_step_tensor, train_params_dict['clr_min_lr'], train_params_dict['clr_max_lr'],
                     train_params_dict['clr_stepsize'], train_params_dict['clr_gamma'], train_params_dict['clr_mode'],
                 )
-            # Change max_iter to correspond to the end of the last cycle (in fact is still approximate but closer)
-            training_schedule['max_iter'] = 2 * train_params_dict['clr_stepsize'] * train_params_dict['clr_num_cycles']
+                # Change max_iter to correspond to the end of the last cycle (in fact is still approximate but closer)
+                new_max_iters = 2 * train_params_dict['clr_stepsize'] * train_params_dict['clr_num_cycles']
+
+                if log_verbosity > 1:
+                    print("(CLR) Default max. number of iters being changed from {} to {}".format(
+                        training_schedule['max_iters'], new_max_iters))
+                training_schedule['max_iter'] = new_max_iters
 
             # add other policies (1-cycle), cosine-decay, etc.
         else:

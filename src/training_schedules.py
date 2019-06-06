@@ -10,15 +10,11 @@
 #     learning_rates.append(lr)
 # learning_rates.insert(0, 1e-10)
 
+# All other params defined as input arguments to train.py scripts
 CLR_SCHEDULE = {
     'learning_rates': 'clr',
-    'min_lr': 4.25e-6,
-    'max_lr': 4.9e-4,
-    'step_size': 5558,  # 2-10 times the number of iterations per epoch (nº samples/batch_size): (min, max) 5558-27790
-    'gamma': 0.99994,
-    'mode': 'triangular',
-    'weight_decay': 0.0,
-    'max_iter': 100000,
+    'weight_decay': 0.0,  # disabled for now as CLR already introduces decay (exponentially or by a fix 0.5 factor)
+    'max_iter': 10000,  # left as default
     'momentum': 0.9,
     'momentum2': 0.999,
 }
