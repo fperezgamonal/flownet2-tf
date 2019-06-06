@@ -679,7 +679,7 @@ class Net(object):
                 if log_verbosity > 1:
                     print("(CLR) Default max. number of iters being changed from {} to {}".format(
                         training_schedule['max_iters'], new_max_iters))
-                training_schedule['max_iter'] = new_max_iters
+                training_schedule['max_iters'] = new_max_iters
 
             # add other policies (1-cycle), cosine-decay, etc.
         else:
@@ -783,7 +783,7 @@ class Net(object):
 
             # If max_steps is passed as a parameter, it overrides max_iter which is configured in training_schedules.py
             if 'max_steps' in train_params_dict:
-                training_schedule['max_iter'] = train_params_dict['max_steps']
+                training_schedule['max_iters'] = train_params_dict['max_steps']
 
             if checkpoints is not None:
                 final_loss = slim.learning.train(
@@ -792,7 +792,7 @@ class Net(object):
                     # session_config=tf.ConfigProto(allow_soft_placement=True),
                     global_step=checkpoint_global_step_tensor,
                     save_summaries_secs=save_summaries_secs,
-                    number_of_steps=training_schedule['max_iter'],
+                    number_of_steps=training_schedule['max_iters'],
                     init_fn=InitAssignFn,
                     # train_step_fn=train_step_fn,
                     # saver=saver,
@@ -804,7 +804,7 @@ class Net(object):
                     # session_config=tf.ConfigProto(allow_soft_placement=True),
                     global_step=checkpoint_global_step_tensor,
                     save_summaries_secs=save_summaries_secs,
-                    number_of_steps=training_schedule['max_iter'],
+                    number_of_steps=training_schedule['max_iters'],
                     # train_step_fn=train_step_fn,
                     # saver=saver,
                 )

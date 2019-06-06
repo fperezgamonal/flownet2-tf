@@ -14,7 +14,7 @@
 CLR_SCHEDULE = {
     'learning_rates': 'clr',
     'weight_decay': 0.0,  # disabled for now as CLR already introduces decay (exponentially or by a fix 0.5 factor)
-    'max_iter': 10000,  # left as default
+    'max_iters': 10000,  # left as default
     'momentum': 0.9,
     'momentum2': 0.999,
 }
@@ -25,7 +25,7 @@ LR_RANGE_TEST = {  # steps and learning rates defined by a step-wise curve with 
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0,  # remove it as we are ONLY exponentially trying diff. lrs
-    'max_iter': 9838,  # around 30 minutes (aprox. 5 iters/s), enough to diverge probably (intended!)
+    'max_iters': 9838,  # around 30 minutes (aprox. 5 iters/s), enough to diverge probably (intended!)
 }
 LONG_SCHEDULE = {
     'step_values': [400000, 600000, 800000, 1000000],
@@ -33,7 +33,7 @@ LONG_SCHEDULE = {
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 1200000,
+    'max_iters': 1200000,
 }
 # og repo adds a stepvalue at 500k iters but it is useless since it is equal to maxiter!
 # Resetting global_step after Slong so this step numbers are correct (started from 0)
@@ -43,7 +43,7 @@ FINE_SCHEDULE = {
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 500000,  # may need to change it to 1.7M iters (continuing Slong)
+    'max_iters': 500000,  # may need to change it to 1.7M iters (continuing Slong)
 }
 
 # Added original FlowNet 1.0 schedule (in case we need to compare results). It performed considerably worse (but faster)
@@ -53,7 +53,7 @@ SHORT_SCHEDULE = {
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 600000,
+    'max_iters': 600000,
 }
 
 # learning rate disruptions to fine-tune on Sintel and Kitti from PWC-Net+ (from paper:
@@ -71,7 +71,7 @@ FINETUNE_SINTEL_S1 = {
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 150000,
+    'max_iters': 150000,
 }
 
 FINETUNE_SINTEL_S2 = {
@@ -81,7 +81,7 @@ FINETUNE_SINTEL_S2 = {
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 300000,
+    'max_iters': 300000,
 }
 # TODO: the fix worked so the global step is correctly resumed (change the other fine-tuning schedules accordingly)
 # NOTE: this means that if we want to do some of this fine-tuning in a different order, we have to:
@@ -98,7 +98,7 @@ FINETUNE_SINTEL_S3 = {
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 450000,
+    'max_iters': 450000,
 }
 
 FINETUNE_SINTEL_S4 = {
@@ -108,7 +108,7 @@ FINETUNE_SINTEL_S4 = {
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 600000,
+    'max_iters': 600000,
 }
 
 FINETUNE_SINTEL_S5 = {
@@ -118,7 +118,7 @@ FINETUNE_SINTEL_S5 = {
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 750000,
+    'max_iters': 750000,
 }
 
 # concatenate all stages into only one (may fix reloading from checkpoint "problems")
@@ -142,7 +142,7 @@ FINETUNE_SINTEL_ALL_STAGES = {
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 750000,
+    'max_iters': 750000,
 }
 
 # KITTI
@@ -153,7 +153,7 @@ FINETUNE_KITTI_S1 = {
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 150000,
+    'max_iters': 150000,
 }
 
 FINETUNE_KITTI_S2 = {
@@ -163,7 +163,7 @@ FINETUNE_KITTI_S2 = {
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 300000,
+    'max_iters': 300000,
 }
 
 FINETUNE_KITTI_S3 = {
@@ -173,7 +173,7 @@ FINETUNE_KITTI_S3 = {
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 450000,
+    'max_iters': 450000,
 }
 
 FINETUNE_KITTI_S4 = {
@@ -183,7 +183,7 @@ FINETUNE_KITTI_S4 = {
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 600000,
+    'max_iters': 600000,
 }
 
 # Uses mixture of Sintel, KITTI and HD1K to fine-tune
@@ -193,5 +193,5 @@ FINETUNE_ROB = {
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0004,
-    'max_iter': 600000,
+    'max_iters': 600000,
 }
