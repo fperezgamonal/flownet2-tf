@@ -600,6 +600,13 @@ class Net(object):
             tf.logging.set_verbosity(tf.logging.DEBUG)
             print("Logging to tensorboard: {}".format(log_tensorboard))
 
+        # TODO: it is likely that the optimizer state cannot be properly resumed since we do not pass saver to .train()
+        #   * In fact, probably ONLY the global step is properly recovered as we give it to create_train_op
+        #   * From https://github.com/tensorflow/tensorflow/issues/312#issuecomment-335039382:
+        #       * We can create a saver properly initialised with the checkpoint variables (allowing for change in name)
+        #       * Specify maximum checkpoints to keep, variable list and keep one each N hours
+        #       * Then this tf.Saver() can be passed to tf.slim.learning.train() and hopefully we can resume training:
+        #           * with a loss approximately of the same value of that yield before pausing/stopping training
         if checkpoints is not None:
             # Create the initial assignment op
             if isinstance(checkpoints, dict):
@@ -609,7 +616,13 @@ class Net(object):
                         var.op.name.split(new_scope + '/')[1]: var
                         for var in variables_to_restore
                     }
-                    init_assign_op, init_feed_dict = slim.assign_from_checkpoint(checkpoint_path, renamed_variables)
+                    if log_verbosity > 1:
+                        print("Restoring the following variables from checkpoint:")
+                        for var in renamed_variables:
+                            print(var)
+                        print("Finished printing list of restored variables")
+
+                init_assign_op, init_feed_dict = slim.assign_from_checkpoint(checkpoint_path, renamed_variables)
                 # Initialise checkpoint for stacked nets with the global step as the number of the outermost net
                 step_number = int(checkpoint_path.split('-')[-1])
                 checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
@@ -617,6 +630,12 @@ class Net(object):
             elif isinstance(checkpoints, str):
                 checkpoint_path = checkpoints
                 variables_to_restore = slim.get_model_variables()
+                if log_verbosity > 1:
+                    print("Restoring the following variables from checkpoint:")
+                    for var in variables_to_restore:
+                        print(var)
+                    print("Finished printing list of restored variables")
+
                 init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
                     checkpoint_path, variables_to_restore)
                 # Initialise checkpoint by parsing checkpoint name (not ideal but reading from checkpoint variable is
@@ -752,7 +771,18 @@ class Net(object):
         # Create unique logging dir to avoid overwritting of old data (e.g.: when comparing different runs)
         now = datetime.datetime.now()
         date_now = now.strftime('%d-%m-%y_%H-%M-%S')
-        log_dir = os.path.join(log_dir, date_now)
+        if 'sintel' in training_schedule_str.lower():  # put all Sintel fine-tuning under the same log folder
+            training_schedule_fld = 'fine_sintel'
+        elif 'fine' in training_schedule_str.lower():  # format it a little better, FT3D for FlyingThings3D
+            training_schedule_fld = "Sfine_FT3D"
+        elif 'clr' in training_schedule_str.lower():  # make it all caps for readability
+            training_schedule_fld = "CLR"
+        elif 'long' in training_schedule_str.lower():
+            training_schedule_fld = "Slong_FC".format(training_schedule_str)  # FC for FlyingChairs
+        else:
+            training_schedule_fld = training_schedule_str  # leave it as is
+
+        log_dir = os.path.join(log_dir, training_schedule_fld, date_now)
 
         print("Starting training...")
         if self.debug:
