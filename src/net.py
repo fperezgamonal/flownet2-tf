@@ -663,6 +663,9 @@ class Net(object):
                 #                                             dtype='int64')
 
                 # likely fix to not proper resuming (huge loss)
+                step_number = int(checkpoint_path.split('-')[-1])
+                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
+                                                            dtype='int64')
                 path_to_checkpoint_fld = os.path.dirname(checkpoint_path)
                 if log_verbosity > 2:
                     print("Path to checkpoint folder is: '{}'".format(path_to_checkpoint_fld))
@@ -670,15 +673,11 @@ class Net(object):
 
                 if log_verbosity > 2:
                     print("Is ckpt None: {0}".format(ckpt is None))
-                saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2,
-                                       var_list=optimistic_restore_vars(ckpt.model_checkpoint_path) if checkpoint_path
-                                       else None)
-                step_number = int(checkpoint_path.split('-')[-1])
-                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
-                                                            dtype='int64')
+                saver = tf.train.Saver(
+                    max_to_keep=3, keep_checkpoint_every_n_hours=2, var_list=optimistic_restore_vars(
+                        ckpt.model_checkpoint_path) if checkpoint_path else None)
+
             else:
-                saver = None
-                checkpoint_global_step_tensor = None
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
         else:
             saver = None
