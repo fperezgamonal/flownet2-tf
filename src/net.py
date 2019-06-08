@@ -643,31 +643,40 @@ class Net(object):
                 step_number = int(checkpoint_path.split('-')[-1])
                 checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
                                                             dtype='int64')
+                # TODO: adapt resuming from saver to stacked architectures if it works for one standalone
+                saver = None
             elif isinstance(checkpoints, str):
                 checkpoint_path = checkpoints
-                variables_to_restore = slim.get_model_variables()
-                if log_verbosity > 1:
-                    print("Restoring the following variables from checkpoint:")
-                    for var in variables_to_restore:
-                        print(var)
-                    print("Finished printing list of restored variables")
+                # variables_to_restore = slim.get_model_variables()
+                # if log_verbosity > 1:
+                #     print("Restoring the following variables from checkpoint:")
+                #     for var in variables_to_restore:
+                #         print(var)
+                #     print("Finished printing list of restored variables")
+                #
+                # init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
+                #     checkpoint_path, variables_to_restore)
+                # # Initialise checkpoint by parsing checkpoint name (not ideal but reading from checkpoint variable is
+                # # currently not working as expected
+                # step_number = int(checkpoint_path.split('-')[-1])
+                # checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
+                #                                             dtype='int64')
 
-                init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
-                    checkpoint_path, variables_to_restore)
-                # Initialise checkpoint by parsing checkpoint name (not ideal but reading from checkpoint variable is
-                # currently not working as expected
+                # likely fix to not proper resuming (huge loss)
+                path_to_checkpoint_fld = os.path.dirname(checkpoint_path)
+                ckpt = tf.train.get_checkpoint_state(os.path.join(path_to_checkpoint_fld, 'checkpoint'))
+                saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2,
+                                       var_list=optimistic_restore_vars(ckpt.model_checkpoint_path) if checkpoint_path
+                                       else None)
                 step_number = int(checkpoint_path.split('-')[-1])
                 checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
                                                             dtype='int64')
-
-                # likely fix to not proper resuming (huge loss)
-                # path_to_checkpoint_fld = os.path.join(checkpoint_path.split('/')[:-1])
-                # ckpt = tf.train.get_checkpoint_state(os.path.join(path_to_checkpoint_fld, 'checkpoint'))
-                # saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2,
-                # var_list=optimistic_restore_vars(ckpt.model_checkpoint_path) if checkpoint else None)
             else:
+                saver = None
+                checkpoint_global_step_tensor = None
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
         else:
+            saver = None
             checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype='int64')
 
         # Create an initial assignment function.
@@ -721,6 +730,8 @@ class Net(object):
                     print("(CLR) Default max. number of iters being changed from {} to {}".format(
                         training_schedule['max_iters'], new_max_iters))
                 training_schedule['max_iters'] = new_max_iters
+            else:
+                learning_rate = 3e-4  # for Adam only!
 
             # add other policies (1-cycle), cosine-decay, etc.
         else:
@@ -826,8 +837,6 @@ class Net(object):
                     }
                 )
         else:
-            # Explicitly create a Saver to specify maximum number of checkpoints to keep (and how frequently)
-            # saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2)
             if lr_range_test:
                 save_summaries_secs = 10
             else:
@@ -845,9 +854,9 @@ class Net(object):
                     global_step=checkpoint_global_step_tensor,
                     save_summaries_secs=save_summaries_secs,
                     number_of_steps=training_schedule['max_iters'],
-                    init_fn=InitAssignFn,
+                    # init_fn=InitAssignFn,
                     # train_step_fn=train_step_fn,
-                    # saver=saver,
+                    saver=saver,
                 )
             else:
                 final_loss = slim.learning.train(
@@ -858,7 +867,7 @@ class Net(object):
                     save_summaries_secs=save_summaries_secs,
                     number_of_steps=training_schedule['max_iters'],
                     # train_step_fn=train_step_fn,
-                    # saver=saver,
+                    saver=saver,
                 )
             print("Loss at the end of training is {}".format(final_loss))
 
