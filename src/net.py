@@ -664,7 +664,12 @@ class Net(object):
 
                 # likely fix to not proper resuming (huge loss)
                 path_to_checkpoint_fld = os.path.dirname(checkpoint_path)
-                ckpt = tf.train.get_checkpoint_state(os.path.join(path_to_checkpoint_fld, 'checkpoint'))
+                if log_verbosity > 2:
+                    print("Path to checkpoint folder is: '{}'".format(path_to_checkpoint_fld))
+                ckpt = tf.train.get_checkpoint_state(path_to_checkpoint_fld)
+
+                if log_verbosity > 2:
+                    print("Is ckpt None: {0}".format(ckpt is None))
                 saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2,
                                        var_list=optimistic_restore_vars(ckpt.model_checkpoint_path) if checkpoint_path
                                        else None)
