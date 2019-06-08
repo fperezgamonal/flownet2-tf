@@ -666,16 +666,17 @@ class Net(object):
                 step_number = int(checkpoint_path.split('-')[-1])
                 checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
                                                             dtype='int64')
-                path_to_checkpoint_fld = os.path.dirname(checkpoint_path)
+                # path_to_checkpoint_fld = os.path.dirname(checkpoint_path)
                 if log_verbosity > 2:
-                    print("Path to checkpoint folder is: '{}'".format(path_to_checkpoint_fld))
-                ckpt = tf.train.get_checkpoint_state(path_to_checkpoint_fld)
+                    print("Path to checkpoint folder is: '{}'".format(os.path.dirname(checkpoints + '/checkpoint')))
+                ckpt = tf.train.get_checkpoint_state(os.path.dirname(checkpoints + '/checkpoint'))
 
                 if log_verbosity > 2:
                     print("Is ckpt None: {0}".format(ckpt is None))
                 saver = tf.train.Saver(
                     max_to_keep=3, keep_checkpoint_every_n_hours=2, var_list=optimistic_restore_vars(
-                        ckpt.model_checkpoint_path) if checkpoint_path else None)
+                        ckpt.model_checkpoint_path) if checkpoints else None)
+
 
             else:
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
