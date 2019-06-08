@@ -667,11 +667,11 @@ class Net(object):
                 checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
                                                             dtype='int64')
                 # path_to_checkpoint_fld = os.path.dirname(checkpoint_path)
-                if log_verbosity > 2:
+                if log_verbosity > 1:
                     print("Path to checkpoint folder is: '{}'".format(os.path.dirname(checkpoints + '/checkpoint')))
                 ckpt = tf.train.get_checkpoint_state(os.path.dirname(checkpoints + '/checkpoint'))
 
-                if log_verbosity > 2:
+                if log_verbosity > 1:
                     print("Is ckpt None: {0}".format(ckpt is None))
                 saver = tf.train.Saver(
                     max_to_keep=3, keep_checkpoint_every_n_hours=2, var_list=optimistic_restore_vars(
