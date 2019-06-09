@@ -653,9 +653,10 @@ class Net(object):
                 checkpoint_path = checkpoints
                 variables_to_restore = slim.get_model_variables()
                 if log_verbosity > 1:
-                    print("Restoring the following variables from checkpoint (SLIM):")
+                    print("Restoring the following variables from checkpoint (SLIM), total: {}".format(
+                        len(variables_to_restore)))
                     for var in variables_to_restore:
-                        print(var)
+                        print("SLIM: {}".format(var))
                     print("Finished printing list of restored variables")
                 #
                 # init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
@@ -682,7 +683,7 @@ class Net(object):
                     print("Listing variables that will be restored(optimistic_restore_vars), total: {}:".format(
                         len(vars2restore)))
                     for var in vars2restore:
-                        print(var)
+                        print("(optimistic_restore_vars): {}".format(var))
                     sys.stdout.flush()
 
                 saver = tf.train.Saver(
