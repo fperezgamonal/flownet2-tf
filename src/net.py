@@ -81,11 +81,22 @@ def optimistic_restore_vars(model_checkpoint_path, filter_by_scope=False):
 def keep_scope_restore_vars(model_checkpoint_path):
     print("model_checkpoint_path is {}".format(model_checkpoint_path))
     reader = tf.train.NewCheckpointReader(model_checkpoint_path)
-    var_to_shape_map = reader.get_variable_to_shape_map()
-    restore_dict = dict()
-    for key in sorted(var_to_shape_map):
-        print("({}, {})".format(reader.get_tensor(key), key))
-    return restore_dict
+    saved_shapes = reader.get_variable_to_shape_map()
+    print(saved_shapes)
+    var_names = sorted([(var.name, var.name.split(':')[0]) for var in saved_shapes])
+    # var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
+    #                     if var.name.split(':')[0] in saved_shapes])
+
+    # restore_vars = []
+    # name2var = dict(zip(map(lambda x: x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
+    # with tf.variable_scope('', reuse=True):
+    #     for var_name, saved_var_name in var_names:
+    #         curr_var = name2var[saved_var_name]
+    #         var_shape = curr_var.get_shape().as_list()
+    #         if var_shape == saved_shapes[saved_var_name]:
+    #             restore_vars.append(curr_var)
+    #             print("restored with name: ".format(curr_var))
+    return restore_vars
 
 
 class Net(object):
