@@ -673,9 +673,14 @@ class Net(object):
 
                 if log_verbosity > 1:
                     print("Is ckpt None: {0}".format(ckpt is None))
+                vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path)
+                if log_verbosity > 1:
+                    print("Listing variables that will be restored:")
+                    for var in vars2restore:
+                        print(var)
+                        
                 saver = tf.train.Saver(
-                    max_to_keep=3, keep_checkpoint_every_n_hours=2, var_list=optimistic_restore_vars(
-                        ckpt.model_checkpoint_path) if checkpoint_path else None)
+                    max_to_keep=3, keep_checkpoint_every_n_hours=2, var_list=vars2restore if checkpoint_path else None)
 
             else:
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
