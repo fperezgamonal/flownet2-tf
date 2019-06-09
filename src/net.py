@@ -71,13 +71,14 @@ def optimistic_restore_vars(model_checkpoint_path):
     for var in var_names:
         print(var)
     restore_vars = []
-    name2var = dict(zip(map(lambda x:x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
+    name2var = dict(zip(map(lambda x: x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
     with tf.variable_scope('', reuse=True):
         for var_name, saved_var_name in var_names:
             curr_var = name2var[saved_var_name]
             var_shape = curr_var.get_shape().as_list()
             if var_shape == saved_shapes[saved_var_name]:
                 restore_vars.append(curr_var)
+                print("restored with name: ".format(curr_var))
     return restore_vars
 
 
