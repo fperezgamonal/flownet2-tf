@@ -649,13 +649,14 @@ class Net(object):
                 # TODO: adapt resuming from saver to stacked architectures if it works for one standalone
                 saver = None
             elif isinstance(checkpoints, str):
+                print("checkpoints is str, {}".format(checkpoints))
                 checkpoint_path = checkpoints
-                # variables_to_restore = slim.get_model_variables()
-                # if log_verbosity > 1:
-                #     print("Restoring the following variables from checkpoint:")
-                #     for var in variables_to_restore:
-                #         print(var)
-                #     print("Finished printing list of restored variables")
+                variables_to_restore = slim.get_model_variables()
+                if log_verbosity > 1:
+                    print("Restoring the following variables from checkpoint (SLIM):")
+                    for var in variables_to_restore:
+                        print(var)
+                    print("Finished printing list of restored variables")
                 #
                 # init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
                 #     checkpoint_path, variables_to_restore)
@@ -678,7 +679,8 @@ class Net(object):
                     print("Is ckpt None: {0}".format(ckpt is None))
                 vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path)
                 if log_verbosity > 1:
-                    print("Listing variables that will be restored:")
+                    print("Listing variables that will be restored(optimistic_restore_vars), total: {}:".format(
+                        len(vars2restore)))
                     for var in vars2restore:
                         print(var)
 
