@@ -676,9 +676,9 @@ class Net(object):
                 #                                             dtype='int64')
 
                 # likely fix to not proper resuming (huge loss)
-                step_number = int(checkpoint_path.split('-')[-1])
-                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
-                                                            dtype='int64')
+                # step_number = int(checkpoint_path.split('-')[-1])
+                # checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
+                #                                             dtype='int64')
                 # path_to_checkpoint_fld = os.path.dirname(checkpoint_path)
                 if log_verbosity > 1:
                     print("Path to checkpoint folder is: '{}'".format(os.path.dirname(checkpoint_path)))
@@ -687,6 +687,9 @@ class Net(object):
                 if log_verbosity > 1:
                     print("Is ckpt None: {0}".format(ckpt is None))
                 vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path)
+                step_number = int(checkpoint_path.split('-')[-1])
+                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
+                                                            dtype='int64')
                 if log_verbosity > 1:
                     print("Listing variables that will be restored(optimistic_restore_vars), total: {}:".format(
                         len(vars2restore)))
