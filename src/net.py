@@ -57,7 +57,7 @@ class Mode(Enum):
 #       * Specify maximum checkpoints to keep, variable list and keep one each N hours
 #       * Then this tf.Saver() can be passed to tf.slim.learning.train() and hopefully we can resume training:
 #           * with a loss approximately of the same value of that yield before pausing/stopping training
-def optimistic_restore_vars(model_checkpoint_path, filter_by_scope=False):
+def optimistic_restore_vars(model_checkpoint_path):
     print("model_checkpoint_path is {}".format(model_checkpoint_path))
     reader = tf.train.NewCheckpointReader(model_checkpoint_path)
     saved_shapes = reader.get_variable_to_shape_map()
@@ -87,7 +87,7 @@ def keep_scope_restore_vars(model_checkpoint_path):
     # var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
     #                     if var.name.split(':')[0] in saved_shapes])
 
-    # restore_vars = []
+    restore_vars = []
     # name2var = dict(zip(map(lambda x: x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
     # with tf.variable_scope('', reuse=True):
     #     for var_name, saved_var_name in var_names:
@@ -649,6 +649,24 @@ class Net(object):
             tf.logging.set_verbosity(tf.logging.DEBUG)
             print("Logging to tensorboard: {}".format(log_tensorboard))
 
+        training_schedule = self.get_training_schedule(training_schedule_str)
+        if log_tensorboard:
+            tf.summary.image("image_a", input_a, max_outputs=1)
+            if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
+                tf.summary.image("matches_a", matches_a, max_outputs=1)
+                # Convert sparse flow to image-like (ONLY for visualization)
+                # not padding needed ! (we do it as a pre-processing step when creating the tfrecord)
+                # Sparse flow is very difficult to visualize (0 values are white) in TB (do not include it)
+                # sparse_flow_0 = sparse_flow[0, :, :, :]
+                # sparse_flow_0 = tf.py_func(flow_to_image, [sparse_flow_0], tf.uint8)
+                # sparse_flow_1 = sparse_flow[1, :, :, :]
+                # sparse_flow_1 = tf.py_func(flow_to_image, [sparse_flow_1], tf.uint8)
+                # sparse_flow_img = tf.stack([sparse_flow_0, sparse_flow_1], 0)
+                #
+                # tf.summary.image("sparse_flow_img", sparse_flow_img, max_outputs=1)
+            else:
+                tf.summary.image("image_b", input_b, max_outputs=1)
+
         if checkpoints is not None:
             # Create the initial assignment op
             if isinstance(checkpoints, dict):
@@ -673,7 +691,8 @@ class Net(object):
                 saver = None
             elif isinstance(checkpoints, str):
                 checkpoint_path = checkpoints
-                # variables_to_restore = slim.get_model_variables()
+                variables_to_restore = slim.get_model_variables()
+                print("SLIM found {} variables to restore".format(len(variables_to_restore)))
                 # if log_verbosity > 1:
                 #     print("Restoring the following variables from checkpoint (SLIM), total: {}".format(
                 #         len(variables_to_restore)))
@@ -712,8 +731,8 @@ class Net(object):
                         print("(optimistic_restore_vars): {}".format(var))
                     sys.stdout.flush()
 
-                saver = tf.train.Saver(
-                    max_to_keep=3, keep_checkpoint_every_n_hours=2, var_list=vars2restore if checkpoint_path else None)
+                saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2,
+                                       var_list=vars2restore if checkpoint_path else None)
 
             else:
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
@@ -724,24 +743,6 @@ class Net(object):
         # Create an initial assignment function.
         def InitAssignFn(sess):
             sess.run(init_assign_op, init_feed_dict)
-
-        training_schedule = self.get_training_schedule(training_schedule_str)
-        if log_tensorboard:
-            tf.summary.image("image_a", input_a, max_outputs=1)
-            if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
-                tf.summary.image("matches_a", matches_a, max_outputs=1)
-                # Convert sparse flow to image-like (ONLY for visualization)
-                # not padding needed ! (we do it as a pre-processing step when creating the tfrecord)
-                # Sparse flow is very difficult to visualize (0 values are white) in TB (do not include it)
-                # sparse_flow_0 = sparse_flow[0, :, :, :]
-                # sparse_flow_0 = tf.py_func(flow_to_image, [sparse_flow_0], tf.uint8)
-                # sparse_flow_1 = sparse_flow[1, :, :, :]
-                # sparse_flow_1 = tf.py_func(flow_to_image, [sparse_flow_1], tf.uint8)
-                # sparse_flow_img = tf.stack([sparse_flow_0, sparse_flow_1], 0)
-                #
-                # tf.summary.image("sparse_flow_img", sparse_flow_img, max_outputs=1)
-            else:
-                tf.summary.image("image_b", input_b, max_outputs=1)
 
         if lr_range_test:  # learning rate range test to bound max/min optimal learning rate (2015, Leslie N. Smith)
             if lr_range_test is not None:  # use the input params
