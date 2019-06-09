@@ -81,14 +81,10 @@ def optimistic_restore_vars(model_checkpoint_path, filter_by_scope=False):
 def keep_scope_restore_vars(model_checkpoint_path):
     print("model_checkpoint_path is {}".format(model_checkpoint_path))
     reader = tf.train.NewCheckpointReader(model_checkpoint_path)
-    var_names = reader.get_variable_to_shape_map().keys()
-    restore_dict = {}
-    for v in var_names:
-        restore_dict[v] = reader.get_tensor(v)
-
-    print("Dictionary of variables has elements:")
-    for elem in restore_dict:
-        print(elem)
+    var_to_shape_map = reader.get_variable_to_shape_map()
+    restore_dict = dict()
+    for key in sorted(var_to_shape_map):
+        print("({}, {})".format(reader.get_tensor(key), key))
     return restore_dict
 
 
