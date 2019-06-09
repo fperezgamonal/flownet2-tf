@@ -68,7 +68,8 @@ def optimistic_restore_vars(model_checkpoint_path):
     var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
                         if var.name.split(':')[0] in saved_shapes])
     print("Printing all vars in checkpoint AFTER filtering, total={}".format(len(var_names)))
-
+    for var in var_names:
+        print(var)
     restore_vars = []
     name2var = dict(zip(map(lambda x:x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
     with tf.variable_scope('', reuse=True):
