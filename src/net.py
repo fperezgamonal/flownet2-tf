@@ -61,12 +61,16 @@ def optimistic_restore_vars(model_checkpoint_path):
     print("model_checkpoint_path is {}".format(model_checkpoint_path))
     reader = tf.train.NewCheckpointReader(model_checkpoint_path)
     saved_shapes = reader.get_variable_to_shape_map()
-    print("len(saved_shapes.keys()): {}".format(len(saved_shapes.keys())))
+    print("Printing all vars in checkpoint BEFORE filtering, total={}".format(len(saved_shapes.keys())))
+    for shape in saved_shapes:
+        print(shape)
+
     var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
                         if var.name.split(':')[0] in saved_shapes])
-    print("len(var_names): {}".format(len(var_names)))
+    print("Printing all vars in checkpoint AFTER filtering, total={}".format(len(var_names)))
+
     restore_vars = []
-    name2var = dict(zip(map(lambda x: x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
+    name2var = dict(zip(map(lambda x:x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
     with tf.variable_scope('', reuse=True):
         for var_name, saved_var_name in var_names:
             curr_var = name2var[saved_var_name]
@@ -649,15 +653,14 @@ class Net(object):
                 # TODO: adapt resuming from saver to stacked architectures if it works for one standalone
                 saver = None
             elif isinstance(checkpoints, str):
-                print("checkpoints is str, {}".format(checkpoints))
                 checkpoint_path = checkpoints
-                variables_to_restore = slim.get_model_variables()
-                if log_verbosity > 1:
-                    print("Restoring the following variables from checkpoint (SLIM), total: {}".format(
-                        len(variables_to_restore)))
-                    for var in variables_to_restore:
-                        print("SLIM: {}".format(var))
-                    print("Finished printing list of restored variables")
+                # variables_to_restore = slim.get_model_variables()
+                # if log_verbosity > 1:
+                #     print("Restoring the following variables from checkpoint (SLIM), total: {}".format(
+                #         len(variables_to_restore)))
+                #     for var in variables_to_restore:
+                #         print("SLIM: {}".format(var))
+                #     print("Finished printing list of restored variables")
                 #
                 # init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
                 #     checkpoint_path, variables_to_restore)
