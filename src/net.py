@@ -683,6 +683,7 @@ class Net(object):
                         len(vars2restore)))
                     for var in vars2restore:
                         print(var)
+                    sys.stdout.flush()
 
                 saver = tf.train.Saver(
                     max_to_keep=3, keep_checkpoint_every_n_hours=2, var_list=vars2restore if checkpoint_path else None)
