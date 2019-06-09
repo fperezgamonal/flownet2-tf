@@ -57,22 +57,15 @@ class Mode(Enum):
 #       * Specify maximum checkpoints to keep, variable list and keep one each N hours
 #       * Then this tf.Saver() can be passed to tf.slim.learning.train() and hopefully we can resume training:
 #           * with a loss approximately of the same value of that yield before pausing/stopping training
-def optimistic_restore_vars(model_checkpoint_path):
+def optimistic_restore_vars(model_checkpoint_path, filter_by_scope=False):
     print("model_checkpoint_path is {}".format(model_checkpoint_path))
     reader = tf.train.NewCheckpointReader(model_checkpoint_path)
     saved_shapes = reader.get_variable_to_shape_map()
-    print("Printing all vars in checkpoint BEFORE filtering, total={}".format(len(saved_shapes.keys())))
     for shape in saved_shapes:
         print(shape)
-    print("vars if tf.global_variables()")
-    for var in tf.global_variables():
-        print(var)
-
     var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
-                        if var.name.split(':')[0] in saved_shapes])
-    print("Printing all vars in checkpoint AFTER filtering, total={}".format(len(var_names)))
-    for var in var_names:
-        print(var)
+                       if var.name.split(':')[0] in saved_shapes])
+
     restore_vars = []
     name2var = dict(zip(map(lambda x: x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
     with tf.variable_scope('', reuse=True):
@@ -82,6 +75,27 @@ def optimistic_restore_vars(model_checkpoint_path):
             if var_shape == saved_shapes[saved_var_name]:
                 restore_vars.append(curr_var)
                 print("restored with name: ".format(curr_var))
+    return restore_vars
+
+
+def keep_scope_restore_vars(model_checkpoint_path):
+    print("model_checkpoint_path is {}".format(model_checkpoint_path))
+    reader = tf.train.NewCheckpointReader(model_checkpoint_path)
+    saved_shapes = reader.get_variable_to_shape_map()
+    # for shape in saved_shapes:
+    #     print(shape)
+    # var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
+    #                     if var.name.split(':')[0] in saved_shapes])
+    #
+    # restore_vars = []
+    # name2var = dict(zip(map(lambda x: x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
+    # with tf.variable_scope('', reuse=True):
+    #     for var_name, saved_var_name in var_names:
+    #         curr_var = name2var[saved_var_name]
+    #         var_shape = curr_var.get_shape().as_list()
+    #         if var_shape == saved_shapes[saved_var_name]:
+    #             restore_vars.append(curr_var)
+    restore_vars = saved_shapes
     return restore_vars
 
 
@@ -686,7 +700,8 @@ class Net(object):
 
                 if log_verbosity > 1:
                     print("Is ckpt None: {0}".format(ckpt is None))
-                vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path)
+                # vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path)
+                vars2restore = keep_scope_restore_vars(ckpt.model_checkpoint_path)
                 step_number = int(checkpoint_path.split('-')[-1])
                 checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
                                                             dtype='int64')
