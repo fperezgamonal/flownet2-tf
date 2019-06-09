@@ -668,15 +668,14 @@ class Net(object):
                                                             dtype='int64')
                 # path_to_checkpoint_fld = os.path.dirname(checkpoint_path)
                 if log_verbosity > 1:
-                    print("Path to checkpoint folder is: '{}'".format(os.path.dirname(checkpoints + '/checkpoint')))
-                ckpt = tf.train.get_checkpoint_state(os.path.dirname(checkpoints + '/checkpoint'))
+                    print("Path to checkpoint folder is: '{}'".format(os.path.dirname(checkpoint_path)))
+                ckpt = tf.train.get_checkpoint_state(os.path.dirname(checkpoint_path))
 
                 if log_verbosity > 1:
                     print("Is ckpt None: {0}".format(ckpt is None))
                 saver = tf.train.Saver(
                     max_to_keep=3, keep_checkpoint_every_n_hours=2, var_list=optimistic_restore_vars(
-                        ckpt.model_checkpoint_path) if checkpoints else None)
-
+                        ckpt.model_checkpoint_path) if checkpoint_path else None)
 
             else:
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
