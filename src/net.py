@@ -64,6 +64,9 @@ def optimistic_restore_vars(model_checkpoint_path):
     print("Printing all vars in checkpoint BEFORE filtering, total={}".format(len(saved_shapes.keys())))
     for shape in saved_shapes:
         print(shape)
+    print("vars if tf.global_variables()")
+    for var in tf.global_variables():
+        print(var)
 
     var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
                         if var.name.split(':')[0] in saved_shapes])
