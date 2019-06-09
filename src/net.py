@@ -58,10 +58,13 @@ class Mode(Enum):
 #       * Then this tf.Saver() can be passed to tf.slim.learning.train() and hopefully we can resume training:
 #           * with a loss approximately of the same value of that yield before pausing/stopping training
 def optimistic_restore_vars(model_checkpoint_path):
+    print("model_checkpoint_path is {}".format(model_checkpoint_path))
     reader = tf.train.NewCheckpointReader(model_checkpoint_path)
     saved_shapes = reader.get_variable_to_shape_map()
+    print("len(saved_shapes.keys()): {}".format(len(saved_shapes.keys())))
     var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
                         if var.name.split(':')[0] in saved_shapes])
+    print("len(var_names): {}".format(len(var_names)))
     restore_vars = []
     name2var = dict(zip(map(lambda x: x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
     with tf.variable_scope('', reuse=True):
@@ -678,7 +681,7 @@ class Net(object):
                     print("Listing variables that will be restored:")
                     for var in vars2restore:
                         print(var)
-                        
+
                 saver = tf.train.Saver(
                     max_to_keep=3, keep_checkpoint_every_n_hours=2, var_list=vars2restore if checkpoint_path else None)
 
