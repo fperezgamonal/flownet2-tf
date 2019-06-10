@@ -58,22 +58,13 @@ class Mode(Enum):
 #       * Then this tf.Saver() can be passed to tf.slim.learning.train() and hopefully we can resume training:
 #           * with a loss approximately of the same value of that yield before pausing/stopping training
 def optimistic_restore_vars(model_checkpoint_path):
-    print("model_checkpoint_path is {}".format(model_checkpoint_path))
     reader = tf.train.NewCheckpointReader(model_checkpoint_path)
     saved_shapes = reader.get_variable_to_shape_map()
-    print("Variables names BEFORE filtering:")
-    for shape in saved_shapes:
-        print(shape)
     var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
                        if var.name.split(':')[0] in saved_shapes])
 
-    print("Variables names AFTER filtering:")
-    for name in var_names:
-        print(name)
-
     restore_vars = []
     name2var = dict(zip(map(lambda x: x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
-    print("Restoring variables...")
     with tf.variable_scope('', reuse=True):
         for var_name, saved_var_name in var_names:
             curr_var = name2var[saved_var_name]
@@ -799,6 +790,16 @@ class Net(object):
             summarize_gradients=False,
             global_step=checkpoint_global_step_tensor,
         )
+
+        if log_verbosity > 1:
+            print("Adam optimizer has slots (to double-check against restored vars):")
+            print(optimizer.get_slot_names())
+
+            print("Prining corresponding variable fo each slot")
+            train_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+            adam_var_list = [optimizer.get_slot(var, name) for name in optimizer.get_slot_names() for var in train_vars]
+            for var in adam_var_list:
+                print("(adam): {}".format(var))
 
         # TODO: Must define checkpoint resuming here to get all the variables in tf.global_variables restored!
         if checkpoints is not None:
