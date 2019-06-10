@@ -61,13 +61,19 @@ def optimistic_restore_vars(model_checkpoint_path):
     print("model_checkpoint_path is {}".format(model_checkpoint_path))
     reader = tf.train.NewCheckpointReader(model_checkpoint_path)
     saved_shapes = reader.get_variable_to_shape_map()
+    print("Variables names BEFORE filtering:")
     for shape in saved_shapes:
         print(shape)
     var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
                        if var.name.split(':')[0] in saved_shapes])
 
+    print("Variables names AFTER filtering:")
+    for name in var_names:
+        print(name)
+
     restore_vars = []
     name2var = dict(zip(map(lambda x: x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
+    print("Restoring variables (check name)...")
     with tf.variable_scope('', reuse=True):
         for var_name, saved_var_name in var_names:
             curr_var = name2var[saved_var_name]
@@ -676,68 +682,19 @@ class Net(object):
                         var.op.name.split(new_scope + '/')[1]: var
                         for var in variables_to_restore
                     }
-                    if log_verbosity > 1:
-                        print("Restoring the following variables from checkpoint:")
-                        for var in renamed_variables:
-                            print(var)
-                        print("Finished printing list of restored variables")
-
-                init_assign_op, init_feed_dict = slim.assign_from_checkpoint(checkpoint_path, renamed_variables)
                 # Initialise checkpoint for stacked nets with the global step as the number of the outermost net
                 step_number = int(checkpoint_path.split('-')[-1])
                 checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
                                                             dtype='int64')
                 # TODO: adapt resuming from saver to stacked architectures if it works for one standalone
-                saver = None
             elif isinstance(checkpoints, str):
                 checkpoint_path = checkpoints
-                variables_to_restore = slim.get_model_variables()
-                print("SLIM found {} variables to restore".format(len(variables_to_restore)))
-                # if log_verbosity > 1:
-                #     print("Restoring the following variables from checkpoint (SLIM), total: {}".format(
-                #         len(variables_to_restore)))
-                #     for var in variables_to_restore:
-                #         print("SLIM: {}".format(var))
-                #     print("Finished printing list of restored variables")
-                #
-                # init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
-                #     checkpoint_path, variables_to_restore)
-                # # Initialise checkpoint by parsing checkpoint name (not ideal but reading from checkpoint variable is
-                # # currently not working as expected
-                # step_number = int(checkpoint_path.split('-')[-1])
-                # checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
-                #                                             dtype='int64')
-
-                # likely fix to not proper resuming (huge loss)
-                # step_number = int(checkpoint_path.split('-')[-1])
-                # checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
-                #                                             dtype='int64')
-                # path_to_checkpoint_fld = os.path.dirname(checkpoint_path)
-                if log_verbosity > 1:
-                    print("Path to checkpoint folder is: '{}'".format(os.path.dirname(checkpoint_path)))
-                ckpt = tf.train.get_checkpoint_state(os.path.dirname(checkpoint_path))
-
-                if log_verbosity > 1:
-                    print("Is ckpt None: {0}".format(ckpt is None))
-                # vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path)
-                vars2restore = keep_scope_restore_vars(ckpt.model_checkpoint_path)
                 step_number = int(checkpoint_path.split('-')[-1])
                 checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
                                                             dtype='int64')
-                if log_verbosity > 1:
-                    print("Listing variables that will be restored(optimistic_restore_vars), total: {}:".format(
-                        len(vars2restore)))
-                    for var in vars2restore:
-                        print("(optimistic_restore_vars): {}".format(var))
-                    sys.stdout.flush()
-
-                saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2,
-                                       var_list=vars2restore if checkpoint_path else None)
-
             else:
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
         else:
-            saver = None
             checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype='int64')
 
         # Create an initial assignment function.
@@ -843,6 +800,73 @@ class Net(object):
             summarize_gradients=False,
             global_step=checkpoint_global_step_tensor,
         )
+
+        # TODO: Must define checkpoint resuming here to get all the variables in tf.global_variables restored!
+        if checkpoints is not None:
+            # Create the initial assignment op
+            if isinstance(checkpoints, dict):
+                for (checkpoint_path, (scope, new_scope)) in checkpoints.items():
+                    variables_to_restore = slim.get_variables(scope=scope)
+                    renamed_variables = {
+                        var.op.name.split(new_scope + '/')[1]: var
+                        for var in variables_to_restore
+                    }
+                    if log_verbosity > 1:
+                        print("Restoring the following variables from checkpoint:")
+                        for var in renamed_variables:
+                            print(var)
+                        print("Finished printing list of restored variables")
+
+                init_assign_op, init_feed_dict = slim.assign_from_checkpoint(checkpoint_path, renamed_variables)
+                # Initialise checkpoint for stacked nets with the global step as the number of the outermost net
+                step_number = int(checkpoint_path.split('-')[-1])
+                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
+                                                            dtype='int64')
+                # TODO: adapt resuming from saver to stacked architectures if it works for one standalone
+                saver = None
+            elif isinstance(checkpoints, str):
+                checkpoint_path = checkpoints
+                variables_to_restore = slim.get_model_variables()
+                if log_verbosity > 1:
+                    print("Restoring the following variables from checkpoint (SLIM), total: {}".format(
+                        len(variables_to_restore)))
+                    for var in variables_to_restore:
+                        print("SLIM: {}".format(var))
+                    print("Finished printing list of restored variables")
+                #
+                # init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
+                #     checkpoint_path, variables_to_restore)
+                # # Initialise checkpoint by parsing checkpoint name (not ideal but reading from checkpoint variable is
+                # # currently not working as expected
+                # step_number = int(checkpoint_path.split('-')[-1])
+                # checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
+                #                                             dtype='int64')
+
+                if log_verbosity > 1:
+                    print("Path to checkpoint folder is: '{}'".format(os.path.dirname(checkpoint_path)))
+                ckpt = tf.train.get_checkpoint_state(os.path.dirname(checkpoint_path))
+
+                if log_verbosity > 1:
+                    print("Is ckpt None: {0}".format(ckpt is None))
+                vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path)
+                # vars2restore = keep_scope_restore_vars(ckpt.model_checkpoint_path)
+                step_number = int(checkpoint_path.split('-')[-1])
+                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
+                                                            dtype='int64')
+                if log_verbosity > 1:
+                    print("Listing variables that will be restored(optimistic_restore_vars), total: {}:".format(
+                        len(vars2restore)))
+                    for var in vars2restore:
+                        print("(optimistic_restore_vars): {}".format(var))
+                    sys.stdout.flush()
+
+                saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2,
+                                       var_list=vars2restore if checkpoint_path else None)
+
+            else:
+                raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
+        else:
+            saver = None
 
         # Create unique logging dir to avoid overwritting of old data (e.g.: when comparing different runs)
         now = datetime.datetime.now()
