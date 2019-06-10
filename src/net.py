@@ -676,7 +676,7 @@ class Net(object):
                 step_number = int(checkpoint_path.split('-')[-1])
                 checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
                                                             dtype='int64')
-                # TODO: adapt resuming from saver to stacked architectures if it works for one standalone
+            # TODO: adapt resuming from saver to stacked architectures if it works for one standalone
             elif isinstance(checkpoints, str):
                 checkpoint_path = checkpoints
                 step_number = int(checkpoint_path.split('-')[-1])
@@ -694,16 +694,22 @@ class Net(object):
         if lr_range_test:  # learning rate range test to bound max/min optimal learning rate (2015, Leslie N. Smith)
             if lr_range_test is not None:  # use the input params
                 start_lr = train_params_dict['start_lr']
+                end_lr = train_params_dict['end_lr']
                 decay_steps = train_params_dict['decay_steps']
                 decay_rate = train_params_dict['decay_rate']  # > 1 so it exponentially increases, does not decay
+                lr_range_niters = train_params_dict['lr_range_niters']
             else:  # use default values
                 start_lr = 1e-10
+                end_lr = 1e-1
                 decay_steps = 110
                 decay_rate = 1.25
-
-            learning_rate = tf.train.exponential_decay(
-                start_lr, global_step=checkpoint_global_step_tensor,
-                decay_steps=decay_steps, decay_rate=decay_rate)
+            if train_params_dict['lr_range_mode'].lower() == 'exponential':
+                learning_rate = tf.train.exponential_decay(
+                    start_lr, global_step=checkpoint_global_step_tensor,
+                    decay_steps=decay_steps, decay_rate=decay_rate)
+            else:  # linear
+                learning_rate = clr.cyclic_learning_rate(checkpoint_global_step_tensor, learning_rate=start_lr,
+                                                         max_lr=end_lr,  step_size=lr_range_niters, mode='triangular')
 
         # maybe this "shield" of checking the fixed config is not needed (3 checks)
         elif isinstance(training_schedule['learning_rates'], str):  # we are using a non-piecewise learning
@@ -731,15 +737,42 @@ class Net(object):
                 [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
                 training_schedule['learning_rates'])
 
-        # As suggested in https://arxiv.org/abs/1711.05101, weight decay is not properly implemented for Adam
-        # They implement L2 regularization. The next expression applied to tf.train.AdamOptimizer effectively
-        # decouples weight decay from weight update (decays weight BEFORE updating gradients)
-        # It only has the desired effects for optimizers that DO NOT depend on the value of 'var' in the update step
-        # TODO: try AdamW and see if it improves convergence (smaller loss and speed)
-        optimizer = tf.train.AdamOptimizer(
-            learning_rate,
-            training_schedule['momentum'],
-            training_schedule['momentum2'])
+        if train_params_dict['optimizer'] is not None:
+            # Stochastic Gradient Descent (SGD)
+            if train_params_dict['optimizer'].lower() == 'sgd':
+                optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+
+            # Momentum (SGD + Momentum)
+            elif train_params_dict['optimizer'].lower() == 'momentum':
+                # Use cyclic momentum if using CLR (accelerates convergence)
+                if training_schedule['learning_rates'].lower() == 'clr' and training_schedule_str == 'clr':
+                    print("WIP: implement inverse cyclic policy for momentum")
+                # Use fixed momentum
+                else:
+                    if train_params_dict['momentum'] is not None:
+                        momentum = train_params_dict['momentum']
+                    else:
+                        momentum = 0.9  # some reasonable default
+                optimizer = tf.train.MomentumOptimizer(learning_rate, momentum, use_nesterov=False)
+
+            # AdamW (w. proper weight decay not L2 regularisation), as suggested in https://arxiv.org/abs/1711.05101
+            elif train_params_dict['optimizer'].lower() == 'adamw':
+                if train_params_dict['weight_decay'] is not None:
+                    weight_decay = train_params_dict['weight_decay']
+                else:
+                    weight_decay = 1e-4  # some reasonable default
+
+                # adam_wd is a new class
+                adam_wd = tf.contrib.opt.extend_with_decoupled_weight_decay(tf.train.AdamOptimizer)
+                # Create a adam_wd object
+                optimizer = adam_wd(weight_decay=weight_decay, learning_rate=learning_rate,
+                                    beta1=training_schedule['momentum'], beta2=training_schedule['momentum2'])
+
+        else:  # default to Adam
+            optimizer = tf.train.AdamOptimizer(
+                learning_rate,
+                training_schedule['momentum'],
+                training_schedule['momentum2'])
 
         # AdamW = tf.contrib.opt.extend_with_decoupled_weight_decay(optimizer)
         if log_tensorboard:
@@ -792,17 +825,12 @@ class Net(object):
         )
 
         if log_verbosity > 1:
-            print("Adam optimizer has slots (to double-check against restored vars):")
-            print(optimizer.get_slot_names())
-
-            print("Prining corresponding variable fo each slot")
             train_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
             adam_var_list = [optimizer.get_slot(var, name) for name in optimizer.get_slot_names() for var in train_vars]
-            print(optimizer._get_beta_accumulators())
+            print("Printing optimizer-specific variables to be restored (check against actually restored below)")
             for var in adam_var_list:
                 print("(adam): {}".format(var))
 
-        # TODO: Must define checkpoint resuming here to get all the variables in tf.global_variables restored!
         if checkpoints is not None:
             # Create the initial assignment op
             if isinstance(checkpoints, dict):
@@ -856,9 +884,10 @@ class Net(object):
                     print("Listing variables that will be restored(optimistic_restore_vars), total: {}:".format(
                         len(vars2restore)))
                     for var in vars2restore:
-                        print("(optimistic_restore_vars): {}".format(var))
+                        print(var)
                     sys.stdout.flush()
 
+                # Initialise saver with custom settings and list of variables to restore (resumed training)
                 saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2,
                                        var_list=vars2restore if checkpoint_path else None)
 
