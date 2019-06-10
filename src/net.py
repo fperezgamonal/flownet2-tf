@@ -798,9 +798,7 @@ class Net(object):
             print("Prining corresponding variable fo each slot")
             train_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
             adam_var_list = [optimizer.get_slot(var, name) for name in optimizer.get_slot_names() for var in train_vars]
-            adam_var_list.extend([
-                optimizer._beta1_power, optimizer._beta2_power
-            ])
+            print(optimizer._get_beta_accumulators())
             for var in adam_var_list:
                 print("(adam): {}".format(var))
 
