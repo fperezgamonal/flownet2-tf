@@ -80,7 +80,7 @@ def optimistic_restore_vars(model_checkpoint_path):
             var_shape = curr_var.get_shape().as_list()
             if var_shape == saved_shapes[saved_var_name]:
                 restore_vars.append(curr_var)
-                print("restored with name: ".format(curr_var))
+                print("restored with name: {}".format(curr_var))
     return restore_vars
 
 
@@ -850,9 +850,6 @@ class Net(object):
                     print("Is ckpt None: {0}".format(ckpt is None))
                 vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path)
                 # vars2restore = keep_scope_restore_vars(ckpt.model_checkpoint_path)
-                step_number = int(checkpoint_path.split('-')[-1])
-                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
-                                                            dtype='int64')
                 if log_verbosity > 1:
                     print("Listing variables that will be restored(optimistic_restore_vars), total: {}:".format(
                         len(vars2restore)))
