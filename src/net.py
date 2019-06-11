@@ -891,8 +891,7 @@ class Net(object):
                 saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2,
                                        var_list=vars2restore if checkpoint_path else None)
                 local_init_op = tf.global_variables_initializer()  # may be needed to successfully resume
-                ckpt_basepath = os.path.join('-'.join(checkpoint_path.split('-')[:-1]))
-                init_fn = tf.contrib.framework.assign_from_checkpoint_fn(ckpt_basepath, vars2restore)
+                init_fn = tf.contrib.framework.assign_from_checkpoint_fn(checkpoint_path, vars2restore)
 
             else:
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
