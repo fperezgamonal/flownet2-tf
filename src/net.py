@@ -954,7 +954,7 @@ class Net(object):
                     # init_fn=InitAssignFn,
                     # train_step_fn=train_step_fn,
                     saver=saver,
-                    local_init_op=local_init_op,
+                    # local_init_op=local_init_op,
                     init_fn=init_fn,
                 )
             else:
