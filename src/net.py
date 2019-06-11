@@ -890,6 +890,7 @@ class Net(object):
                 # Initialise saver with custom settings and list of variables to restore (resumed training)
                 saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2,
                                        var_list=vars2restore if checkpoint_path else None)
+                local_init_op = tf.global_variables_initializer()  # may be needed to successfully resume
 
             else:
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
@@ -952,6 +953,7 @@ class Net(object):
                     # init_fn=InitAssignFn,
                     # train_step_fn=train_step_fn,
                     saver=saver,
+                    local_init_op=local_init_op,
                 )
             else:
                 final_loss = slim.learning.train(
