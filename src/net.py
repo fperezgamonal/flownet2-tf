@@ -855,25 +855,12 @@ class Net(object):
                 saver = None
             elif isinstance(checkpoints, str):
                 checkpoint_path = checkpoints
-                variables_to_restore = slim.get_variables_to_restore()
-                if log_verbosity > 1:
-                    print("Restoring the following variables from checkpoint (SLIM), total: {}".format(
-                        len(variables_to_restore)))
-                    for var in variables_to_restore:
-                        print("SLIM: {}".format(var))
-                    print("Finished printing list of restored variables")
-                #
-                # init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
-                #     checkpoint_path, variables_to_restore)
-                # # Initialise checkpoint by parsing checkpoint name (not ideal but reading from checkpoint variable is
-                # # currently not working as expected
-                # step_number = int(checkpoint_path.split('-')[-1])
-                # checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
-                #                                             dtype='int64')
 
                 if log_verbosity > 1:
                     print("Checkpoint path (to file) was: {}".format(checkpoint_path))
                     print("Path to checkpoint folder is: '{}'".format(os.path.dirname(checkpoint_path)))
+
+                # Get checkpoint state from checkpoint_path (used to restore vars)
                 ckpt = tf.train.get_checkpoint_state(os.path.dirname(checkpoint_path))
 
                 if log_verbosity > 1:
@@ -887,10 +874,12 @@ class Net(object):
                         print(var)
                     sys.stdout.flush()
 
+                # TODO: check that the creation of a saver inside 'assign_from_...' does not interfere with custom one
+                # It depends on the preference of saver and init_fn in slim.learning.train()
                 # Initialise saver with custom settings and list of variables to restore (resumed training)
                 saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2,
                                        var_list=vars2restore if checkpoint_path else None)
-                local_init_op = tf.global_variables_initializer()  # may be needed to successfully resume
+                # Define init function to assign variables from checkpoint
                 init_fn = tf.contrib.framework.assign_from_checkpoint_fn(checkpoint_path, vars2restore)
 
             else:
