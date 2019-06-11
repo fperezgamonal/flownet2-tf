@@ -50,6 +50,34 @@ class Mode(Enum):
 #     return [total_loss, should_stop]
 
 
+#  The optimizer state could not be properly resumed because of the following reasons:
+#   * Actual restoring from checkpoint was done BEFORE defining the graph operations==> only global_step resumed
+#   * SLIM required us to use assign_from_checkpoint_fn with the vars retrieved by optimistic_restore_vars
+#   * The above is passed as init_fn to learning.train()
+#   * Finally, the custom training is also passed (but we have to check if its configuration is actually applied or
+#       the one created by init_fn is used instead, without the max num of checkpoints, etc.)
+
+# Special thanks to helpful discussions on similar issues:
+#   * optimistic_restore_vars:
+#       https://github.com/tensorflow/tensorflow/issues/312#issuecomment-335039382 (the whole discussion):
+#   * 'slim.learning.train can't restore variables if new variable have created
+def optimistic_restore_vars(model_checkpoint_path):
+    reader = tf.train.NewCheckpointReader(model_checkpoint_path)
+    saved_shapes = reader.get_variable_to_shape_map()
+    var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
+                       if var.name.split(':')[0] in saved_shapes])
+
+    restore_vars = []
+    name2var = dict(zip(map(lambda x: x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
+    with tf.variable_scope('', reuse=True):
+        for var_name, saved_var_name in var_names:
+            curr_var = name2var[saved_var_name]
+            var_shape = curr_var.get_shape().as_list()
+            if var_shape == saved_shapes[saved_var_name]:
+                restore_vars.append(curr_var)
+    return restore_vars
+
+
 class Net(object):
     __metaclass__ = abc.ABCMeta
 
@@ -600,58 +628,6 @@ class Net(object):
             tf.logging.set_verbosity(tf.logging.DEBUG)
             print("Logging to tensorboard: {}".format(log_tensorboard))
 
-        # TODO: it is likely that the optimizer state cannot be properly resumed since we do not pass saver to .train()
-        #   * In fact, probably ONLY the global step is properly recovered as we give it to create_train_op
-        #   * From https://github.com/tensorflow/tensorflow/issues/312#issuecomment-335039382:
-        #       * We can create a saver properly initialised with the checkpoint variables (allowing for change in name)
-        #       * Specify maximum checkpoints to keep, variable list and keep one each N hours
-        #       * Then this tf.Saver() can be passed to tf.slim.learning.train() and hopefully we can resume training:
-        #           * with a loss approximately of the same value of that yield before pausing/stopping training
-        if checkpoints is not None:
-            # Create the initial assignment op
-            if isinstance(checkpoints, dict):
-                for (checkpoint_path, (scope, new_scope)) in checkpoints.items():
-                    variables_to_restore = slim.get_variables(scope=scope)
-                    renamed_variables = {
-                        var.op.name.split(new_scope + '/')[1]: var
-                        for var in variables_to_restore
-                    }
-                    if log_verbosity > 1:
-                        print("Restoring the following variables from checkpoint:")
-                        for var in renamed_variables:
-                            print(var)
-                        print("Finished printing list of restored variables")
-
-                init_assign_op, init_feed_dict = slim.assign_from_checkpoint(checkpoint_path, renamed_variables)
-                # Initialise checkpoint for stacked nets with the global step as the number of the outermost net
-                step_number = int(checkpoint_path.split('-')[-1])
-                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
-                                                            dtype='int64')
-            elif isinstance(checkpoints, str):
-                checkpoint_path = checkpoints
-                variables_to_restore = slim.get_model_variables()
-                if log_verbosity > 1:
-                    print("Restoring the following variables from checkpoint:")
-                    for var in variables_to_restore:
-                        print(var)
-                    print("Finished printing list of restored variables")
-
-                init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
-                    checkpoint_path, variables_to_restore)
-                # Initialise checkpoint by parsing checkpoint name (not ideal but reading from checkpoint variable is
-                # currently not working as expected
-                step_number = int(checkpoint_path.split('-')[-1])
-                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
-                                                            dtype='int64')
-            else:
-                raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
-        else:
-            checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype='int64')
-
-        # Create an initial assignment function.
-        def InitAssignFn(sess):
-            sess.run(init_assign_op, init_feed_dict)
-
         training_schedule = self.get_training_schedule(training_schedule_str)
         if log_tensorboard:
             tf.summary.image("image_a", input_a, max_outputs=1)
@@ -670,19 +646,53 @@ class Net(object):
             else:
                 tf.summary.image("image_b", input_b, max_outputs=1)
 
+        if checkpoints is not None:
+            # Create the initial assignment op
+            if isinstance(checkpoints, dict):
+                for (checkpoint_path, (scope, new_scope)) in checkpoints.items():
+                    variables_to_restore = slim.get_variables(scope=scope)
+                    renamed_variables = {
+                        var.op.name.split(new_scope + '/')[1]: var
+                        for var in variables_to_restore
+                    }
+                # Initialise checkpoint for stacked nets with the global step as the number of the outermost net
+                step_number = int(checkpoint_path.split('-')[-1])
+                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
+                                                            dtype='int64')
+            # TODO: adapt resuming from saver to stacked architectures if it works for one standalone
+            elif isinstance(checkpoints, str):
+                checkpoint_path = checkpoints
+                step_number = int(checkpoint_path.split('-')[-1])
+                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
+                                                            dtype='int64')
+            else:
+                raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
+        else:
+            checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype='int64')
+
+        # Create an initial assignment function.
+        def InitAssignFn(sess):
+            sess.run(init_assign_op, init_feed_dict)
+
         if lr_range_test:  # learning rate range test to bound max/min optimal learning rate (2015, Leslie N. Smith)
             if lr_range_test is not None:  # use the input params
                 start_lr = train_params_dict['start_lr']
+                end_lr = train_params_dict['end_lr']
                 decay_steps = train_params_dict['decay_steps']
                 decay_rate = train_params_dict['decay_rate']  # > 1 so it exponentially increases, does not decay
+                lr_range_niters = train_params_dict['lr_range_niters']
             else:  # use default values
                 start_lr = 1e-10
+                end_lr = 1e-1
                 decay_steps = 110
                 decay_rate = 1.25
-
-            learning_rate = tf.train.exponential_decay(
-                start_lr, global_step=checkpoint_global_step_tensor,
-                decay_steps=decay_steps, decay_rate=decay_rate)
+            if train_params_dict['lr_range_mode'].lower() == 'exponential':
+                learning_rate = tf.train.exponential_decay(
+                    start_lr, global_step=checkpoint_global_step_tensor,
+                    decay_steps=decay_steps, decay_rate=decay_rate)
+            else:  # linear
+                learning_rate = clr.cyclic_learning_rate(checkpoint_global_step_tensor, learning_rate=start_lr,
+                                                         max_lr=end_lr,  step_size=lr_range_niters, mode='triangular')
 
         # maybe this "shield" of checking the fixed config is not needed (3 checks)
         elif isinstance(training_schedule['learning_rates'], str):  # we are using a non-piecewise learning
@@ -699,6 +709,8 @@ class Net(object):
                     print("(CLR) Default max. number of iters being changed from {} to {}".format(
                         training_schedule['max_iters'], new_max_iters))
                 training_schedule['max_iters'] = new_max_iters
+            else:
+                learning_rate = 3e-4  # for Adam only!
 
             # add other policies (1-cycle), cosine-decay, etc.
         else:
@@ -708,15 +720,42 @@ class Net(object):
                 [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
                 training_schedule['learning_rates'])
 
-        # As suggested in https://arxiv.org/abs/1711.05101, weight decay is not properly implemented for Adam
-        # They implement L2 regularization. The next expression applied to tf.train.AdamOptimizer effectively
-        # decouples weight decay from weight update (decays weight BEFORE updating gradients)
-        # It only has the desired effects for optimizers that DO NOT depend on the value of 'var' in the update step
-        # TODO: try AdamW and see if it improves convergence (smaller loss and speed)
-        optimizer = tf.train.AdamOptimizer(
-            learning_rate,
-            training_schedule['momentum'],
-            training_schedule['momentum2'])
+        if train_params_dict['optimizer'] is not None:
+            # Stochastic Gradient Descent (SGD)
+            if train_params_dict['optimizer'].lower() == 'sgd':
+                optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+
+            # Momentum (SGD + Momentum)
+            elif train_params_dict['optimizer'].lower() == 'momentum':
+                # Use cyclic momentum if using CLR (accelerates convergence)
+                if training_schedule['learning_rates'].lower() == 'clr' and training_schedule_str == 'clr':
+                    print("WIP: implement inverse cyclic policy for momentum")
+                # Use fixed momentum
+                else:
+                    if train_params_dict['momentum'] is not None:
+                        momentum = train_params_dict['momentum']
+                    else:
+                        momentum = 0.9  # some reasonable default
+                optimizer = tf.train.MomentumOptimizer(learning_rate, momentum, use_nesterov=False)
+
+            # AdamW (w. proper weight decay not L2 regularisation), as suggested in https://arxiv.org/abs/1711.05101
+            elif train_params_dict['optimizer'].lower() == 'adamw':
+                if train_params_dict['weight_decay'] is not None:
+                    weight_decay = train_params_dict['weight_decay']
+                else:
+                    weight_decay = 1e-4  # some reasonable default
+
+                # adam_wd is a new class
+                adam_wd = tf.contrib.opt.extend_with_decoupled_weight_decay(tf.train.AdamOptimizer)
+                # Create a adam_wd object
+                optimizer = adam_wd(weight_decay=weight_decay, learning_rate=learning_rate,
+                                    beta1=training_schedule['momentum'], beta2=training_schedule['momentum2'])
+
+        else:  # default to Adam
+            optimizer = tf.train.AdamOptimizer(
+                learning_rate,
+                training_schedule['momentum'],
+                training_schedule['momentum2'])
 
         # AdamW = tf.contrib.opt.extend_with_decoupled_weight_decay(optimizer)
         if log_tensorboard:
@@ -768,6 +807,68 @@ class Net(object):
             global_step=checkpoint_global_step_tensor,
         )
 
+        if log_verbosity > 1:
+            train_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+            adam_var_list = [optimizer.get_slot(var, name) for name in optimizer.get_slot_names() for var in train_vars]
+            print("Printing optimizer-specific variables to be restored (check against actually restored below)")
+            for var in adam_var_list:
+                print("(adam): {}".format(var))
+
+        if checkpoints is not None:
+            # Create the initial assignment op
+            if isinstance(checkpoints, dict):
+                for (checkpoint_path, (scope, new_scope)) in checkpoints.items():
+                    variables_to_restore = slim.get_variables(scope=scope)
+                    renamed_variables = {
+                        var.op.name.split(new_scope + '/')[1]: var
+                        for var in variables_to_restore
+                    }
+                    if log_verbosity > 1:
+                        print("Restoring the following variables from checkpoint:")
+                        for var in renamed_variables:
+                            print(var)
+                        print("Finished printing list of restored variables")
+
+                init_assign_op, init_feed_dict = slim.assign_from_checkpoint(checkpoint_path, renamed_variables)
+                # Initialise checkpoint for stacked nets with the global step as the number of the outermost net
+                step_number = int(checkpoint_path.split('-')[-1])
+                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
+                                                            dtype='int64')
+                # TODO: adapt resuming from saver to stacked architectures if it works for one standalone
+                saver = None
+            elif isinstance(checkpoints, str):
+                checkpoint_path = checkpoints
+
+                if log_verbosity > 1:
+                    print("Checkpoint path (to file) was: {}".format(checkpoint_path))
+                    print("Path to checkpoint folder is: '{}'".format(os.path.dirname(checkpoint_path)))
+
+                # Get checkpoint state from checkpoint_path (used to restore vars)
+                ckpt = tf.train.get_checkpoint_state(os.path.dirname(checkpoint_path))
+
+                if log_verbosity > 1:
+                    print("Is ckpt None: {0}".format(ckpt is None))
+                vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path)
+                if log_verbosity > 1:
+                    print("Listing variables that will be restored(optimistic_restore_vars), total: {}:".format(
+                        len(vars2restore)))
+                    for var in vars2restore:
+                        print(var)
+                    sys.stdout.flush()
+
+                # TODO: check that the creation of a saver inside 'assign_from_...' does not interfere with custom one
+                # It depends on the preference of saver and init_fn in slim.learning.train()
+                # Initialise saver with custom settings and list of variables to restore (resumed training)
+                saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2,
+                                       var_list=vars2restore if checkpoint_path else None)
+                # Define init function to assign variables from checkpoint
+                init_fn = tf.contrib.framework.assign_from_checkpoint_fn(checkpoint_path, vars2restore)
+
+            else:
+                raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
+        else:
+            saver = None
+
         # Create unique logging dir to avoid overwritting of old data (e.g.: when comparing different runs)
         now = datetime.datetime.now()
         date_now = now.strftime('%d-%m-%y_%H-%M-%S')
@@ -804,8 +905,6 @@ class Net(object):
                     }
                 )
         else:
-            # Explicitly create a Saver to specify maximum number of checkpoints to keep (and how frequently)
-            # saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2)
             if lr_range_test:
                 save_summaries_secs = 10
             else:
@@ -823,9 +922,11 @@ class Net(object):
                     global_step=checkpoint_global_step_tensor,
                     save_summaries_secs=save_summaries_secs,
                     number_of_steps=training_schedule['max_iters'],
-                    init_fn=InitAssignFn,
+                    # init_fn=InitAssignFn,
                     # train_step_fn=train_step_fn,
-                    # saver=saver,
+                    saver=saver,
+                    # local_init_op=local_init_op,
+                    init_fn=init_fn,
                 )
             else:
                 final_loss = slim.learning.train(
@@ -836,7 +937,7 @@ class Net(object):
                     save_summaries_secs=save_summaries_secs,
                     number_of_steps=training_schedule['max_iters'],
                     # train_step_fn=train_step_fn,
-                    # saver=saver,
+                    saver=saver,
                 )
             print("Loss at the end of training is {}".format(final_loss))
 

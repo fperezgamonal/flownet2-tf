@@ -14,19 +14,30 @@ def main():
 
     # initialise range test values (exponentially increasing lr to be tested)
     if FLAGS.lr_range_test and FLAGS.training_schedule.lower() == 'lr_range_test':
-        train_params_dict = {'start_lr': FLAGS.start_lr,
-                             'decay_rate': FLAGS.decay_rate,
-                             'decay_steps': FLAGS.decay_steps,
-                             }
+        train_params_dict = {
+            'lr_range_mode': FLAGS.lr_range_mode,
+            'start_lr': FLAGS.start_lr,
+            'end_lr': FLAGS.end_lr,
+            'decay_rate': FLAGS.decay_rate,
+            'decay_steps': FLAGS.decay_steps,
+            'lr_range_niters': FLAGS.lr_range_niters,
+            'optimizer': FLAGS.optimizer,
+            'momentum': FLAGS.momentum,
+            'weight_decay': FLAGS.weight_decay
+        }
     # Initialise CLR parameters (define dictionary). Note that if max_iter=stepsize we have a linear range test!
     elif FLAGS.training_schedule.lower() == 'clr':
-        train_params_dict = {'clr_min_lr': FLAGS.clr_min_lr,
-                             'clr_max_lr': FLAGS.clr_max_lr,
-                             'clr_stepsize': FLAGS.clr_stepsize,
-                             'clr_num_cycles': FLAGS.clr_num_cycles,
-                             'clr_gamma': FLAGS.clr_gamma,
-                             'clr_mode': FLAGS.clr_mode,
-                             }
+        train_params_dict = {
+            'clr_min_lr': FLAGS.clr_min_lr,
+            'clr_max_lr': FLAGS.clr_max_lr,
+            'clr_stepsize': FLAGS.clr_stepsize,
+            'clr_num_cycles': FLAGS.clr_num_cycles,
+            'clr_gamma': FLAGS.clr_gamma,
+            'clr_mode': FLAGS.clr_mode,
+            'optimizer': FLAGS.optimizer,
+            'momentum': FLAGS.momentum,
+            'weight_decay': FLAGS.weight_decay,
+        }
     else:
         train_params_dict = None
 
@@ -114,12 +125,36 @@ if __name__ == '__main__':
         default=False,
     )
     parser.add_argument(
+        '--lr_range_mode',
+        type=str,
+        required=False,
+        help='Whether a linear or exponential range is used (the latter does not require max_lr/end_lr)',
+        default='linear',  # linear uses CLR policy with stepsize=max_iters (that is, only the increasing cycle)
+    )
+    parser.add_argument(
         '--start_lr',
         type=float,
         required=False,
-        help='Initial/starting learning rate for the range finder',
-        default=1e-10,
+        help='Initial (min) learning rate for the range finder',
+        default=1e-8,
     )
+    parser.add_argument(
+        '--end_lr',
+        type=float,
+        required=False,
+        help='Ending (max) learning rate for the range finder',
+        default=1e-2,
+    )
+    # Linear test
+    # Must define max_iter = stepsize
+    parser.add_argument(
+        '--lr_range_niters',
+        type=int,
+        required=False,
+        help='Number of iterations for the linear learning rate range test (def.=10000)',
+        default=10000,
+    )
+    # Exponential test
     parser.add_argument(
         '--decay_rate',
         type=float,
@@ -186,6 +221,32 @@ if __name__ == '__main__':
         required=False,
         help="Maximum number of iterations to train for (Careful, this overrides the setting of the current training "
              "schedule defined in training_schedules.py)",
+        default=None,
+    )
+    # Overrides Adam optimizer as the default
+    parser.add_argument(
+        '--optimizer',
+        type=str,
+        required=False,
+        help="Optimizer to use (def. 'adam'). Values: 'sgd', 'momentum' or 'adamw'",
+        default=None,
+    )
+
+    # Overrides default value if Momentum optimizer (SGD+momentum) is used
+    parser.add_argument(
+        '--momentum',
+        type=float,
+        required=False,
+        help="Value of momentum for the Momentum optimizer (SGD+momentum). If CLR, a cyclic policy for momentum will "
+             "be used",
+        default=None,
+    )
+    # Actual weight decay for Adam (not L2 regularisation)
+    parser.add_argument(
+        '--weight_decay',
+        type=float,
+        required=False,
+        help="Weight decay for AdamW (w. proper weight decay, not L2 regularisation)",
         default=None,
     )
 
