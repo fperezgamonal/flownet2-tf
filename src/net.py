@@ -50,13 +50,17 @@ class Mode(Enum):
 #     return [total_loss, should_stop]
 
 
-# TODO: it is likely that the optimizer state cannot be properly resumed since we do not pass saver to .train()
-#   * In fact, probably ONLY the global step is properly recovered as we give it to create_train_op
-#   * Kudos to https://github.com/tensorflow/tensorflow/issues/312#issuecomment-335039382 (the whole discussion):
-#       * We can create a saver properly initialised with the checkpoint variables (allowing for change in name)
-#       * Specify maximum checkpoints to keep, variable list and keep one each N hours
-#       * Then this tf.Saver() can be passed to tf.slim.learning.train() and hopefully we can resume training:
-#           * with a loss approximately of the same value of that yield before pausing/stopping training
+#  The optimizer state could not be properly resumed because of the following reasons:
+#   * Actual restoring from checkpoint was done BEFORE defining the graph operations==> only global_step resumed
+#   * SLIM required us to use assign_from_checkpoint_fn with the vars retrieved by optimistic_restore_vars
+#   * The above is passed as init_fn to learning.train()
+#   * Finally, the custom training is also passed (but we have to check if its configuration is actually applied or
+#       the one created by init_fn is used instead, without the max num of checkpoints, etc.)
+
+# Special thanks to helpful discussions on similar issues:
+#   * optimistic_restore_vars:
+#       https://github.com/tensorflow/tensorflow/issues/312#issuecomment-335039382 (the whole discussion):
+#   * 'slim.learning.train can't restore variables if new variable have created
 def optimistic_restore_vars(model_checkpoint_path):
     reader = tf.train.NewCheckpointReader(model_checkpoint_path)
     saved_shapes = reader.get_variable_to_shape_map()
@@ -71,27 +75,6 @@ def optimistic_restore_vars(model_checkpoint_path):
             var_shape = curr_var.get_shape().as_list()
             if var_shape == saved_shapes[saved_var_name]:
                 restore_vars.append(curr_var)
-    return restore_vars
-
-
-def keep_scope_restore_vars(model_checkpoint_path):
-    print("model_checkpoint_path is {}".format(model_checkpoint_path))
-    reader = tf.train.NewCheckpointReader(model_checkpoint_path)
-    saved_shapes = reader.get_variable_to_shape_map()
-    print(saved_shapes)
-    var_names = sorted([(var.name, var.name.split(':')[0]) for var in saved_shapes])
-    # var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
-    #                     if var.name.split(':')[0] in saved_shapes])
-
-    restore_vars = []
-    # name2var = dict(zip(map(lambda x: x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
-    # with tf.variable_scope('', reuse=True):
-    #     for var_name, saved_var_name in var_names:
-    #         curr_var = name2var[saved_var_name]
-    #         var_shape = curr_var.get_shape().as_list()
-    #         if var_shape == saved_shapes[saved_var_name]:
-    #             restore_vars.append(curr_var)
-    #             print("restored with name: ".format(curr_var))
     return restore_vars
 
 
@@ -866,7 +849,6 @@ class Net(object):
                 if log_verbosity > 1:
                     print("Is ckpt None: {0}".format(ckpt is None))
                 vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path)
-                # vars2restore = keep_scope_restore_vars(ckpt.model_checkpoint_path)
                 if log_verbosity > 1:
                     print("Listing variables that will be restored(optimistic_restore_vars), total: {}:".format(
                         len(vars2restore)))
