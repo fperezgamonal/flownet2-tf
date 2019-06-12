@@ -80,7 +80,7 @@ class Image(slim.tfexample_decoder.ItemHandler):
 def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
     """
     dataset_config: A dataset_config defined in dataset_configs.py
-    split_name: 'train'/'validate'
+    split_name: 'train'/'valid'
     """
     with tf.name_scope('__get_dataset'):
         if split_name not in dataset_config['SIZES']:
@@ -255,12 +255,7 @@ def _generate_coeff(param, discount_coeff=tf.constant(1.0), default_value=tf.con
     return value
 
 
-# TODO: fix bug with data augmentation (otherwise training performance will be worse for sure (more likely to overfit!)
-# may be related to gcc version (too new, test 4.8 or similar, current is 6.3)
-# image+matches: only need to remove the pieces regarding transformations on the second image
-# TODO: as it is, for each different data type, we require a different dataset config (OK!)
-# TODO: but we also require on TFRecords (HUGE!), better create one with all the required data!!
-# TODO: that is, image_a (img1), image_b (img2), matches_a, sparse_flow ==> make sure the mappings are OK
+# TODO: fix bug with data augmentation
 def load_batch(dataset_config_str, split_name, global_step=None, input_type='image_pairs'):
 
     if dataset_config_str.lower() == 'flying_things3d':
@@ -399,16 +394,33 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
         #         flows, transforms_from_a, transforms_from_b, crop)
 
         if input_type == 'image_matches':
-            return tf.train.batch([image_as, matches_as, sparse_flows, flows],
-                                  enqueue_many=True,
-                                  batch_size=dataset_config['BATCH_SIZE'],
-                                  capacity=dataset_config['BATCH_SIZE'] * 4,  # consider reducing this (RAM?)
-                                  allow_smaller_final_batch=False,
-                                  num_threads=num_threads)
+            if split_name == 'valid':
+                return tf.train.batch([image_as, matches_as, sparse_flows, flows],
+                                      enqueue_many=True,
+                                      batch_size=dataset_config['BATCH_SIZE'],
+                                      capacity=dataset_config['BATCH_SIZE'] * 1,  # reduce RAM?
+                                      allow_smaller_final_batch=False,
+                                      num_threads=num_threads)
+            else:
+
+                return tf.train.batch([image_as, matches_as, sparse_flows, flows],
+                                      enqueue_many=True,
+                                      batch_size=dataset_config['BATCH_SIZE'],
+                                      capacity=dataset_config['BATCH_SIZE'] * 4,  # consider reducing this (RAM?)
+                                      allow_smaller_final_batch=False,
+                                      num_threads=num_threads)
         else:
-            return tf.train.batch([image_as, image_bs, flows],
-                                  enqueue_many=True,
-                                  batch_size=dataset_config['BATCH_SIZE'],
-                                  capacity=dataset_config['BATCH_SIZE'] * 4,  # consider reducing this (RAM?)
-                                  allow_smaller_final_batch=False,
-                                  num_threads=num_threads)
+            if split_name == 'valid':
+                return tf.train.batch([image_as, image_bs, flows],
+                                      enqueue_many=True,
+                                      batch_size=dataset_config['BATCH_SIZE'],
+                                      capacity=dataset_config['BATCH_SIZE'] * 1,
+                                      allow_smaller_final_batch=False,
+                                      num_threads=num_threads)
+            else:
+                return tf.train.batch([image_as, image_bs, flows],
+                                      enqueue_many=True,
+                                      batch_size=dataset_config['BATCH_SIZE'],
+                                      capacity=dataset_config['BATCH_SIZE'] * 4,
+                                      allow_smaller_final_batch=False,
+                                      num_threads=num_threads)

@@ -47,7 +47,17 @@ def main():
 
     if FLAGS.input_type == 'image_matches':
         print("Input_type: 'image_matches'")
+        # Train
         input_a, matches_a, sparse_flow, flow = load_batch(FLAGS.dataset_config, 'train', input_type=FLAGS.input_type)
+        # Validation
+        if FLAGS.val_iters > 0:
+            val_input_a, val_matches_a, val_sparse_flow, val_flow = load_batch(FLAGS.dataset_config, 'valid',
+                                                                               input_type=FLAGS.input_type)
+        else:
+            val_input_a = None
+            val_matches_a = None
+            val_sparse_flow = None
+            val_flow = None
 
         # Train on the data
         net.train(
@@ -56,7 +66,12 @@ def main():
             input_a=input_a,
             matches_a=matches_a,
             sparse_flow=sparse_flow,
-            out_flow=flow,
+            gt_flow=flow,
+            valid_iters=FLAGS.val_iters,
+            val_input_a=val_input_a,
+            val_matches_a=val_matches_a,
+            val_sparse_flow=val_sparse_flow,
+            val_gt_flow=val_flow,
             input_type=FLAGS.input_type,
             checkpoints=checkpoints,
             log_verbosity=FLAGS.log_verbosity,
@@ -66,7 +81,15 @@ def main():
         )
     else:
         print("Input_type: 'image_pairs'")
+        # Train
         input_a, input_b, flow = load_batch(FLAGS.dataset_config, 'train', input_type=FLAGS.input_type)
+        # Validation
+        if FLAGS.val_iters > 0:
+            val_input_a, val_input_b,  val_flow = load_batch(FLAGS.dataset_config, 'valid', input_type=FLAGS.input_type)
+        else:
+            val_input_a = None
+            val_input_b = None
+            val_flow = None
 
         # Train on the data
         net.train(
@@ -74,7 +97,11 @@ def main():
             training_schedule_str=FLAGS.training_schedule,
             input_a=input_a,
             input_b=input_b,
-            out_flow=flow,
+            gt_flow=flow,
+            valid_iters=FLAGS.val_iters,
+            val_input_a=val_input_a,
+            val_input_b=val_input_b,
+            val_gt_flow=val_flow,
             input_type=FLAGS.input_type,
             checkpoints=checkpoints,
             log_verbosity=FLAGS.log_verbosity,
@@ -115,6 +142,13 @@ if __name__ == '__main__':
         required=False,
         help='Training schedule (learning rate, weight decay, etc.)',
         default='long_schedule',
+    )
+    parser.add_argument(
+        '--val_iters',
+        type=int,
+        required=False,
+        help='Validation interval, that is, a validation step is performed every val_iters (< 0 to disable validation)',
+        default=2000,
     )
     # ==== Learning rate range test parameters ====
     parser.add_argument(
