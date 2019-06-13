@@ -76,6 +76,7 @@ def train_step_fn(sess, train_op, global_step, valid_interval, train_step_kwargs
 
     return [total_loss, should_stop]
 
+
 class Mode(Enum):
     TRAIN = 1
     TEST = 2
