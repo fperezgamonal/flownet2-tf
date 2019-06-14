@@ -18,65 +18,6 @@ from .cyclic_learning_rate import clr
 VAL_INTERVAL = 1000  # each N samples, we evaluate the validation set
 
 
-# The optimizer state could not be properly resumed because of the following reasons:
-#   * Actual restoring from checkpoint was done BEFORE defining the graph operations==> only global_step resumed
-#   * SLIM required us to use assign_from_checkpoint_fn with the vars retrieved by optimistic_restore_vars
-#   * The above is passed as init_fn to learning.train()
-#   * Finally, the custom training is also passed (but we have to check if its configuration is actually applied or
-#       the one created by init_fn is used instead, without the max num of checkpoints, etc.)
-
-# Special thanks to helpful discussions on similar issues:
-#   * optimistic_restore_vars:
-#       https://github.com/tensorflow/tensorflow/issues/312#issuecomment-335039382 (the whole discussion):
-#   * 'slim.learning.train can't restore variables if new variable have created
-
-# Important notice: tf.slim is considered deprecated so everything should be moved to tf.estimator high level API
-# However, for the scope of the MsC thesis, it is too complicated to write flownet2-tf from scratch again, so we
-# patch it to meet our needs despite its problems
-def optimistic_restore_vars(model_checkpoint_path):
-    reader = tf.train.NewCheckpointReader(model_checkpoint_path)
-    saved_shapes = reader.get_variable_to_shape_map()
-    var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
-                       if var.name.split(':')[0] in saved_shapes])
-
-    restore_vars = []
-    name2var = dict(zip(map(lambda x: x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
-    with tf.variable_scope('', reuse=True):
-        for var_name, saved_var_name in var_names:
-            curr_var = name2var[saved_var_name]
-            var_shape = curr_var.get_shape().as_list()
-            if var_shape == saved_shapes[saved_var_name]:
-                restore_vars.append(curr_var)
-    return restore_vars
-
-
-# How to run validation on the same session that training (tf.slim)
-# From: https://colab.research.google.com/drive/11PWvXR85NAIe6LAV1kocheXGDJa1VOa1#scrollTo=IhwzhDFttEoh
-def train_step_fn(sess, train_op, global_step, valid_interval, train_step_kwargs):
-    """
-    slim.learning.train_step():
-      train_step_kwargs = {summary_writer:, should_log:, should_stop:}
-
-    usage: slim.learning.train( train_op, logdir,
-                                train_step_fn=train_step_fn,)
-    """
-    if hasattr(train_step_fn, 'step'):
-        train_step_fn.step += 1  # or use global_step.eval(session=sess)
-    else:
-        train_step_fn.step = global_step.eval(sess)
-
-    # calc training losses
-    total_loss, should_stop = slim.learning.train_step(sess, train_op, global_step, train_step_kwargs)
-
-    # validate on interval
-    if valid_interval > 0 and (train_step_fn.step % valid_interval == 0):
-        valid_loss, valid_delta = sess.run([val_loss, summary_validation_delta])
-        print(">>> global step= {:<5d} | train={:^15.4f} | validation={:^15.4f} | delta={:^15.4f} <<<".format(
-            train_step_fn.step, total_loss, valid_loss, valid_loss - total_loss))
-
-    return [total_loss, should_stop]
-
-
 class Mode(Enum):
     TRAIN = 1
     TEST = 2
@@ -704,6 +645,7 @@ class Net(object):
             learning_rate = tf.train.piecewise_constant(checkpoint_global_step_tensor,
                                                         [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
                                                         training_schedule['learning_rates'])
+
         if train_params_dict['optimizer'] is not None:
             # Stochastic Gradient Descent (SGD)
             if train_params_dict['optimizer'].lower() == 'sgd':
@@ -730,9 +672,14 @@ class Net(object):
                 # Create a adam_wd object
                 optimizer = adam_wd(weight_decay=weight_decay, learning_rate=learning_rate,
                                     beta1=training_schedule['momentum'], beta2=training_schedule['momentum2'])
+            else:
+                # default to Adam
+                optimizer = tf.train.AdamOptimizer(learning_rate, training_schedule['momentum'],
+                                                   training_schedule['momentum2'])
         else:  # default to Adam
             optimizer = tf.train.AdamOptimizer(learning_rate, training_schedule['momentum'],
                                                training_schedule['momentum2'])
+
         # AdamW = tf.contrib.opt.extend_with_decoupled_weight_decay(optimizer)
         if log_tensorboard:
             tf.summary.scalar('learning_rate', learning_rate)  # Add learning rate
@@ -755,7 +702,7 @@ class Net(object):
             if valid_iters > 0:
                 # Define model operations (graph) to compute loss (VALIDATION)
                 scope.reuse_variables()  # to make sure we re-use the same weights as in the train loop
-                val_predictions = self.model(inputs, training_schedule, trainable=False)  # test does not specify this
+                val_predictions = self.model(val_inputs, training_schedule, trainable=False)  # test does not specify this
 
         # Compute losses
         total_loss = self.loss(gt_flow, predictions)
@@ -823,12 +770,41 @@ class Net(object):
             train_writer = None
 
         # Create the train_op
-        train_op = slim.learning.create_train_op(
+        train_operator = slim.learning.create_train_op(
             total_loss,
             optimizer,
             summarize_gradients=False,
             global_step=checkpoint_global_step_tensor,
         )
+
+        # ==== Add validation by defining a custom train_step_fn ====
+        # How to run validation on the same session that training (tf.slim)
+        # From: https://colab.research.google.com/drive/11PWvXR85NAIe6LAV1kocheXGDJa1VOa1#scrollTo=IhwzhDFttEoh
+        def train_step_fn(sess, train_op, global_step, train_step_kwargs):
+            """
+            slim.learning.train_step():
+              train_step_kwargs = {summary_writer:, should_log:, should_stop:}
+
+            usage: slim.learning.train( train_op, logdir,
+                                        train_step_fn=train_step_fn,)
+            """
+            if hasattr(train_step_fn, 'step'):
+                train_step_fn.step += 1  # or use global_step.eval(session=sess)
+            else:
+                train_step_fn.step = global_step.eval(sess)
+
+            # calc training losses
+            total_loss, should_stop = slim.learning.train_step(sess, train_op, global_step, train_step_kwargs)
+
+            # validate on interval
+            if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
+                valid_loss, valid_delta = sess.run([val_loss, summary_validation_delta])
+                print(">>> global step= {:<5d} | train={:^15.4f} | validation={:^15.4f} | delta={:^15.4f} <<<".format(
+                    train_step_fn.step, total_loss, valid_loss, valid_loss - total_loss))
+
+            return [total_loss, should_stop]
+
+        # ===========================================================
 
         if checkpoints is not None:
             # Create the initial assignment op
@@ -905,12 +881,12 @@ class Net(object):
             if not os.path.isdir(debug_logdir):
                 os.makedirs(debug_logdir)
                 print("debugging logdir is: {}".format(debug_logdir))
-            with tf.Session() as sess:
-                sess.run(tf.global_variables_initializer())
-                tf.train.start_queue_runners(sess)
+            with tf.Session() as session:
+                session.run(tf.global_variables_initializer())
+                tf.train.start_queue_runners(session)
                 slim.learning.train_step(
-                    sess,
-                    train_op,
+                    session,
+                    train_operator,
                     checkpoint_global_step_tensor,
                     {'should_trace': tf.constant(1), 'should_log': tf.constant(1), 'logdir': debug_logdir, }
                 )
@@ -927,7 +903,7 @@ class Net(object):
             if checkpoints is not None:
                 if valid_iters > 0:
                     final_loss = slim.learning.train(
-                        train_op,
+                        train_operator,
                         log_dir,
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
                         global_step=checkpoint_global_step_tensor,
@@ -941,7 +917,7 @@ class Net(object):
                     )
                 else:
                     final_loss = slim.learning.train(
-                        train_op,
+                        train_operator,
                         log_dir,
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
                         global_step=checkpoint_global_step_tensor,
@@ -954,7 +930,7 @@ class Net(object):
             else:
                 if valid_iters > 0:
                     final_loss = slim.learning.train(
-                        train_op,
+                        train_operator,
                         log_dir,
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
                         global_step=checkpoint_global_step_tensor,
@@ -966,7 +942,7 @@ class Net(object):
                     )
                 else:
                     final_loss = slim.learning.train(
-                        train_op,
+                        train_operator,
                         log_dir,
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
                         global_step=checkpoint_global_step_tensor,
@@ -982,3 +958,35 @@ class Net(object):
     # It is not clear if Adam can only save some variables or all
     #  See: https://www.tensorflow.org/alpha/guide/checkpoints#manually_inspecting_checkpoints
     # def finetuning(...)
+
+
+# The optimizer state could not be properly resumed because of the following reasons:
+#   * Actual restoring from checkpoint was done BEFORE defining the graph operations==> only global_step resumed
+#   * SLIM required us to use assign_from_checkpoint_fn with the vars retrieved by optimistic_restore_vars
+#   * The above is passed as init_fn to learning.train()
+#   * Finally, the custom training is also passed (but we have to check if its configuration is actually applied or
+#       the one created by init_fn is used instead, without the max num of checkpoints, etc.)
+
+# Special thanks to helpful discussions on similar issues:
+#   * optimistic_restore_vars:
+#       https://github.com/tensorflow/tensorflow/issues/312#issuecomment-335039382 (the whole discussion):
+#   * 'slim.learning.train can't restore variables if new variable have created
+
+# Important notice: tf.slim is considered deprecated so everything should be moved to tf.estimator high level API
+# However, for the scope of the MsC thesis, it is too complicated to write flownet2-tf from scratch again, so we
+# patch it to meet our needs despite its problems
+def optimistic_restore_vars(model_checkpoint_path):
+    reader = tf.train.NewCheckpointReader(model_checkpoint_path)
+    saved_shapes = reader.get_variable_to_shape_map()
+    var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
+                       if var.name.split(':')[0] in saved_shapes])
+
+    restore_vars = []
+    name2var = dict(zip(map(lambda x: x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
+    with tf.variable_scope('', reuse=True):
+        for var_name, saved_var_name in var_names:
+            curr_var = name2var[saved_var_name]
+            var_shape = curr_var.get_shape().as_list()
+            if var_shape == saved_shapes[saved_var_name]:
+                restore_vars.append(curr_var)
+    return restore_vars
