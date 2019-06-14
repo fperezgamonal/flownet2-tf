@@ -711,6 +711,8 @@ class Net(object):
                 optimizer = tf.train.AdamOptimizer(learning_rate, training_schedule['momentum'],
                                                    training_schedule['momentum2'])
         else:  # default to Adam
+            if train_params_dict['weight_decay'] is not None:
+                training_schedule['weight_decay'] = train_params_dict['weight_decay']
             optimizer = tf.train.AdamOptimizer(learning_rate, training_schedule['momentum'],
                                                training_schedule['momentum2'])
 
