@@ -18,6 +18,38 @@ from .cyclic_learning_rate import clr
 VAL_INTERVAL = 1000  # each N samples, we evaluate the validation set
 
 
+# The optimizer state could not be properly resumed because of the following reasons:
+#   * Actual restoring from checkpoint was done BEFORE defining the graph operations==> only global_step resumed
+#   * SLIM required us to use assign_from_checkpoint_fn with the vars retrieved by optimistic_restore_vars
+#   * The above is passed as init_fn to learning.train()
+#   * Finally, the custom training is also passed (but we have to check if its configuration is actually applied or
+#       the one created by init_fn is used instead, without the max num of checkpoints, etc.)
+
+# Special thanks to helpful discussions on similar issues:
+#   * optimistic_restore_vars:
+#       https://github.com/tensorflow/tensorflow/issues/312#issuecomment-335039382 (the whole discussion):
+#   * 'slim.learning.train can't restore variables if new variable have created
+
+# Important notice: tf.slim is considered deprecated so everything should be moved to tf.estimator high level API
+# However, for the scope of the MsC thesis, it is too complicated to write flownet2-tf from scratch again, so we
+# patch it to meet our needs despite its problems
+def optimistic_restore_vars(model_checkpoint_path):
+    reader = tf.train.NewCheckpointReader(model_checkpoint_path)
+    saved_shapes = reader.get_variable_to_shape_map()
+    var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
+                       if var.name.split(':')[0] in saved_shapes])
+
+    restore_vars = []
+    name2var = dict(zip(map(lambda x: x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
+    with tf.variable_scope('', reuse=True):
+        for var_name, saved_var_name in var_names:
+            curr_var = name2var[saved_var_name]
+            var_shape = curr_var.get_shape().as_list()
+            if var_shape == saved_shapes[saved_var_name]:
+                restore_vars.append(curr_var)
+    return restore_vars
+
+
 class Mode(Enum):
     TRAIN = 1
     TEST = 2
@@ -580,6 +612,7 @@ class Net(object):
             else:
                 tf.summary.image("train/image_b", input_b, max_outputs=1)
 
+        # Initialise global step by parsing checkpoint filename to define learning rate (restoring is done afterwards)
         if checkpoints is not None:
             # Create the initial assignment op
             if isinstance(checkpoints, dict):
@@ -660,6 +693,7 @@ class Net(object):
                         momentum = train_params_dict['momentum']
                     else:
                         momentum = 0.9  # some reasonable default
+
                 optimizer = tf.train.MomentumOptimizer(learning_rate, momentum, use_nesterov=False)
             # AdamW (w. proper weight decay not L2 regularisation), as suggested in https://arxiv.org/abs/1711.05101
             elif train_params_dict['optimizer'].lower() == 'adamw':
@@ -696,18 +730,16 @@ class Net(object):
             else:
                 val_inputs = {'input_a': val_input_a, 'input_b': val_input_b, }
 
-        with tf.variable_scope("model") as scope:
-            # Define model operations (graph) to compute loss (TRAIN)
-            predictions = self.model(inputs, training_schedule)
-            if valid_iters > 0:
-                # Define model operations (graph) to compute loss (VALIDATION)
-                scope.reuse_variables()  # to make sure we re-use the same weights as in the train loop
-                val_predictions = self.model(val_inputs, training_schedule, trainable=False)  # test does not specify this
+        # Define model operations (graph) to compute loss (TRAIN)
+        predictions = self.model(inputs, training_schedule)
+        if valid_iters > 0:
+            # Define model operations (graph) to compute loss (VALIDATION)
+            val_predictions = self.model(val_inputs, training_schedule, trainable=False)  # test does not specify this
 
         # Compute losses
-        total_loss = self.loss(gt_flow, predictions)
+        train_loss = self.loss(gt_flow, predictions)
         if log_verbosity > 1:
-            print("\n >>> total_loss=", total_loss)
+            print("\n >>> train_loss=", train_loss)
         if valid_iters > 0:
             val_loss = self.loss(val_gt_flow, val_predictions)
             # Add validation loss to a different collection to avoid adding it to the train one when calling get_loss()
@@ -715,8 +747,7 @@ class Net(object):
             tf.losses.add_loss(val_loss, loss_collection='validation')
 
         if log_tensorboard:
-            summary_loss = tf.summary.scalar('train/loss', total_loss)
-            train_writer = tf.summary.FileWriter(log_dir)
+            summary_loss = tf.summary.scalar('train/loss', train_loss)
             # Show the generated flow in TensorBoard
             if 'flow' in predictions:
                 pred_flow_0 = predictions['flow'][0, :, :, :]
@@ -741,7 +772,7 @@ class Net(object):
             # Validation
             if valid_iters > 0:
                 summary_validation_loss = tf.summary.scalar('valid/loss', val_loss)
-                summary_validation_delta = tf.summary.scalar("valid/loss_delta", (val_loss - total_loss))
+                summary_validation_delta = tf.summary.scalar("valid/loss_delta", (val_loss - train_loss))
                 # Just to check that val losses are logged separately
                 if log_verbosity > 1:
                     print("\n >>> validation losses=", tf.losses.get_losses(loss_collection="validation"))
@@ -766,12 +797,10 @@ class Net(object):
                 # val_true_flow_1 = tf.py_function(func=flow_to_image, inp=[val_true_flow_1], Tout=tf.uint8)
                 val_true_flow_img = tf.stack([val_true_flow_0, val_true_flow_1], 0)
                 tf.summary.image('valid/true_flow', val_true_flow_img, max_outputs=1)
-        else:
-            train_writer = None
 
         # Create the train_op
         train_operator = slim.learning.create_train_op(
-            total_loss,
+            train_loss,
             optimizer,
             summarize_gradients=False,
             global_step=checkpoint_global_step_tensor,
@@ -840,6 +869,7 @@ class Net(object):
 
                 vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path)
                 if log_verbosity > 1:
+                    print("Path from which checkpoint state is computed: '{}'".format(os.path.dirname(checkpoint_path)))
                     print("Listing variables that will be restored(optimistic_restore_vars), total: {}:".format(
                         len(vars2restore)))
                     for var in vars2restore:
@@ -912,7 +942,7 @@ class Net(object):
                         train_step_fn=train_step_fn,
                         saver=saver,
                         init_fn=init_fn,
-                        summary_writer=train_writer,
+                        # summary_writer=train_writer,
 
                     )
                 else:
@@ -925,7 +955,7 @@ class Net(object):
                         number_of_steps=training_schedule['max_iters'],
                         saver=saver,
                         init_fn=init_fn,
-                        summary_writer=train_writer,
+                        # summary_writer=train_writer,
                     )
             else:
                 if valid_iters > 0:
@@ -938,7 +968,7 @@ class Net(object):
                         number_of_steps=training_schedule['max_iters'],
                         train_step_fn=train_step_fn,
                         saver=saver,
-                        summary_writer=train_writer,
+                        # summary_writer=train_writer,
                     )
                 else:
                     final_loss = slim.learning.train(
@@ -950,7 +980,7 @@ class Net(object):
                         number_of_steps=training_schedule['max_iters'],
                         # train_step_fn=train_step_fn,
                         saver=saver,
-                        summary_writer=train_writer,
+                        # summary_writer=train_writer,
                     )
             print("Finished training, last batch loss: {:^15.4f}".format(final_loss))
 
@@ -958,35 +988,3 @@ class Net(object):
     # It is not clear if Adam can only save some variables or all
     #  See: https://www.tensorflow.org/alpha/guide/checkpoints#manually_inspecting_checkpoints
     # def finetuning(...)
-
-
-# The optimizer state could not be properly resumed because of the following reasons:
-#   * Actual restoring from checkpoint was done BEFORE defining the graph operations==> only global_step resumed
-#   * SLIM required us to use assign_from_checkpoint_fn with the vars retrieved by optimistic_restore_vars
-#   * The above is passed as init_fn to learning.train()
-#   * Finally, the custom training is also passed (but we have to check if its configuration is actually applied or
-#       the one created by init_fn is used instead, without the max num of checkpoints, etc.)
-
-# Special thanks to helpful discussions on similar issues:
-#   * optimistic_restore_vars:
-#       https://github.com/tensorflow/tensorflow/issues/312#issuecomment-335039382 (the whole discussion):
-#   * 'slim.learning.train can't restore variables if new variable have created
-
-# Important notice: tf.slim is considered deprecated so everything should be moved to tf.estimator high level API
-# However, for the scope of the MsC thesis, it is too complicated to write flownet2-tf from scratch again, so we
-# patch it to meet our needs despite its problems
-def optimistic_restore_vars(model_checkpoint_path):
-    reader = tf.train.NewCheckpointReader(model_checkpoint_path)
-    saved_shapes = reader.get_variable_to_shape_map()
-    var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
-                       if var.name.split(':')[0] in saved_shapes])
-
-    restore_vars = []
-    name2var = dict(zip(map(lambda x: x.name.split(':')[0], tf.global_variables()), tf.global_variables()))
-    with tf.variable_scope('', reuse=True):
-        for var_name, saved_var_name in var_names:
-            curr_var = name2var[saved_var_name]
-            var_shape = curr_var.get_shape().as_list()
-            if var_shape == saved_shapes[saved_var_name]:
-                restore_vars.append(curr_var)
-    return restore_vars
