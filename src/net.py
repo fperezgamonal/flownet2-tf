@@ -694,7 +694,7 @@ class Net(object):
                     else:
                         momentum = 0.9  # some reasonable default
 
-                optimizer = tf.train.MomentumOptimizer(learning_rate, momentum, use_nesterov=False)
+                optimizer = tf.train.MomentumOptimizer(learning_rate, momentum, use_nesterov=True)
             # AdamW (w. proper weight decay not L2 regularisation), as suggested in https://arxiv.org/abs/1711.05101
             elif train_params_dict['optimizer'].lower() == 'adamw':
                 if train_params_dict['weight_decay'] is not None:
