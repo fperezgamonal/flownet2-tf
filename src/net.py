@@ -654,6 +654,9 @@ class Net(object):
                     start_lr, global_step=checkpoint_global_step_tensor,
                     decay_steps=decay_steps, decay_rate=decay_rate)
             else:  # linear
+                if log_verbosity > 1:
+                    print("base learning rate: {}, maximum learning rate: {}, step_size: {}, max_iters: {}".format(
+                        start_lr, end_lr, lr_range_niters, train_params_dict['max_steps']))
                 learning_rate = clr.cyclic_learning_rate(checkpoint_global_step_tensor, learning_rate=start_lr,
                                                          max_lr=end_lr,  step_size=lr_range_niters, mode='triangular')
 
@@ -678,13 +681,15 @@ class Net(object):
             learning_rate = tf.train.piecewise_constant(checkpoint_global_step_tensor,
                                                         [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
                                                         training_schedule['learning_rates'])
-
+        # TODO: define common variables outside of individual if-statements to keep it as short as possible
         if train_params_dict['optimizer'] is not None:
             # Stochastic Gradient Descent (SGD)
             if train_params_dict['optimizer'].lower() == 'sgd':
                 optimizer = tf.train.GradientDescentOptimizer(learning_rate)
             # Momentum (SGD + Momentum)
             elif train_params_dict['optimizer'].lower() == 'momentum':
+                if train_params_dict['weight_decay'] is not None:
+                    training_schedule['weight_decay'] = train_params_dict['weight_decay']
                 # Use cyclic momentum if using CLR (accelerates convergence)
                 if training_schedule['learning_rates'].lower() == 'clr' and training_schedule_str == 'clr':
                     print("WIP: implement inverse cyclic policy for momentum")
@@ -878,9 +883,6 @@ class Net(object):
                         print(var)
                     sys.stdout.flush()
 
-                # TODO: check that the creation of a saver inside 'assign_from_...' does not interfere with custom one
-                # It depends on the preference of saver and init_fn in slim.learning.train()
-                # Initialise saver with custom settings and list of variables to restore (resumed training)
                 saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2,
                                        var_list=vars2restore if checkpoint_path else None)
                 # Define init function to assign variables from checkpoint
@@ -985,8 +987,3 @@ class Net(object):
                         # summary_writer=train_writer,
                     )
             print("Finished training, last batch loss: {:^15.4f}".format(final_loss))
-
-    # TODO: manually inspect if ALL optimizer variables are properly resumed (loss explodes for a few iterations)
-    # It is not clear if Adam can only save some variables or all
-    #  See: https://www.tensorflow.org/alpha/guide/checkpoints#manually_inspecting_checkpoints
-    # def finetuning(...)
