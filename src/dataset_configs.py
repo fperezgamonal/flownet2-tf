@@ -54,8 +54,8 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 8,
     'PATHS': {
-        'train': './data/tfrecords/interp/fc_train_all.tfrecord',
-        'valid': './data/tfrecords/interp/fc_val_all.tfrecord',
+        'train': './data/tfrecords/interp/fc_train_all.tfrecords',
+        'valid': './data/tfrecords/interp/fc_val_all.tfrecords',
     },
     'PREPROCESS': {
         'scale': False,
@@ -299,8 +299,8 @@ FLYING_THINGS_3D_ALL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 4,
     'PATHS': {
-        'train': './data/tfrecords/interp/ft3d_train_all.tfrecord',
-        'valid': './data/tfrecords/interp/ft3d_val_all.tfrecord',
+        'train': './data/tfrecords/interp/ft3d_train_all.tfrecords',
+        'valid': './data/tfrecords/interp/ft3d_val_all.tfrecords',
     },
     'PREPROCESS': {
         'scale': False,
@@ -545,8 +545,8 @@ SINTEL_ALL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 4,
     'PATHS': {
-        'train': './data/tfrecords/interp/sintel_train_all.tfrecord',
-        'valid': './data/tfrecords/interp/sintel_val_all.tfrecord',
+        'train': './data/tfrecords/interp/sintel_train_all.tfrecords',
+        'valid': './data/tfrecords/interp/sintel_val_all.tfrecords',
     },
     'PREPROCESS': {
         'scale': False,
