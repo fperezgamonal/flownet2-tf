@@ -50,11 +50,20 @@ def main():
     if FLAGS.input_type == 'image_matches':
         print("Input_type: 'image_matches'")
         # Train
-        input_a, matches_a, sparse_flow, flow = load_batch(FLAGS.dataset_config, 'train', input_type=FLAGS.input_type)
+        input_a, matches_a, sparse_flow, flow = load_batch(
+            FLAGS.dataset_config, 'train', input_type=FLAGS.input_type,
+            common_queue_capacity=FLAGS.common_queue_capacity,
+            common_queue_min=FLAGS.common_queue_min,
+            num_threads=FLAGS.num_threads)
         # Validation
         if FLAGS.val_iters > 0:
-            val_input_a, val_matches_a, val_sparse_flow, val_flow = load_batch(FLAGS.dataset_config, 'valid',
-                                                                               input_type=FLAGS.input_type)
+            val_input_a, val_matches_a, val_sparse_flow, val_flow = load_batch(
+                FLAGS.dataset_config, 'valid',
+                input_type=FLAGS.input_type,
+                common_queue_capacity = FLAGS.common_queue_capacity,
+                common_queue_min = FLAGS.common_queue_min,
+                num_threads = FLAGS.num_threads)
+
         else:
             val_input_a = None
             val_matches_a = None
@@ -84,10 +93,18 @@ def main():
     else:
         print("Input_type: 'image_pairs'")
         # Train
-        input_a, input_b, flow = load_batch(FLAGS.dataset_config, 'train', input_type=FLAGS.input_type)
+        input_a, input_b, flow = load_batch(
+            FLAGS.dataset_config, 'train', input_type=FLAGS.input_type,
+            common_queue_capacity=FLAGS.common_queue_capacity,
+            common_queue_min=FLAGS.common_queue_min,
+            num_threads=FLAGS.num_threads)
         # Validation
         if FLAGS.val_iters > 0:
-            val_input_a, val_input_b,  val_flow = load_batch(FLAGS.dataset_config, 'valid', input_type=FLAGS.input_type)
+            val_input_a, val_input_b,  val_flow = load_batch(
+                FLAGS.dataset_config, 'valid', input_type=FLAGS.input_type,
+                common_queue_capacity=FLAGS.common_queue_capacity,
+                common_queue_min=FLAGS.common_queue_min,
+                num_threads=FLAGS.num_threads)
         else:
             val_input_a = None
             val_input_b = None
@@ -317,6 +334,28 @@ if __name__ == '__main__':
         required=False,
         help='Whether to log to Tensorboard or not (only stdout)',
         default=True,
+    )
+    # ==== Capacity of queues ====
+    parser.add_argument(
+        '--common_queue_capacity',
+        type=int,
+        required=False,
+        help='integer that specifies the capacity of the queue when loading data from a slim.dataset',
+        default=256,
+    )
+    parser.add_argument(
+        '--common_queue_min',
+        type=int,
+        required=False,
+        help='integer that specifies the minimum capacity of the queue when loading data from a slim.dataset',
+        default=128,
+    )
+    parser.add_argument(
+        '--num_threads',
+        type=int,
+        required=False,
+        help='number of threads to load data from a slim.dataset',
+        default=8,
     )
 
     FLAGS = parser.parse_args()

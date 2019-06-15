@@ -256,7 +256,8 @@ def _generate_coeff(param, discount_coeff=tf.constant(1.0), default_value=tf.con
 
 
 # TODO: fix bug with data augmentation
-def load_batch(dataset_config_str, split_name, global_step=None, input_type='image_pairs'):
+def load_batch(dataset_config_str, split_name, global_step=None, input_type='image_pairs', common_queue_capacity=256,
+               common_queue_min=128, capacity_in_batches_train=4, capacity_in_batches_val=1, num_threads=8):
 
     if dataset_config_str.lower() == 'flying_things3d':
         dataset_config = FLYING_THINGS_3D_ALL_DATASET_CONFIG
@@ -267,15 +268,14 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
     else:  # flying_chairs
         dataset_config = FLYING_CHAIRS_ALL_DATASET_CONFIG
 
-    num_threads = 8  # og value: 32  this broke training
     reader_kwargs = {'options': tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.ZLIB)}
     with tf.name_scope('load_batch'):
         dataset = __get_dataset(dataset_config, split_name, input_type=input_type)
         data_provider = slim.dataset_data_provider.DatasetDataProvider(
             dataset,
             num_readers=num_threads,
-            common_queue_capacity=256,  # this also broke training, we lowered it (og. value = 2048)
-            common_queue_min=128,  # this also broke training, we lowered it (og. value = 1024)
+            common_queue_capacity=common_queue_capacity,  # this also broke training, we lowered it (og. value = 2048)
+            common_queue_min=common_queue_min,  # this also broke training, we lowered it (og. value = 1024)
             reader_kwargs=reader_kwargs)
 
         if input_type == 'image_matches':
@@ -398,7 +398,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                 return tf.train.batch([image_as, matches_as, sparse_flows, flows],
                                       enqueue_many=True,
                                       batch_size=dataset_config['BATCH_SIZE'],
-                                      capacity=dataset_config['BATCH_SIZE'] * 1,  # reduce RAM?
+                                      capacity=dataset_config['BATCH_SIZE'] * capacity_in_batches_val,
                                       allow_smaller_final_batch=False,
                                       num_threads=num_threads)
             else:
@@ -406,7 +406,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                 return tf.train.batch([image_as, matches_as, sparse_flows, flows],
                                       enqueue_many=True,
                                       batch_size=dataset_config['BATCH_SIZE'],
-                                      capacity=dataset_config['BATCH_SIZE'] * 4,  # consider reducing this (RAM?)
+                                      capacity=dataset_config['BATCH_SIZE'] * capacity_in_batches_train,
                                       allow_smaller_final_batch=False,
                                       num_threads=num_threads)
         else:
@@ -414,13 +414,13 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                 return tf.train.batch([image_as, image_bs, flows],
                                       enqueue_many=True,
                                       batch_size=dataset_config['BATCH_SIZE'],
-                                      capacity=dataset_config['BATCH_SIZE'] * 1,
+                                      capacity=dataset_config['BATCH_SIZE'] * capacity_in_batches_val,
                                       allow_smaller_final_batch=False,
                                       num_threads=num_threads)
             else:
                 return tf.train.batch([image_as, image_bs, flows],
                                       enqueue_many=True,
                                       batch_size=dataset_config['BATCH_SIZE'],
-                                      capacity=dataset_config['BATCH_SIZE'] * 4,
+                                      capacity=dataset_config['BATCH_SIZE'] * capacity_in_batches_train,
                                       allow_smaller_final_batch=False,
                                       num_threads=num_threads)
