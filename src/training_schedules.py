@@ -21,7 +21,7 @@ CLR_SCHEDULE = {
 
 LR_RANGE_TEST = {  # steps and learning rates defined by a step-wise curve with (exponential) decay (increasing)
     # 'step_values': step_values,
-    # 'learning_rates': learning_rates,
+    'learning_rates': 'range_test',
     'momentum': 0.9,
     'momentum2': 0.999,
     'weight_decay': 0.0,  # remove it as we are ONLY exponentially trying diff. lrs

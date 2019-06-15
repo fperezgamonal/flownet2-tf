@@ -13,13 +13,13 @@ NAME = {
     },
     SIZES: {
         'train': int,
-        'validate': int,    (optional)
+        'valid': int,    (optional)
         ...
     },
     BATCH_SIZE: int,
     PATHS: {
         'train': '',
-        'validate': '', (optional)
+        'valid': '', (optional)
         ...
     }
 }
@@ -50,12 +50,12 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
     },
     'SIZES': {
         'train': 22232,
-        'validate': 640,
+        'valid': 640,
     },
     'BATCH_SIZE': 8,
     'PATHS': {
         'train': '/datasets/GPI/optical_flow/TFrecords/interp/fc_train_all.tfrecord',
-        'validate': '/datasets/GPI/optical_flow/TFrecords/interp/fc_val_all.tfrecord',
+        'valid': '/datasets/GPI/optical_flow/TFrecords/interp/fc_val_all.tfrecord',
     },
     'PREPROCESS': {
         'scale': False,
@@ -173,12 +173,12 @@ FLYING_THINGS_3D_ALL_DATASET_CONFIG = {
     },
     'SIZES': {
         'train': 19640,
-        'validate': 3824,
+        'valid': 3824,
     },
     'BATCH_SIZE': 4,
     'PATHS': {
         'train': '/datasets/GPI/optical_flow/TFrecords/interp/ft3d_train_all.tfrecord',
-        'validate': '/datasets/GPI/optical_flow/TFrecords/interp/ft3d_val_all.tfrecord',
+        'valid': '/datasets/GPI/optical_flow/TFrecords/interp/ft3d_val_all.tfrecord',
     },
     'PREPROCESS': {
         'scale': False,
@@ -296,12 +296,12 @@ SINTEL_ALL_DATASET_CONFIG = {
     },
     'SIZES': {
         'train': 9151,
-        'validate': 1259,
+        'valid': 1259,
     },
     'BATCH_SIZE': 4,
     'PATHS': {
         'train': '/datasets/GPI/optical_flow/TFrecords/interp/sintel_train_all.tfrecord',
-        'validate': '/datasets/GPI/optical_flow/TFrecords/interp/sintel_val_all.tfrecord',
+        'valid': '/datasets/GPI/optical_flow/TFrecords/interp/sintel_val_all.tfrecord',
     },
     'PREPROCESS': {
         'scale': False,
@@ -427,12 +427,12 @@ SINTEL_FINAL_ALL_DATASET_CONFIG = {
     },
     'SIZES': {
         'train': 1816,
-        'validate': 133,
+        'valid': 133,
     },
     'BATCH_SIZE': 4,
     'PATHS': {
         'train': '/datasets/GPI/optical_flow/TFrecords/interp/sintel_final_train_all.tfrecord',
-        'validate': '/datasets/GPI/optical_flow/TFrecords/interp/sintel_final_val_all.tfrecord',
+        'valid': '/datasets/GPI/optical_flow/TFrecords/interp/sintel_final_val_all.tfrecord',
     },
     'PREPROCESS': {
         'scale': False,

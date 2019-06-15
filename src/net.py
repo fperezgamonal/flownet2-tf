@@ -4,7 +4,6 @@ from math import ceil
 import os
 import tensorflow as tf
 import numpy as np
-import glob
 import sys
 import datetime
 import uuid
@@ -19,38 +18,7 @@ from .cyclic_learning_rate import clr
 VAL_INTERVAL = 1000  # each N samples, we evaluate the validation set
 
 
-class Mode(Enum):
-    TRAIN = 1
-    TEST = 2
-
-
-# def train_step_fn(sess, train_op, global_step, train_step_kwargs):
-#     """
-#     slim.learning.train_step():
-#       train_step_kwargs = {summary_writer:, should_log:, should_stop:}
-#
-#     usage: slim.learning.train( train_op, logdir,
-#                                 train_step_fn=train_step_fn,)
-#     """
-#     if hasattr(train_step_fn, 'step'):
-#         train_step_fn.step += 1  # or use global_step.eval(session=sess)
-#     else:
-#         train_step_fn.step = global_step.eval(sess)
-#
-#     # calc training losses
-#     total_loss, should_stop = slim.learning.train_step(sess, train_op, global_step, train_step_kwargs)
-#
-#     # validate on interval
-#     if train_step_fn.step % VAL_INTERVAL == 0:
-#         validate_loss, validation_delta = sess.run([val_loss, summary_validation_delta])
-#         print(">> global step {}:    train={}   validation={}  delta={}".format(train_step_fn.step,
-#                                                                                 total_loss, validate_loss,
-#                                                                                 validate_loss - total_loss))
-#
-#     return [total_loss, should_stop]
-
-
-#  The optimizer state could not be properly resumed because of the following reasons:
+# The optimizer state could not be properly resumed because of the following reasons:
 #   * Actual restoring from checkpoint was done BEFORE defining the graph operations==> only global_step resumed
 #   * SLIM required us to use assign_from_checkpoint_fn with the vars retrieved by optimistic_restore_vars
 #   * The above is passed as init_fn to learning.train()
@@ -61,6 +29,10 @@ class Mode(Enum):
 #   * optimistic_restore_vars:
 #       https://github.com/tensorflow/tensorflow/issues/312#issuecomment-335039382 (the whole discussion):
 #   * 'slim.learning.train can't restore variables if new variable have created
+
+# Important notice: tf.slim is considered deprecated so everything should be moved to tf.estimator high level API
+# However, for the scope of the MsC thesis, it is too complicated to write flownet2-tf from scratch again, so we
+# patch it to meet our needs despite its problems
 def optimistic_restore_vars(model_checkpoint_path):
     reader = tf.train.NewCheckpointReader(model_checkpoint_path)
     saved_shapes = reader.get_variable_to_shape_map()
@@ -76,6 +48,11 @@ def optimistic_restore_vars(model_checkpoint_path):
             if var_shape == saved_shapes[saved_var_name]:
                 restore_vars.append(curr_var)
     return restore_vars
+
+
+class Mode(Enum):
+    TRAIN = 1
+    TEST = 2
 
 
 class Net(object):
@@ -337,14 +314,8 @@ class Net(object):
             input_b = imread(input_b_path)
             sparse_flow = None
             matches_a = None
-            # print("Avoid 'double-defining' as None...")
         input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b,
                                                                               matches_a, sparse_flow)
-        # if sparse_flow_path is not None and matches_a_path is not None and input_type == 'image_matches':
-        #     input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b,
-        #                                                                           matches_a, sparse_flow)
-        # else:
-        #     input_a, input_b, matches_a, sparse_flow, x_adapt_info = self.adapt_x(input_a, input_b)
 
         # TODO: This is a hack, we should get rid of this
         # the author probably means that it should be chosen as an input parameter not hardcoded!
@@ -598,19 +569,27 @@ class Net(object):
                     else:  # print to stdout
                         print(final_str_formated)
 
-    def train(self, log_dir, training_schedule_str, input_a, out_flow, input_b=None, matches_a=None, sparse_flow=None,
-              checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True, lr_range_test=False,
-              train_params_dict=None):
+    def train(self, log_dir, training_schedule_str, input_a, gt_flow, input_b=None, matches_a=None, sparse_flow=None,
+              valid_iters=VAL_INTERVAL, val_input_a=None, val_gt_flow=None, val_input_b=None, val_matches_a=None,
+              val_sparse_flow=None, checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True,
+              lr_range_test=False, train_params_dict=None):
+
         # Add validation batches as input? Used only once every val_interval steps...?
         """
         runs training on the network from which this method is called.
         :param log_dir:
         :param training_schedule_str:
         :param input_a:
-        :param out_flow:
+        :param gt_flow:
         :param input_b:
         :param matches_a:
         :param sparse_flow:
+        :param valid_iters:
+        :param val_input_a:
+        :param val_gt_flow:
+        :param val_input_b:
+        :param val_matches_a:
+        :param val_sparse_flow:
         :param checkpoints:
         :param input_type:
         :param log_verbosity:
@@ -621,31 +600,19 @@ class Net(object):
         :return:
         """
         if log_verbosity <= 1:  # print loss and tfinfo to stdout
-            print("Logging messages from 'INFO' level or worse")
             tf.logging.set_verbosity(tf.logging.INFO)
         else:  # debug info (more verbose)
-            print("Logging messages from 'DEBUG' level or worse (this is the most verbose)")
             tf.logging.set_verbosity(tf.logging.DEBUG)
-            print("Logging to tensorboard: {}".format(log_tensorboard))
 
         training_schedule = self.get_training_schedule(training_schedule_str)
         if log_tensorboard:
-            tf.summary.image("image_a", input_a, max_outputs=1)
+            tf.summary.image("train/image_a", input_a, max_outputs=1)
             if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
-                tf.summary.image("matches_a", matches_a, max_outputs=1)
-                # Convert sparse flow to image-like (ONLY for visualization)
-                # not padding needed ! (we do it as a pre-processing step when creating the tfrecord)
-                # Sparse flow is very difficult to visualize (0 values are white) in TB (do not include it)
-                # sparse_flow_0 = sparse_flow[0, :, :, :]
-                # sparse_flow_0 = tf.py_func(flow_to_image, [sparse_flow_0], tf.uint8)
-                # sparse_flow_1 = sparse_flow[1, :, :, :]
-                # sparse_flow_1 = tf.py_func(flow_to_image, [sparse_flow_1], tf.uint8)
-                # sparse_flow_img = tf.stack([sparse_flow_0, sparse_flow_1], 0)
-                #
-                # tf.summary.image("sparse_flow_img", sparse_flow_img, max_outputs=1)
+                tf.summary.image("train/matches_a", matches_a, max_outputs=1)
             else:
-                tf.summary.image("image_b", input_b, max_outputs=1)
+                tf.summary.image("train/image_b", input_b, max_outputs=1)
 
+        # Initialise global step by parsing checkpoint filename to define learning rate (restoring is done afterwards)
         if checkpoints is not None:
             # Create the initial assignment op
             if isinstance(checkpoints, dict):
@@ -659,7 +626,7 @@ class Net(object):
                 step_number = int(checkpoint_path.split('-')[-1])
                 checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
                                                             dtype='int64')
-            # TODO: adapt resuming from saver to stacked architectures if it works for one standalone
+            # TODO: adapt resuming from saver to stacked architectures
             elif isinstance(checkpoints, str):
                 checkpoint_path = checkpoints
                 step_number = int(checkpoint_path.split('-')[-1])
@@ -669,10 +636,6 @@ class Net(object):
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
         else:
             checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype='int64')
-
-        # Create an initial assignment function.
-        def InitAssignFn(sess):
-            sess.run(init_assign_op, init_feed_dict)
 
         if lr_range_test:  # learning rate range test to bound max/min optimal learning rate (2015, Leslie N. Smith)
             if lr_range_test is not None:  # use the input params
@@ -691,10 +654,12 @@ class Net(object):
                     start_lr, global_step=checkpoint_global_step_tensor,
                     decay_steps=decay_steps, decay_rate=decay_rate)
             else:  # linear
+                if log_verbosity > 1:
+                    print("base learning rate: {}, maximum learning rate: {}, step_size: {}, max_iters: {}".format(
+                        start_lr, end_lr, lr_range_niters, train_params_dict['max_steps']))
                 learning_rate = clr.cyclic_learning_rate(checkpoint_global_step_tensor, learning_rate=start_lr,
                                                          max_lr=end_lr,  step_size=lr_range_niters, mode='triangular')
 
-        # maybe this "shield" of checking the fixed config is not needed (3 checks)
         elif isinstance(training_schedule['learning_rates'], str):  # we are using a non-piecewise learning
             # cyclical learning rate forked from: https://github.com/mhmoodlan/cyclic-learning-rate
             if training_schedule['learning_rates'].lower() == 'clr' and training_schedule_str == 'clr':
@@ -711,73 +676,85 @@ class Net(object):
                 training_schedule['max_iters'] = new_max_iters
             else:
                 learning_rate = 3e-4  # for Adam only!
-
             # add other policies (1-cycle), cosine-decay, etc.
         else:
-
-            learning_rate = tf.train.piecewise_constant(
-                checkpoint_global_step_tensor,
-                [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
-                training_schedule['learning_rates'])
-
+            learning_rate = tf.train.piecewise_constant(checkpoint_global_step_tensor,
+                                                        [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
+                                                        training_schedule['learning_rates'])
+        # TODO: define common variables outside of individual if-statements to keep it as short as possible
         if train_params_dict['optimizer'] is not None:
             # Stochastic Gradient Descent (SGD)
             if train_params_dict['optimizer'].lower() == 'sgd':
                 optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-
             # Momentum (SGD + Momentum)
             elif train_params_dict['optimizer'].lower() == 'momentum':
+                if train_params_dict['weight_decay'] is not None:
+                    training_schedule['weight_decay'] = train_params_dict['weight_decay']
                 # Use cyclic momentum if using CLR (accelerates convergence)
                 if training_schedule['learning_rates'].lower() == 'clr' and training_schedule_str == 'clr':
                     print("WIP: implement inverse cyclic policy for momentum")
-                # Use fixed momentum
-                else:
+                else:  # Use fixed momentum
                     if train_params_dict['momentum'] is not None:
                         momentum = train_params_dict['momentum']
                     else:
                         momentum = 0.9  # some reasonable default
-                optimizer = tf.train.MomentumOptimizer(learning_rate, momentum, use_nesterov=False)
 
+                optimizer = tf.train.MomentumOptimizer(learning_rate, momentum, use_nesterov=True)
             # AdamW (w. proper weight decay not L2 regularisation), as suggested in https://arxiv.org/abs/1711.05101
             elif train_params_dict['optimizer'].lower() == 'adamw':
                 if train_params_dict['weight_decay'] is not None:
                     weight_decay = train_params_dict['weight_decay']
                 else:
                     weight_decay = 1e-4  # some reasonable default
-
                 # adam_wd is a new class
                 adam_wd = tf.contrib.opt.extend_with_decoupled_weight_decay(tf.train.AdamOptimizer)
                 # Create a adam_wd object
                 optimizer = adam_wd(weight_decay=weight_decay, learning_rate=learning_rate,
                                     beta1=training_schedule['momentum'], beta2=training_schedule['momentum2'])
-
+            else:
+                # default to Adam
+                optimizer = tf.train.AdamOptimizer(learning_rate, training_schedule['momentum'],
+                                                   training_schedule['momentum2'])
         else:  # default to Adam
-            optimizer = tf.train.AdamOptimizer(
-                learning_rate,
-                training_schedule['momentum'],
-                training_schedule['momentum2'])
+            if train_params_dict['weight_decay'] is not None:
+                training_schedule['weight_decay'] = train_params_dict['weight_decay']
+            optimizer = tf.train.AdamOptimizer(learning_rate, training_schedule['momentum'],
+                                               training_schedule['momentum2'])
 
         # AdamW = tf.contrib.opt.extend_with_decoupled_weight_decay(optimizer)
         if log_tensorboard:
-            # Add learning rate
-            tf.summary.scalar('learning_rate', learning_rate)
+            tf.summary.scalar('learning_rate', learning_rate)  # Add learning rate
 
+        # Define input dictionary (TRAIN)
         if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
-            inputs = {
-                'input_a': input_a,
-                'matches_a': matches_a,
-                'sparse_flow': sparse_flow,
-            }
+            inputs = {'input_a': input_a, 'matches_a': matches_a, 'sparse_flow': sparse_flow, }
         else:
-            inputs = {
-                'input_a': input_a,
-                'input_b': input_b,
-            }
+            inputs = {'input_a': input_a, 'input_b': input_b, }
+        # Define input dictionary (VALIDATION)
+        if valid_iters > 0:
+            if val_matches_a is not None and val_sparse_flow is not None and input_type == 'image_matches':
+                val_inputs = {'input_a': val_input_a, 'matches_a': val_matches_a, 'sparse_flow': val_sparse_flow, }
+            else:
+                val_inputs = {'input_a': val_input_a, 'input_b': val_input_b, }
+
+        # Define model operations (graph) to compute loss (TRAIN)
         predictions = self.model(inputs, training_schedule)
-        total_loss = self.loss(out_flow, predictions)
+        if valid_iters > 0:
+            # Define model operations (graph) to compute loss (VALIDATION)
+            val_predictions = self.model(val_inputs, training_schedule, trainable=False)  # test does not specify this
+
+        # Compute losses
+        train_loss = self.loss(gt_flow, predictions)
+        if log_verbosity > 1:
+            print("\n >>> train_loss=", train_loss)
+        if valid_iters > 0:
+            val_loss = self.loss(val_gt_flow, val_predictions)
+            # Add validation loss to a different collection to avoid adding it to the train one when calling get_loss()
+            # By default, all losses are added to the same collection (tf.GraphKeys.LOSSES)
+            tf.losses.add_loss(val_loss, loss_collection='validation')
 
         if log_tensorboard:
-            tf.summary.scalar('loss', total_loss)  # otherwise only printed to stdout!
+            summary_loss = tf.summary.scalar('train/loss', train_loss)
             # Show the generated flow in TensorBoard
             if 'flow' in predictions:
                 pred_flow_0 = predictions['flow'][0, :, :, :]
@@ -787,32 +764,83 @@ class Net(object):
                 pred_flow_1 = tf.py_func(flow_to_image, [pred_flow_1], tf.uint8)
                 # pred_flow_1 = tf.py_function(func=flow_to_image, inp=[pred_flow_1], Tout=tf.uint8)
                 pred_flow_img = tf.stack([pred_flow_0, pred_flow_1], 0)
-                tf.summary.image('pred_flow', pred_flow_img, max_outputs=1)
+                tf.summary.image('train/pred_flow', pred_flow_img, max_outputs=1)
 
-            true_flow_0 = out_flow[0, :, :, :]
+            # Add ground truth flow (TRAIN)
+            true_flow_0 = gt_flow[0, :, :, :]
             true_flow_0 = tf.py_func(flow_to_image, [true_flow_0], tf.uint8)
             # true_flow_0 = tf.py_function(func=flow_to_image, inp=[true_flow_0], Tout=tf.uint8)
-            true_flow_1 = out_flow[1, :, :, :]
+            true_flow_1 = gt_flow[1, :, :, :]
             true_flow_1 = tf.py_func(flow_to_image, [true_flow_1], tf.uint8)
             # true_flow_1 = tf.py_function(func=flow_to_image, inp=[true_flow_1], Tout=tf.uint8)
             true_flow_img = tf.stack([true_flow_0, true_flow_1], 0)
-            tf.summary.image('true_flow', true_flow_img, max_outputs=1)
+            tf.summary.image('train/gt_flow', true_flow_img, max_outputs=1)
+
+            # Validation
+            if valid_iters > 0:
+                summary_validation_loss = tf.summary.scalar('valid/loss', val_loss)
+                summary_validation_delta = tf.summary.scalar("valid/loss_delta", (val_loss - train_loss))
+                # Just to check that val losses are logged separately
+                if log_verbosity > 1:
+                    print("\n >>> validation losses=", tf.losses.get_losses(loss_collection="validation"))
+
+                # Show the generated flow in TensorBoard
+                if 'flow' in val_predictions:
+                    val_pred_flow_0 = val_predictions['flow'][0, :, :, :]
+                    val_pred_flow_0 = tf.py_func(flow_to_image, [val_pred_flow_0], tf.uint8)
+                    # val_pred_flow_0 = tf.py_function(func=flow_to_image, inp=[val_pred_flow_0], Tout=tf.uint8)
+                    val_pred_flow_1 = val_predictions['flow'][1, :, :, :]
+                    val_pred_flow_1 = tf.py_func(flow_to_image, [val_pred_flow_1], tf.uint8)
+                    # val_pred_flow_1 = tf.py_function(func=flow_to_image, inp=[val_pred_flow_1], Tout=tf.uint8)
+                    val_pred_flow_img = tf.stack([val_pred_flow_0, val_pred_flow_1], 0)
+                    tf.summary.image('valid/pred_flow', val_pred_flow_img, max_outputs=1)
+
+                # Add ground truth flow (VALIDATION)
+                val_true_flow_0 = val_gt_flow[0, :, :, :]
+                val_true_flow_0 = tf.py_func(flow_to_image, [val_true_flow_0], tf.uint8)
+                # val_true_flow_0 = tf.py_function(func=flow_to_image, inp=[val_true_flow_0], Tout=tf.uint8)
+                val_true_flow_1 = val_gt_flow[1, :, :, :]
+                val_true_flow_1 = tf.py_func(flow_to_image, [val_true_flow_1], tf.uint8)
+                # val_true_flow_1 = tf.py_function(func=flow_to_image, inp=[val_true_flow_1], Tout=tf.uint8)
+                val_true_flow_img = tf.stack([val_true_flow_0, val_true_flow_1], 0)
+                tf.summary.image('valid/true_flow', val_true_flow_img, max_outputs=1)
 
         # Create the train_op
-        print("Creating training op...")
-        train_op = slim.learning.create_train_op(
-            total_loss,
+        train_operator = slim.learning.create_train_op(
+            train_loss,
             optimizer,
             summarize_gradients=False,
             global_step=checkpoint_global_step_tensor,
         )
 
-        if log_verbosity > 1:
-            train_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-            adam_var_list = [optimizer.get_slot(var, name) for name in optimizer.get_slot_names() for var in train_vars]
-            print("Printing optimizer-specific variables to be restored (check against actually restored below)")
-            for var in adam_var_list:
-                print("(adam): {}".format(var))
+        # ==== Add validation by defining a custom train_step_fn ====
+        # How to run validation on the same session that training (tf.slim)
+        # From: https://colab.research.google.com/drive/11PWvXR85NAIe6LAV1kocheXGDJa1VOa1#scrollTo=IhwzhDFttEoh
+        def train_step_fn(sess, train_op, global_step, train_step_kwargs):
+            """
+            slim.learning.train_step():
+              train_step_kwargs = {summary_writer:, should_log:, should_stop:}
+
+            usage: slim.learning.train( train_op, logdir,
+                                        train_step_fn=train_step_fn,)
+            """
+            if hasattr(train_step_fn, 'step'):
+                train_step_fn.step += 1  # or use global_step.eval(session=sess)
+            else:
+                train_step_fn.step = global_step.eval(sess)
+
+            # calc training losses
+            total_loss, should_stop = slim.learning.train_step(sess, train_op, global_step, train_step_kwargs)
+
+            # validate on interval
+            if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
+                valid_loss, valid_delta = sess.run([val_loss, summary_validation_delta])
+                print(">>> global step= {:<5d} | train={:^15.4f} | validation={:^15.4f} | delta={:^15.4f} <<<".format(
+                    train_step_fn.step, total_loss, valid_loss, valid_loss - total_loss))
+
+            return [total_loss, should_stop]
+
+        # ===========================================================
 
         if checkpoints is not None:
             # Create the initial assignment op
@@ -829,6 +857,10 @@ class Net(object):
                             print(var)
                         print("Finished printing list of restored variables")
 
+                # Create an initial assignment function.
+                def InitAssignFn(sess):
+                    sess.run(init_assign_op, init_feed_dict)
+
                 init_assign_op, init_feed_dict = slim.assign_from_checkpoint(checkpoint_path, renamed_variables)
                 # Initialise checkpoint for stacked nets with the global step as the number of the outermost net
                 step_number = int(checkpoint_path.split('-')[-1])
@@ -839,26 +871,18 @@ class Net(object):
             elif isinstance(checkpoints, str):
                 checkpoint_path = checkpoints
 
-                if log_verbosity > 1:
-                    print("Checkpoint path (to file) was: {}".format(checkpoint_path))
-                    print("Path to checkpoint folder is: '{}'".format(os.path.dirname(checkpoint_path)))
-
                 # Get checkpoint state from checkpoint_path (used to restore vars)
                 ckpt = tf.train.get_checkpoint_state(os.path.dirname(checkpoint_path))
 
-                if log_verbosity > 1:
-                    print("Is ckpt None: {0}".format(ckpt is None))
                 vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path)
                 if log_verbosity > 1:
+                    print("Path from which checkpoint state is computed: '{}'".format(os.path.dirname(checkpoint_path)))
                     print("Listing variables that will be restored(optimistic_restore_vars), total: {}:".format(
                         len(vars2restore)))
                     for var in vars2restore:
                         print(var)
                     sys.stdout.flush()
 
-                # TODO: check that the creation of a saver inside 'assign_from_...' does not interfere with custom one
-                # It depends on the preference of saver and init_fn in slim.learning.train()
-                # Initialise saver with custom settings and list of variables to restore (resumed training)
                 saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2,
                                        var_list=vars2restore if checkpoint_path else None)
                 # Define init function to assign variables from checkpoint
@@ -891,18 +915,14 @@ class Net(object):
             if not os.path.isdir(debug_logdir):
                 os.makedirs(debug_logdir)
                 print("debugging logdir is: {}".format(debug_logdir))
-            with tf.Session() as sess:
-                sess.run(tf.global_variables_initializer())
-                tf.train.start_queue_runners(sess)
+            with tf.Session() as session:
+                session.run(tf.global_variables_initializer())
+                tf.train.start_queue_runners(session)
                 slim.learning.train_step(
-                    sess,
-                    train_op,
+                    session,
+                    train_operator,
                     checkpoint_global_step_tensor,
-                    {
-                        'should_trace': tf.constant(1),
-                        'should_log': tf.constant(1),
-                        'logdir': debug_logdir,
-                    }
+                    {'should_trace': tf.constant(1), 'should_log': tf.constant(1), 'logdir': debug_logdir, }
                 )
         else:
             if lr_range_test:
@@ -910,38 +930,60 @@ class Net(object):
             else:
                 save_summaries_secs = 180
 
-            # If max_steps is passed as a parameter, it overrides max_iter which is configured in training_schedules.py
+            # max_steps overrides max_iter which is configured in training_schedules.py
             if 'max_steps' in train_params_dict:
                 training_schedule['max_iters'] = train_params_dict['max_steps']
 
             if checkpoints is not None:
-                final_loss = slim.learning.train(
-                    train_op,
-                    log_dir,
-                    # session_config=tf.ConfigProto(allow_soft_placement=True),
-                    global_step=checkpoint_global_step_tensor,
-                    save_summaries_secs=save_summaries_secs,
-                    number_of_steps=training_schedule['max_iters'],
-                    # init_fn=InitAssignFn,
-                    # train_step_fn=train_step_fn,
-                    saver=saver,
-                    # local_init_op=local_init_op,
-                    init_fn=init_fn,
-                )
-            else:
-                final_loss = slim.learning.train(
-                    train_op,
-                    log_dir,
-                    # session_config=tf.ConfigProto(allow_soft_placement=True),
-                    global_step=checkpoint_global_step_tensor,
-                    save_summaries_secs=save_summaries_secs,
-                    number_of_steps=training_schedule['max_iters'],
-                    # train_step_fn=train_step_fn,
-                    saver=saver,
-                )
-            print("Loss at the end of training is {}".format(final_loss))
+                if valid_iters > 0:
+                    final_loss = slim.learning.train(
+                        train_operator,
+                        log_dir,
+                        # session_config=tf.ConfigProto(allow_soft_placement=True),
+                        global_step=checkpoint_global_step_tensor,
+                        save_summaries_secs=save_summaries_secs,
+                        number_of_steps=training_schedule['max_iters'],
+                        train_step_fn=train_step_fn,
+                        saver=saver,
+                        init_fn=init_fn,
+                        # summary_writer=train_writer,
 
-    # TODO: manually inspect if ALL optimizer variables are properly resumed (loss explodes for a few iterations)
-    # It is not clear if Adam can only save some variables or all
-    #  See: https://www.tensorflow.org/alpha/guide/checkpoints#manually_inspecting_checkpoints
-    # def finetuning(...)
+                    )
+                else:
+                    final_loss = slim.learning.train(
+                        train_operator,
+                        log_dir,
+                        # session_config=tf.ConfigProto(allow_soft_placement=True),
+                        global_step=checkpoint_global_step_tensor,
+                        save_summaries_secs=save_summaries_secs,
+                        number_of_steps=training_schedule['max_iters'],
+                        saver=saver,
+                        init_fn=init_fn,
+                        # summary_writer=train_writer,
+                    )
+            else:
+                if valid_iters > 0:
+                    final_loss = slim.learning.train(
+                        train_operator,
+                        log_dir,
+                        # session_config=tf.ConfigProto(allow_soft_placement=True),
+                        global_step=checkpoint_global_step_tensor,
+                        save_summaries_secs=save_summaries_secs,
+                        number_of_steps=training_schedule['max_iters'],
+                        train_step_fn=train_step_fn,
+                        saver=saver,
+                        # summary_writer=train_writer,
+                    )
+                else:
+                    final_loss = slim.learning.train(
+                        train_operator,
+                        log_dir,
+                        # session_config=tf.ConfigProto(allow_soft_placement=True),
+                        global_step=checkpoint_global_step_tensor,
+                        save_summaries_secs=save_summaries_secs,
+                        number_of_steps=training_schedule['max_iters'],
+                        # train_step_fn=train_step_fn,
+                        saver=saver,
+                        # summary_writer=train_writer,
+                    )
+            print("Finished training, last batch loss: {:^15.4f}".format(final_loss))

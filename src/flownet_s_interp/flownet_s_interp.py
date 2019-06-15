@@ -39,7 +39,8 @@ class FlowNetS_interp(Net):
                                 weights_initializer=slim.variance_scaling_initializer(),
                                 activation_fn=LeakyReLU,
                                 # We will do our own padding to match the original Caffe code
-                                padding='VALID'):
+                                padding='VALID',
+                                reuse=tf.AUTO_REUSE):
                 # TODO: for adaptive optimizers: L2reg != weight_decay, change the name to reflect that
                 weights_regularizer = slim.l2_regularizer(training_schedule['weight_decay'])
                 with slim.arg_scope([slim.conv2d], weights_regularizer=weights_regularizer):
