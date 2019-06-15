@@ -299,8 +299,8 @@ FLYING_THINGS_3D_ALL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 4,
     'PATHS': {
-        'train': '/datasets/GPI/optical_flow/TFrecords/interp/ft3d_train_all.tfrecords',
-        'valid': '/datasets/GPI/optical_flow/TFrecords/interp/ft3d_val_all.tfrecords',
+        'train': './data/tfrecords/interp/ft3d_train_all.tfrecord',
+        'valid': './data/tfrecords/interp/ft3d_val_all.tfrecord',
     },
     'PREPROCESS': {
         'scale': False,
@@ -658,7 +658,6 @@ SINTEL_ALL_DATASET_CONFIG = {
     }
 }
 
-
 SINTEL_MINI_DATASET_CONFIG = {
     'IMAGE_HEIGHT': 436,
     'IMAGE_WIDTH': 1024,
@@ -918,7 +917,6 @@ FLYING_THINGS_3D_ALL_DATASET_CONFIG = {
     'IMAGE_WIDTH': 960,
     'PADDED_IMAGE_HEIGHT': 576,
     'PADDED_IMAGE_WIDTH': 960,
->>>>>>> added local mini datasets to debug code
     'ITEMS_TO_DESCRIPTIONS': {
         'image_a': 'A 3-channel image.',
         'image_b': 'A 3-channel image.',
@@ -1171,7 +1169,6 @@ FLYING_THINGS_3D_MINI_DATASET_CONFIG = {
 # Add here configs for other datasets. For instance, sintel/clean, sintel/final, slowflow, etc.
 # MPI-Sintel (Final + clean pass) with perturbations (removing, adding or moving initial matches)
 SINTEL_ALL_DATASET_CONFIG = {
->>>>>>> added local mini datasets to debug code
     'IMAGE_HEIGHT': 436,
     'IMAGE_WIDTH': 1024,
     'PADDED_IMAGE_HEIGHT': 448,
@@ -1439,7 +1436,6 @@ SINTEL_FINAL_ALL_DATASET_CONFIG = {
     'IMAGE_WIDTH': 1024,
     'PADDED_IMAGE_HEIGHT': 448,
     'PADDED_IMAGE_WIDTH': 1024,
->>>>>>> added local mini datasets to debug code
     'ITEMS_TO_DESCRIPTIONS': {
         'image_a': 'A 3-channel image.',
         'image_b': 'A 3-channel image.',
