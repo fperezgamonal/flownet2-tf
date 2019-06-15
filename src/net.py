@@ -738,6 +738,8 @@ class Net(object):
                 val_inputs = {'input_a': val_input_a, 'input_b': val_input_b, }
 
         # Define model operations (graph) to compute loss (TRAIN)
+        if log_verbosity > 1:
+            print("Weight decay (l2 regularization): {}".format(training_schedule['weight_decay']))
         predictions = self.model(inputs, training_schedule)
         if valid_iters > 0:
             # Define model operations (graph) to compute loss (VALIDATION)
