@@ -706,6 +706,7 @@ class Net(object):
 
                     # Track momentum value (just for debugging initially)
                     if log_verbosity > 1 and log_tensorboard:
+                        print("Logging cyclic momentum to tensorboard...")
                         tf.summary.scalar('cyclic_momentum', momentum)
 
                 else:  # Use fixed momentum
