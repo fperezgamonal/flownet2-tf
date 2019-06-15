@@ -54,15 +54,19 @@ def main():
             FLAGS.dataset_config, 'train', input_type=FLAGS.input_type,
             common_queue_capacity=FLAGS.common_queue_capacity,
             common_queue_min=FLAGS.common_queue_min,
-            num_threads=FLAGS.num_threads)
+            num_threads=FLAGS.num_threads,
+            capacity_in_batches_train=FLAGS.capacity_in_batches_train,
+            capacity_in_batches_val=FLAGS.capacity_in_batches_val)
         # Validation
         if FLAGS.val_iters > 0:
             val_input_a, val_matches_a, val_sparse_flow, val_flow = load_batch(
                 FLAGS.dataset_config, 'valid',
                 input_type=FLAGS.input_type,
-                common_queue_capacity = FLAGS.common_queue_capacity,
-                common_queue_min = FLAGS.common_queue_min,
-                num_threads = FLAGS.num_threads)
+                common_queue_capacity=FLAGS.common_queue_capacity,
+                common_queue_min=FLAGS.common_queue_min,
+                num_threads=FLAGS.num_threads,
+                capacity_in_batches_train=FLAGS.capacity_in_batches_train,
+                capacity_in_batches_val=FLAGS.capacity_in_batches_val)
 
         else:
             val_input_a = None
@@ -97,14 +101,18 @@ def main():
             FLAGS.dataset_config, 'train', input_type=FLAGS.input_type,
             common_queue_capacity=FLAGS.common_queue_capacity,
             common_queue_min=FLAGS.common_queue_min,
-            num_threads=FLAGS.num_threads)
+            num_threads=FLAGS.num_threads,
+            capacity_in_batches_train=FLAGS.capacity_in_batches_train,
+            capacity_in_batches_val=FLAGS.capacity_in_batches_val)
         # Validation
         if FLAGS.val_iters > 0:
             val_input_a, val_input_b,  val_flow = load_batch(
                 FLAGS.dataset_config, 'valid', input_type=FLAGS.input_type,
                 common_queue_capacity=FLAGS.common_queue_capacity,
                 common_queue_min=FLAGS.common_queue_min,
-                num_threads=FLAGS.num_threads)
+                num_threads=FLAGS.num_threads,
+                capacity_in_batches_train=FLAGS.capacity_in_batches_train,
+                capacity_in_batches_val=FLAGS.capacity_in_batches_val)
         else:
             val_input_a = None
             val_input_b = None
@@ -356,6 +364,21 @@ if __name__ == '__main__':
         required=False,
         help='number of threads to load data from a slim.dataset',
         default=8,
+    )
+    # ==== Capacity in batches (when feeding to train/val) ====
+    parser.add_argument(
+        '--capacity_in_batches_train',
+        type=int,
+        required=False,
+        help='capacity in batches to feed to train (kept in memory?)',
+        default=4,
+    )
+    parser.add_argument(
+        '--capacity_in_batches_val',
+        type=int,
+        required=False,
+        help='capacity in batches to feed to validation (kept in memory?)',
+        default=1,
     )
 
     FLAGS = parser.parse_args()
