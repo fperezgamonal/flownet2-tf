@@ -406,7 +406,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                 return tf.train.batch([image_as, matches_as, sparse_flows, flows],
                                       enqueue_many=True,
                                       batch_size=dataset_config['BATCH_SIZE'],
-                                      capacity=dataset_config['BATCH_SIZE'] * 2,  # consider reducing this (RAM?)
+                                      capacity=dataset_config['BATCH_SIZE'] * 4,  # consider reducing this (RAM?)
                                       allow_smaller_final_batch=False,
                                       num_threads=num_threads)
         else:
@@ -421,6 +421,6 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                 return tf.train.batch([image_as, image_bs, flows],
                                       enqueue_many=True,
                                       batch_size=dataset_config['BATCH_SIZE'],
-                                      capacity=dataset_config['BATCH_SIZE'] * 2,
+                                      capacity=dataset_config['BATCH_SIZE'] * 4,
                                       allow_smaller_final_batch=False,
                                       num_threads=num_threads)
