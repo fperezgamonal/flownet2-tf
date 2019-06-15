@@ -176,8 +176,8 @@ FLYING_CHAIRS_MINI_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 8,
     'PATHS': {
-        'train': '/datasets/GPI/optical_flow/TFrecords/interp/regen/fc_train_all.tfrecords',
-        'valid': '/datasets/GPI/optical_flow/TFrecords/interp/regen/fc_val_all.tfrecords',
+        'train': './data/tfrecords/interp/fc_train_all.tfrecords',
+        'valid': './data/tfrecords/interp/fc_val_all.tfrecords',
     },
     'PREPROCESS': {
         'scale': False,
@@ -808,8 +808,8 @@ ALLEY_MINI_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 4,
     'PATHS': {
-        'train': '/datasets/GPI/optical_flow/TFrecords/interp/regen/alley1_only/sintel_train_all.tfrecords',
-        'valid': '/datasets/GPI/optical_flow/TFrecords/interp/regen/alley1_only/sintel_val_all.tfrecords',
+        'train': './data/tfrecords/interp/ft3d_train_all.tfrecords',
+        'valid': './data/tfrecords/interp/ft3d_val_all.tfrecords',
     },
     'PREPROCESS': {
         'scale': False,
@@ -939,8 +939,8 @@ SINTEL_FINAL_ALL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 4,
     'PATHS': {
-        'train': '/datasets/GPI/optical_flow/TFrecords/interp/sintel_final_train_all.tfrecords',
-        'valid': '/datasets/GPI/optical_flow/TFrecords/interp/sintel_final_val_all.tfrecords',
+        'train': './data/tfrecords/interp/sintel_train_all.tfrecords',
+        'valid': './data/tfrecords/interp/sintel_val_all.tfrecords',
     },
     'PREPROCESS': {
         'scale': False,
@@ -1073,8 +1073,8 @@ FC_TRAIN_SINTEL_VAL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 8,
     'PATHS': {
-        'train': '/datasets/GPI/optical_flow/TFrecords/interp/fc_sintel_train.tfrecords',
-        'valid': '/datasets/GPI/optical_flow/TFrecords/interp/fc_sintel_val.tfrecords',
+        'train': './data/tfrecords/interp/sintel_final_train_all.tfrecord',
+        'valid': './data/tfrecords/interp/sintel_final_val_all.tfrecord',
     },
     'PREPROCESS': {
         'scale': False,
