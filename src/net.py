@@ -691,8 +691,23 @@ class Net(object):
                 if train_params_dict['weight_decay'] is not None:
                     training_schedule['weight_decay'] = train_params_dict['weight_decay']
                 # Use cyclic momentum if using CLR (accelerates convergence)
-                if training_schedule['learning_rates'].lower() == 'clr' and training_schedule_str == 'clr':
-                    print("WIP: implement inverse cyclic policy for momentum")
+                if training_schedule['learning_rates'].lower() == 'clr' and training_schedule_str == 'clr' and \
+                   train_params_dict['min_momentum'] is not None and train_params_dict['max_momentum'] is not None:
+                    # Use the CLR scheduling for LR to get momentum value at current step:
+                    #     * Simply swap the min_lr for the max_momentum and viceversa
+                    #     * By doing so, we have the expected behaviour, when momentum is maximum, lr is minimum
+                    #     * The stepsize remains the same and by using 'triangular' mode, all momentum cycles have
+                    #     matching amplitude
+                    momentum = clr.cyclic_learning_rate(checkpoint_global_step_tensor,
+                                                        learning_rate=train_params_dict['max_momentum'],
+                                                        max_lr=train_params_dict['min_momentum'],
+                                                        step_size=train_params_dict['clr_stepsize'],
+                                                        mode='triangular')
+
+                    # Track momentum value (just for debugging initially)
+                    if log_verbosity > 1 and log_tensorboard:
+                        tf.summary.scalar('cyclic_momentum', momentum)
+
                 else:  # Use fixed momentum
                     if train_params_dict['momentum'] is not None:
                         momentum = train_params_dict['momentum']

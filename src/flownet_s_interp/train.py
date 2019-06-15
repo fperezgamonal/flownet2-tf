@@ -25,7 +25,7 @@ def main():
             'momentum': FLAGS.momentum,
             'weight_decay': FLAGS.weight_decay
         }
-    # Initialise CLR parameters (define dictionary). Note that if max_iter=stepsize we have a linear range test!
+    # Initialise CLR parameters (define dictionary). Note that if max_steps=stepsize we have a linear range test!
     elif FLAGS.training_schedule.lower() == 'clr':
         train_params_dict = {
             'clr_min_lr': FLAGS.clr_min_lr,
@@ -36,6 +36,8 @@ def main():
             'clr_mode': FLAGS.clr_mode,
             'optimizer': FLAGS.optimizer,
             'momentum': FLAGS.momentum,
+            'min_momentum': FLAGS.min_momentum,
+            'max_momentum': FLAGS.max_momentum,
             'weight_decay': FLAGS.weight_decay,
         }
     else:
@@ -265,15 +267,31 @@ if __name__ == '__main__':
         help="Optimizer to use (def. 'adam'). Values: 'sgd', 'momentum' or 'adamw'",
         default=None,
     )
-
     # Overrides default value if Momentum optimizer (SGD+momentum) is used
     parser.add_argument(
         '--momentum',
         type=float,
         required=False,
-        help="Value of momentum for the Momentum optimizer (SGD+momentum). If CLR, a cyclic policy for momentum will "
+        help="(constant) Value of momentum for the Momentum optimizer (SGD+momentum). For cyclic momentum, set "
+             "'min_momentum' and 'max_momentum' instead and define the training schedule as 'clr'"
              "be used",
         default=None,
+    )
+    # Defines lower bound for the cyclic momentum (if CLR is in use)
+    parser.add_argument(
+        '--min_momentum',
+        type=float,
+        required=False,
+        help="minimum value of the momentum for the SGD + Momentum optimizer (cyclic momentum)",
+        default=0.85,
+    )
+    # Defines lower bound for the cyclic momentum (if CLR is in use)
+    parser.add_argument(
+        '--max_momentum',
+        type=float,
+        required=False,
+        help="maximum value of the momentum for the SGD + Momentum optimizer (cyclic momentum)",
+        default=0.95,
     )
     # Actual weight decay for Adam (not L2 regularisation)
     parser.add_argument(
