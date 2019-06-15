@@ -274,8 +274,8 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
         data_provider = slim.dataset_data_provider.DatasetDataProvider(
             dataset,
             num_readers=num_threads,
-            common_queue_capacity=1024,  # this also broke training, we lowered it (og. value = 2048)
-            common_queue_min=512,  # this also broke training, we lowered it (og. value = 1024)
+            common_queue_capacity=256,  # this also broke training, we lowered it (og. value = 2048)
+            common_queue_min=128,  # this also broke training, we lowered it (og. value = 1024)
             reader_kwargs=reader_kwargs)
 
         if input_type == 'image_matches':
