@@ -298,7 +298,7 @@ if __name__ == '__main__':
         '--weight_decay',
         type=float,
         required=False,
-        help="Weight decay for AdamW (w. proper weight decay, not L2 regularisation)",
+        help="Weight decay for AdamW (w. proper weight decay); L2 regularisation for other optimizers)",
         default=None,
     )
 
