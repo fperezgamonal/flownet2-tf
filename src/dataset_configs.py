@@ -54,130 +54,8 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 8,
     'PATHS': {
-        'train': './data/tfrecords/interp/fc_train_all.tfrecord',
-        'valid': './data/tfrecords/interp/fc_val_all.tfrecord',
-    },
-    'PREPROCESS': {
-        'scale': False,
-        'crop_height': 384,
-        'crop_width': 448,
-        'image_a': {
-            'translate': {
-                'rand_type': "uniform_bernoulli",
-                'exp': False,
-                'mean': 0,
-                'spread': 0.4,
-                'prob': 1.0,
-            },
-            'rotate': {
-                'rand_type': "uniform_bernoulli",
-                'exp': False,
-                'mean': 0,
-                'spread': 0.4,
-                'prob': 1.0,
-            },
-            'zoom': {
-                'rand_type': "uniform_bernoulli",
-                'exp': True,
-                'mean': 0.2,
-                'spread': 0.4,
-                'prob': 1.0,
-            },
-            'squeeze': {
-                'rand_type': "uniform_bernoulli",
-                'exp': True,
-                'mean': 0,
-                'spread': 0.3,
-                'prob': 1.0,
-            },
-            'noise': {
-                'rand_type': "uniform_bernoulli",
-                'exp': False,
-                'mean': 0.03,
-                'spread': 0.03,
-                'prob': 1.0,
-            },
-        },
-        # All preprocessing to image A will be applied to image B in addition to the following.
-        'image_b': {
-            'translate': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': False,
-                'mean': 0,
-                'spread': 0.03,
-                'prob': 1.0,
-            },
-            'rotate': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': False,
-                'mean': 0,
-                'spread': 0.03,
-                'prob': 1.0,
-            },
-            'zoom': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': True,
-                'mean': 0,
-                'spread': 0.03,
-                'prob': 1.0,
-            },
-            'gamma': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': True,
-                'mean': 0,
-                'spread': 0.02,
-                'prob': 1.0,
-            },
-            'brightness': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': False,
-                'mean': 0,
-                'spread': 0.02,
-                'prob': 1.0,
-            },
-            'contrast': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': True,
-                'mean': 0,
-                'spread': 0.02,
-                'prob': 1.0,
-            },
-            'color': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': True,
-                'mean': 0,
-                'spread': 0.02,
-                'prob': 1.0,
-            },
-            'coeff_schedule_param': {
-                'half_life': 50000,
-                'initial_coeff': 0.5,
-                'final_coeff': 1,
-            },
-        }
-    }
-}
-
-FLYING_CHAIRS_MINI_DATASET_CONFIG = {
-    'IMAGE_HEIGHT': 384,
-    'IMAGE_WIDTH': 512,
-    'PADDED_IMAGE_HEIGHT': 384,
-    'PADDED_IMAGE_WIDTH': 512,
-    'ITEMS_TO_DESCRIPTIONS': {
-        'image_a': 'A 3-channel image.',
-        'image_b': 'A 3-channel image.',
-        'matches_a': 'A 1-channel matching mask (1s pixels matched, 0s not matched).',
-        'sparse_flow': 'A sparse flow initialised from a set of sparse matches.',
-        'flow': 'A 2-channel optical flow field.',
-    },
-    'SIZES': {
-        'train': 300,
-        'valid': 100,
-    },
-    'BATCH_SIZE': 8,
-    'PATHS': {
-        'train': '/datasets/GPI/optical_flow/TFrecords/interp/regen/fc_train_all.tfrecords',
-        'valid': '/datasets/GPI/optical_flow/TFrecords/interp/regen/fc_val_all.tfrecords',
+        'train': './data/tfrecords/interp/fc_train_all.tfrecords',
+        'valid': './data/tfrecords/interp/fc_val_all.tfrecords',
     },
     'PREPROCESS': {
         'scale': False,
@@ -808,8 +686,8 @@ ALLEY_MINI_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 4,
     'PATHS': {
-        'train': '/datasets/GPI/optical_flow/TFrecords/interp/regen/alley1_only/sintel_train_all.tfrecords',
-        'valid': '/datasets/GPI/optical_flow/TFrecords/interp/regen/alley1_only/sintel_val_all.tfrecords',
+        'train': './data/tfrecords/interp/ft3d_train_all.tfrecords',
+        'valid': './data/tfrecords/interp/ft3d_val_all.tfrecords',
     },
     'PREPROCESS': {
         'scale': False,
@@ -939,8 +817,8 @@ SINTEL_FINAL_ALL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 4,
     'PATHS': {
-        'train': '/datasets/GPI/optical_flow/TFrecords/interp/sintel_final_train_all.tfrecords',
-        'valid': '/datasets/GPI/optical_flow/TFrecords/interp/sintel_final_val_all.tfrecords',
+        'train': './data/tfrecords/interp/sintel_train_all.tfrecords',
+        'valid': './data/tfrecords/interp/sintel_val_all.tfrecords',
     },
     'PREPROCESS': {
         'scale': False,
@@ -1073,8 +951,8 @@ FC_TRAIN_SINTEL_VAL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 8,
     'PATHS': {
-        'train': '/datasets/GPI/optical_flow/TFrecords/interp/fc_sintel_train.tfrecords',
-        'valid': '/datasets/GPI/optical_flow/TFrecords/interp/fc_sintel_val.tfrecords',
+        'train': './data/tfrecords/interp/sintel_final_train_all.tfrecord',
+        'valid': './data/tfrecords/interp/sintel_final_val_all.tfrecord',
     },
     'PREPROCESS': {
         'scale': False,
