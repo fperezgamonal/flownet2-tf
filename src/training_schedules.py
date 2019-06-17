@@ -13,7 +13,7 @@
 # All other params defined as input arguments to train.py scripts
 CLR_SCHEDULE = {
     'learning_rates': 'clr',
-    'weight_decay': 0.0,  # disabled for now as CLR already introduces decay (exponentially or by a fix 0.5 factor)
+    'l2_regularization': 0.0,  # disabled for now as CLR already introduces decay (exponentially or by a fix 0.5 factor)
     'max_iters': 10000,  # left as default
     'momentum': 0.9,
     'momentum2': 0.999,
@@ -24,7 +24,7 @@ LR_RANGE_TEST = {  # steps and learning rates defined by a step-wise curve with 
     'learning_rates': 'range_test',
     'momentum': 0.9,
     'momentum2': 0.999,
-    'weight_decay': 0.0,  # remove it as we are ONLY exponentially trying diff. lrs
+    'l2_regularization': 0.0,  # remove it as we are ONLY exponentially trying diff. lrs
     'max_iters': 9838,  # around 30 minutes (aprox. 5 iters/s), enough to diverge probably (intended!)
 }
 LONG_SCHEDULE = {
@@ -32,7 +32,7 @@ LONG_SCHEDULE = {
     'learning_rates': [0.0001, 0.00005, 0.000025, 0.0000125, 0.00000625],
     'momentum': 0.9,
     'momentum2': 0.999,
-    'weight_decay': 0.0004,
+    'l2_regularization': 0.0004,
     'max_iters': 1200000,
 }
 # og repo adds a stepvalue at 500k iters but it is useless since it is equal to maxiter!
@@ -42,7 +42,7 @@ FINE_SCHEDULE = {
     'learning_rates': [0.00001, 0.000005, 0.0000025, 0.00000125],
     'momentum': 0.9,
     'momentum2': 0.999,
-    'weight_decay': 0.0004,
+    'l2_regularization': 0.0004,
     'max_iters': 500000,  # may need to change it to 1.7M iters (continuing Slong)
 }
 
@@ -52,7 +52,7 @@ SHORT_SCHEDULE = {
     'learning_rates': [0.0001, 0.00005, 0.000025, 0.0000125],
     'momentum': 0.9,
     'momentum2': 0.999,
-    'weight_decay': 0.0004,
+    'l2_regularization': 0.0004,
     'max_iters': 600000,
 }
 
@@ -70,7 +70,7 @@ FINETUNE_SINTEL_S1 = {
                        9.765625e-08, 4.8828125e-08],
     'momentum': 0.9,
     'momentum2': 0.999,
-    'weight_decay': 0.0004,
+    'l2_regularization': 0.0004,
     'max_iters': 150000,
 }
 
@@ -80,7 +80,7 @@ FINETUNE_SINTEL_S2 = {
                        5.859375e-08, 2.9296875e-08],
     'momentum': 0.9,
     'momentum2': 0.999,
-    'weight_decay': 0.0004,
+    'l2_regularization': 0.0004,
     'max_iters': 300000,
 }
 # TODO: the fix worked so the global step is correctly resumed (change the other fine-tuning schedules accordingly)
@@ -97,7 +97,7 @@ FINETUNE_SINTEL_S3 = {
                        1.953125e-08],
     'momentum': 0.9,
     'momentum2': 0.999,
-    'weight_decay': 0.0004,
+    'l2_regularization': 0.0004,
     'max_iters': 450000,
 }
 
@@ -107,7 +107,7 @@ FINETUNE_SINTEL_S4 = {
                        1.953125e-08, 9.765625e-09],
     'momentum': 0.9,
     'momentum2': 0.999,
-    'weight_decay': 0.0004,
+    'l2_regularization': 0.0004,
     'max_iters': 600000,
 }
 
@@ -117,31 +117,7 @@ FINETUNE_SINTEL_S5 = {
                        9.765625e-09, 4.8828125e-09],
     'momentum': 0.9,
     'momentum2': 0.999,
-    'weight_decay': 0.0004,
-    'max_iters': 750000,
-}
-
-# concatenate all stages into only one (may fix reloading from checkpoint "problems")
-# CORRECTION: this is not valid since the weight decay will NOT have different value than expected
-# since it is applied only at the start and gradually changes instead of restarting it after each stage!
-# That is why in the original training schedules they have separate running scripts and proto.txt files
-# TODO: remove this step for the aforementioned reasons
-FINETUNE_SINTEL_ALL_STAGES = {
-    'step_values': [45000, 65000, 85000, 95000, 97500, 100000, 110000, 120000, 130000, 140000, 150000, 195000, 215000,
-                    235000, 245000, 247500, 250000, 260000, 270000, 280000, 290000, 300000, 345000, 365000, 385000,
-                    395000, 397500, 400000, 410000, 420000, 430000, 440000, 450000, 495000, 515000, 535000, 545000,
-                    547500, 550000, 560000, 570000, 580000, 590000, 600000, 645000, 665000, 685000, 695000, 697500,
-                    700000, 710000, 720000, 730000, 740000],
-    'learning_rates': [5e-05, 2.5e-05, 1.25e-05, 6.25e-06, 3.125e-06, 1.5625e-06, 7.8125e-07, 3.90625e-07, 1.953125e-07,
-                       9.765625e-08, 4.8828125e-08, 3e-05, 1.5e-05, 7.5e-06, 3.75e-06, 1.875e-06, 9.375e-07, 4.6875e-07,
-                       2.34375e-07, 1.171875e-07, 5.859375e-08, 2.9296875e-08, 2e-05, 1e-05, 5e-06, 2.5e-06, 1.25e-06,
-                       6.25e-07, 3.125e-07, 1.5625e-07, 7.8125e-08, 3.90625e-08, 1.953125e-08, 1e-05, 5e-06, 2.5e-06,
-                       1.25e-06, 6.25e-07, 3.125e-07, 1.5625e-07, 7.8125e-08, 3.90625e-08, 1.953125e-08, 9.765625e-09,
-                       5e-06, 2.5e-06, 1.25e-06, 6.25e-07, 3.125e-07, 1.5625e-07, 7.8125e-08, 3.90625e-08, 1.953125e-08,
-                       9.765625e-09, 4.8828125e-09],
-    'momentum': 0.9,
-    'momentum2': 0.999,
-    'weight_decay': 0.0004,
+    'l2_regularization': 0.0004,
     'max_iters': 750000,
 }
 
@@ -152,7 +128,7 @@ FINETUNE_KITTI_S1 = {
                        3.90625e-08],
     'momentum': 0.9,
     'momentum2': 0.999,
-    'weight_decay': 0.0004,
+    'l2_regularization': 0.0004,
     'max_iters': 150000,
 }
 
@@ -162,7 +138,7 @@ FINETUNE_KITTI_S2 = {
                        3.90625e-08],
     'momentum': 0.9,
     'momentum2': 0.999,
-    'weight_decay': 0.0004,
+    'l2_regularization': 0.0004,
     'max_iters': 300000,
 }
 
@@ -172,7 +148,7 @@ FINETUNE_KITTI_S3 = {
                        1.953125e-08],
     'momentum': 0.9,
     'momentum2': 0.999,
-    'weight_decay': 0.0004,
+    'l2_regularization': 0.0004,
     'max_iters': 450000,
 }
 
@@ -182,7 +158,7 @@ FINETUNE_KITTI_S4 = {
                        1.953125e-08, 9.765625e-09],
     'momentum': 0.9,
     'momentum2': 0.999,
-    'weight_decay': 0.0004,
+    'l2_regularization': 0.0004,
     'max_iters': 600000,
 }
 
@@ -192,6 +168,6 @@ FINETUNE_ROB = {
     'learning_rates': [0.0001, 0.00005, 0.000025, 0.0000125],
     'momentum': 0.9,
     'momentum2': 0.999,
-    'weight_decay': 0.0004,
+    'l2_regularization': 0.0004,
     'max_iters': 600000,
 }

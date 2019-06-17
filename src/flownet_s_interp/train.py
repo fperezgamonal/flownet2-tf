@@ -23,7 +23,8 @@ def main():
             'lr_range_niters': FLAGS.lr_range_niters,
             'optimizer': FLAGS.optimizer,
             'momentum': FLAGS.momentum,
-            'weight_decay': FLAGS.weight_decay
+            'weight_decay': FLAGS.weight_decay,
+            'l2_regularization': FLAGS.l2_regularization,
         }
     # Initialise CLR parameters (define dictionary). Note that if max_steps=stepsize we have a linear range test!
     elif FLAGS.training_schedule.lower() == 'clr':
@@ -39,6 +40,7 @@ def main():
             'min_momentum': FLAGS.min_momentum,
             'max_momentum': FLAGS.max_momentum,
             'weight_decay': FLAGS.weight_decay,
+            'l2_regularization': FLAGS.l2_regularization,
         }
     else:
         train_params_dict = None
@@ -320,12 +322,20 @@ if __name__ == '__main__':
         help="maximum value of the momentum for the SGD + Momentum optimizer (cyclic momentum)",
         default=0.95,
     )
-    # Actual weight decay for Adam (not L2 regularisation)
+    # Actual weight decay for AdamW (not L2 regularisation)
     parser.add_argument(
         '--weight_decay',
         type=float,
         required=False,
-        help="Weight decay for AdamW (w. proper weight decay); L2 regularisation for other optimizers)",
+        help="Weight decay for AdamW (w. proper weight decay)",
+        default=None,
+    )
+    # L2 norm weight regularisation
+    parser.add_argument(
+        '--l2_regularization',
+        type=float,
+        required=False,
+        help="Weight L2-regularization",
         default=None,
     )
 
