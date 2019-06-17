@@ -572,7 +572,7 @@ class Net(object):
     def train(self, log_dir, training_schedule_str, input_a, gt_flow, input_b=None, matches_a=None, sparse_flow=None,
               valid_iters=VAL_INTERVAL, val_input_a=None, val_gt_flow=None, val_input_b=None, val_matches_a=None,
               val_sparse_flow=None, checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True,
-              lr_range_test=False, train_params_dict=None):
+              lr_range_test=False, train_params_dict=None, log_smoothed_loss=True):
 
         # Add validation batches as input? Used only once every val_interval steps...?
         """
@@ -596,6 +596,7 @@ class Net(object):
         :param log_tensorboard:
         :param lr_range_test:
         :param train_params_dict:
+        :param log_smoothed_loss:
 
         :return:
         """
@@ -611,6 +612,11 @@ class Net(object):
                 tf.summary.image("train/matches_a", matches_a, max_outputs=1)
             else:
                 tf.summary.image("train/image_b", input_b, max_outputs=1)
+
+        # Initialise variable to track and smooth train+valid losses
+        if log_smoothed_loss:
+            smoothed_train_loss = []
+            smoothed_valid_loss = []
 
         # Initialise global step by parsing checkpoint filename to define learning rate (restoring is done afterwards)
         if checkpoints is not None:
@@ -855,6 +861,26 @@ class Net(object):
                 valid_loss, valid_delta = sess.run([val_loss, summary_validation_delta])
                 print(">>> global step= {:<5d} | train={:^15.4f} | validation={:^15.4f} | delta={:^15.4f} <<<".format(
                     train_step_fn.step, total_loss, valid_loss, valid_loss - total_loss))
+
+            if log_smoothed_loss:  # running average to plot smoother loss (especially useful to find LR range
+                smoothing = 0.05
+                if train_step_fn.step == 0:  # equal to global step if train_step_fn does not have attribute 'step'
+                    smoothed_train_loss.append(total_loss)
+                    if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
+                        smoothed_valid_loss.append(valid_loss)
+                else:  # weighted sum/accumulation
+                    smoothed_loss = smoothing * total_loss + (1 - smoothing) * smoothed_train_loss[-1]
+                    smoothed_train_loss.append(smoothed_loss)
+
+                    if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
+                        smoothed_loss = smoothing * valid_loss + (1 - smoothing) * smoothed_valid_loss[-1]
+                        smoothed_valid_loss.append(smoothed_loss)
+
+                # Log to TB
+                if log_tensorboard:
+                    tf.summary.scalar('train/smoothed_loss', smoothed_train_loss)
+                    if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
+                        tf.summary.scalar('valid/smoothed_loss', smoothed_train_loss)
 
             return [total_loss, should_stop]
 

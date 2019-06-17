@@ -93,6 +93,7 @@ def main():
             log_tensorboard=FLAGS.log_tensorboard,
             lr_range_test=FLAGS.lr_range_test,
             train_params_dict=train_params_dict,
+            log_smoothed_loss=FLAGS.log_smoothed_loss,
         )
     else:
         print("Input_type: 'image_pairs'")
@@ -135,6 +136,7 @@ def main():
             log_tensorboard=FLAGS.log_tensorboard,
             lr_range_test=FLAGS.lr_range_test,
             train_params_dict=train_params_dict,
+            log_smoothed_loss=FLAGS.log_smoothed_loss,
         )
 
 
@@ -343,6 +345,14 @@ if __name__ == '__main__':
         help='Whether to log to Tensorboard or not (only stdout)',
         default=True,
     )
+    parser.add_argument(
+        '--log_smoothed_loss',
+        type=bool,
+        required=False,
+        help='Whether to log an additional smoothed version of the loss (running average)',
+        default=True,
+    )
+
     # ==== Capacity of queues ====
     parser.add_argument(
         '--common_queue_capacity',

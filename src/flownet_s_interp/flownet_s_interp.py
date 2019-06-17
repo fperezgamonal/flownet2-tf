@@ -25,7 +25,7 @@ class FlowNetS_interp(Net):
                 concat_inputs = tf.concat([inputs['input_a'],
                                            inputs['input_b'],
                                            inputs['warped'],
-                                           inputs['flow'],
+                                           inputs['flow'],  # already normalised in previous net (FlowNetC in this case)
                                            inputs['brightness_error']], axis=3)
             else:
                 # TODO: consider permutating order
