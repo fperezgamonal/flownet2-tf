@@ -1,7 +1,32 @@
 import tensorflow as tf
+from tensorflow.python.framework import ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.eager import context
+
+
+def exponentially_increasing_lr(global_step, min_lr=1e-10, max_lr=1, num_iters=10000, name=None):
+    if global_step is None:
+        raise ValueError("global_step is required for cyclic_learning_rate.")
+    with ops.name_scope(name, "exp_incr_lr",
+                        [min_lr, global_step]) as name:
+        learning_rate = ops.convert_to_tensor(min_lr, name="learning_rate")
+        dtype = learning_rate.dtype
+        global_step = math_ops.cast(global_step, dtype)
+
+        def exp_incr_lr():
+            """Helper to recompute learning rate; most helpful in eager-mode."""
+            maxlr_div_minlr = math_ops.divide(max_lr, min_lr)
+            power_iter = math_ops.divide(global_step / num_iters)
+            pow_div = math_ops.pow(maxlr_div_minlr, power_iter)
+            return math_ops.multiply(min_lr, pow_div, name=name)
+
+        if not context.executing_eagerly():
+            exp_incr_lr = exp_incr_lr()
+        return exp_incr_lr
 
 
 # Thanks, https://github.com/tensorflow/tensorflow/issues/4079
+# Replaced by tensorflow built-in (should be quicker?)
 def LeakyReLU(x, leak=0.1, name="lrelu"):
     with tf.variable_scope(name):
         f1 = 0.5 * (1.0 + leak)

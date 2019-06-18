@@ -14,6 +14,7 @@ from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FI
     FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LR_RANGE_TEST, CLR_SCHEDULE
 slim = tf.contrib.slim
 from .cyclic_learning_rate import clr
+from .utils import exponentially_increasing_lr
 
 VAL_INTERVAL = 1000  # each N samples, we evaluate the validation set
 
@@ -657,9 +658,13 @@ class Net(object):
                 decay_rate = 1.25
                 # TODO: add exponential but that explicitly defines an ending maximum learning rate
             if train_params_dict['lr_range_mode'].lower() == 'exponential':
-                learning_rate = tf.train.exponential_decay(
-                    start_lr, global_step=checkpoint_global_step_tensor,
-                    decay_steps=decay_steps, decay_rate=decay_rate)
+                # learning_rate = tf.train.exponential_decay(
+                #     start_lr, global_step=checkpoint_global_step_tensor,
+                #     decay_steps=decay_steps, decay_rate=decay_rate)
+                if 'max_steps' in train_params_dict:
+                    training_schedule['max_iters'] = train_params_dict['max_steps']
+                learning_rate = exponentially_increasing_lr(checkpoint_global_step_tensor, min_lr=start_lr,
+                                                            max_lr=end_lr, num_iters=training_schedule['max_iters'])
             else:  # linear
                 if log_verbosity > 1:
                     print("base learning rate: {}, maximum learning rate: {}, step_size: {}, max_iters: {}".format(
@@ -745,7 +750,6 @@ class Net(object):
             optimizer = tf.train.AdamOptimizer(learning_rate, training_schedule['momentum'],
                                                training_schedule['momentum2'])
 
-        # AdamW = tf.contrib.opt.extend_with_decoupled_weight_decay(optimizer)
         if log_tensorboard:
             tf.summary.scalar('learning_rate', learning_rate)  # Add learning rate
 
@@ -777,28 +781,49 @@ class Net(object):
             val_loss = self.loss(val_gt_flow, val_predictions)
             # Add validation loss to a different collection to avoid adding it to the train one when calling get_loss()
             # By default, all losses are added to the same collection (tf.GraphKeys.LOSSES)
-            tf.losses.add_loss(val_loss, loss_collection='validation')
+            tf.losses.add_loss(val_loss, loss_collection='validation_losses')
 
         # ==== Generate smooth version of the training and validation losses ====
-        # if log_smoothed_loss:  # running average to plot smoother loss (especially useful to find LR range
-        #     smoothing = 0.05
-        #     if train_step_fn.step == 0:  # equal to global step if train_step_fn does not have attribute 'step'
-        #         smoothed_train_loss.append(train_loss)
-        #         if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
-        #             smoothed_valid_loss.append(valid_loss)
-        #     else:  # weighted sum/accumulation
-        #         smoothed_loss = smoothing * total_loss + (1 - smoothing) * smoothed_train_loss[-1]
-        #         smoothed_train_loss.append(smoothed_loss)
-        #
-        #         if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
-        #             smoothed_loss = smoothing * valid_loss + (1 - smoothing) * smoothed_valid_loss[-1]
-        #             smoothed_valid_loss.append(smoothed_loss)
-        #
-        #     # Log to TB
-        #     if log_tensorboard:
-        #         tf.summary.scalar('train/smoothed_loss', smoothed_train_loss)
-        #         if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
-        #             tf.summary.scalar('valid/smoothed_loss', smoothed_train_loss)
+        if log_smoothed_loss:  # running average to plot smoother loss (especially useful to find LR range
+            decay_factor = 0.95  # 0.05
+            # if train_step_fn.step == 0:  # equal to global step if train_step_fn does not have attribute 'step'
+            #     smoothed_train_loss.append(train_loss)
+            #     if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
+            #         smoothed_valid_loss.append(valid_loss)
+            # else:  # weighted sum/accumulation
+            #     smoothed_loss = smoothing * train_loss + (1 - smoothing) * smoothed_train_loss[-1]
+            #     smoothed_train_loss.append(smoothed_loss)
+            #
+            #     if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
+            #         smoothed_loss = smoothing * val_loss + (1 - smoothing) * smoothed_valid_loss[-1]
+            #         smoothed_valid_loss.append(smoothed_loss)
+            #
+            # # Log to TB
+            # if log_tensorboard:
+            #     tf.summary.scalar('train/smoothed_loss', smoothed_train_loss)
+            #     if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
+            #         tf.summary.scalar('valid/smoothed_loss', smoothed_train_loss)
+
+            def moving_avg(loss_tensor, collection='losses', decay=0.99, name='train_avg'):
+                """
+                Generates moving average for all loses for the optionally specified collection (train or validation)
+                :return: operators for each moving average
+                """
+                # Compute the moving average of all individual losses and the total loss.
+                loss_averages = tf.train.ExponentialMovingAverage(decay, name=name)
+                losses = tf.get_collection(collection)
+                loss_averages_op = loss_averages.apply(losses + [loss_tensor])
+
+                return loss_averages_op
+
+            smoothed_train_loss = moving_avg(train_loss, decay=decay_factor)
+            if valid_iters > 0:
+                smoothed_valid_loss = moving_avg(val_loss, collection='validation_losses', name='valid_avg')
+            # Log to moving averages TB
+            if log_tensorboard:
+                tf.summary.scalar('train/smoothed_loss', smoothed_train_loss)
+                if valid_iters > 0:
+                    tf.summary.scalar('valid/smoothed_loss', smoothed_valid_loss)
 
         # =======================================================================
 
@@ -831,7 +856,7 @@ class Net(object):
                 summary_validation_delta = tf.summary.scalar("valid/loss_delta", (val_loss - train_loss))
                 # Just to check that val losses are logged separately
                 if log_verbosity > 1:
-                    print("\n >>> validation losses=", tf.losses.get_losses(loss_collection="validation"))
+                    print("\n >>> validation losses=", tf.losses.get_losses(loss_collection="validation_losses"))
 
                 # Show the generated flow in TensorBoard
                 if 'flow' in val_predictions:
