@@ -779,6 +779,29 @@ class Net(object):
             # By default, all losses are added to the same collection (tf.GraphKeys.LOSSES)
             tf.losses.add_loss(val_loss, loss_collection='validation')
 
+        # ==== Generate smooth version of the training and validation losses ====
+        # if log_smoothed_loss:  # running average to plot smoother loss (especially useful to find LR range
+        #     smoothing = 0.05
+        #     if train_step_fn.step == 0:  # equal to global step if train_step_fn does not have attribute 'step'
+        #         smoothed_train_loss.append(train_loss)
+        #         if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
+        #             smoothed_valid_loss.append(valid_loss)
+        #     else:  # weighted sum/accumulation
+        #         smoothed_loss = smoothing * total_loss + (1 - smoothing) * smoothed_train_loss[-1]
+        #         smoothed_train_loss.append(smoothed_loss)
+        #
+        #         if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
+        #             smoothed_loss = smoothing * valid_loss + (1 - smoothing) * smoothed_valid_loss[-1]
+        #             smoothed_valid_loss.append(smoothed_loss)
+        #
+        #     # Log to TB
+        #     if log_tensorboard:
+        #         tf.summary.scalar('train/smoothed_loss', smoothed_train_loss)
+        #         if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
+        #             tf.summary.scalar('valid/smoothed_loss', smoothed_train_loss)
+
+        # =======================================================================
+
         if log_tensorboard:
             summary_loss = tf.summary.scalar('train/loss', train_loss)
             # Show the generated flow in TensorBoard
@@ -863,26 +886,6 @@ class Net(object):
                 valid_loss, valid_delta = sess.run([val_loss, summary_validation_delta])
                 print(">>> global step= {:<5d} | train={:^15.4f} | validation={:^15.4f} | delta={:^15.4f} <<<".format(
                     train_step_fn.step, total_loss, valid_loss, valid_loss - total_loss))
-
-            if log_smoothed_loss:  # running average to plot smoother loss (especially useful to find LR range
-                smoothing = 0.05
-                if train_step_fn.step == 0:  # equal to global step if train_step_fn does not have attribute 'step'
-                    smoothed_train_loss.append(total_loss)
-                    if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
-                        smoothed_valid_loss.append(valid_loss)
-                else:  # weighted sum/accumulation
-                    smoothed_loss = smoothing * total_loss + (1 - smoothing) * smoothed_train_loss[-1]
-                    smoothed_train_loss.append(smoothed_loss)
-
-                    if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
-                        smoothed_loss = smoothing * valid_loss + (1 - smoothing) * smoothed_valid_loss[-1]
-                        smoothed_valid_loss.append(smoothed_loss)
-
-                # Log to TB
-                if log_tensorboard:
-                    tf.summary.scalar('train/smoothed_loss', smoothed_train_loss)
-                    if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
-                        tf.summary.scalar('valid/smoothed_loss', smoothed_train_loss)
 
             return [total_loss, should_stop]
 
