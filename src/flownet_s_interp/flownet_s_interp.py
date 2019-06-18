@@ -37,7 +37,8 @@ class FlowNetS_interp(Net):
                                 trainable=trainable,
                                 # He (aka MSRA) weight initialization
                                 weights_initializer=slim.variance_scaling_initializer(),
-                                activation_fn=tf.nn.leaky_relu(alpha=0.1),  # LeakyReLU, changed custom to TF's built-in
+                                # LeakyReLU, changed custom to TF's built-in
+                                activation_fn=lambda x: tf.nn.leaky_relu(x, alpha=0.1),
                                 # We will do our own padding to match the original Caffe code
                                 padding='VALID',
                                 reuse=tf.AUTO_REUSE):
