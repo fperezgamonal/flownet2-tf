@@ -16,7 +16,7 @@ def exponentially_increasing_lr(global_step, min_lr=1e-10, max_lr=1, num_iters=1
         def exp_incr_lr():
             """Helper to recompute learning rate; most helpful in eager-mode."""
             maxlr_div_minlr = math_ops.divide(max_lr, min_lr)
-            power_iter = math_ops.divide(global_step / num_iters)
+            power_iter = math_ops.divide(global_step, num_iters)
             pow_div = math_ops.pow(maxlr_div_minlr, power_iter)
             return math_ops.multiply(min_lr, pow_div, name=name)
 
