@@ -293,7 +293,7 @@ if __name__ == '__main__':
         '--optimizer',
         type=str,
         required=False,
-        help="Optimizer to use (def. 'adam'). Values: 'sgd', 'momentum' or 'adamw'",
+        help="Optimizer to use (def. 'adam'). Values: 'sgd', 'momentum' or 'adamw (w. proper weight decay)'",
         default=None,
     )
     # Overrides default value if Momentum optimizer (SGD+momentum) is used

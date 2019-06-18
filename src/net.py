@@ -655,6 +655,7 @@ class Net(object):
                 end_lr = 1e-1
                 decay_steps = 110
                 decay_rate = 1.25
+                # TODO: add exponential but that explicitly defines an ending maximum learning rate
             if train_params_dict['lr_range_mode'].lower() == 'exponential':
                 learning_rate = tf.train.exponential_decay(
                     start_lr, global_step=checkpoint_global_step_tensor,
@@ -762,7 +763,7 @@ class Net(object):
 
         # Define model operations (graph) to compute loss (TRAIN)
         if log_verbosity > 1:
-            print("Weight decay (l2 regularization): {}".format(training_schedule['weight_decay']))
+            print("l2 regularization: {}".format(training_schedule['l2_regularization']))
         predictions = self.model(inputs, training_schedule)
         if valid_iters > 0:
             # Define model operations (graph) to compute loss (VALIDATION)
