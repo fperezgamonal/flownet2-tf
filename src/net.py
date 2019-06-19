@@ -874,7 +874,7 @@ class Net(object):
         if log_verbosity > 1:
             print("Train op after adding exponential moving averages is: {}".format(training_op))
             print("Listing variables that will be restored (from EMA scope): ")
-            var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='ExponentialMovingAverage')
+            var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
             for var in var_list:
                 print(var)
         # ==== Generate smooth version of the training and validation losses ====
