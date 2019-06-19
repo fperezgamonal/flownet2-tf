@@ -12,9 +12,9 @@ from .flowlib import flow_to_image, write_flow, read_flow, compute_all_metrics, 
 from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FINETUNE_SINTEL_S1, FINETUNE_SINTEL_S2, \
     FINETUNE_SINTEL_S3, FINETUNE_SINTEL_S4, FINETUNE_SINTEL_S5, FINETUNE_KITTI_S1, FINETUNE_KITTI_S2,\
     FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LR_RANGE_TEST, CLR_SCHEDULE
-slim = tf.contrib.slim
 from .cyclic_learning_rate import clr
 from .utils import exponentially_increasing_lr
+slim = tf.contrib.slim
 
 VAL_INTERVAL = 1000  # each N samples, we evaluate the validation set
 
@@ -69,7 +69,7 @@ def _add_loss_summaries(train_loss, valid_loss, decay=0.99, summary_name_train='
       loss_averages_op: op for generating moving averages of losses.
     """
     # Compute the moving average of all individual losses and the total loss.
-    ema = tf.train.ExponentialMovingAverage(decay, zero_debias=True, name='avg')
+    ema = tf.train.ExponentialMovingAverage(decay, zero_debias=True)
     loss_averages_op = ema.apply([train_loss, valid_loss])
 
     if log_tensorboard:
@@ -163,7 +163,7 @@ class Net(object):
         input_a = input_a[..., [2, 1, 0]]
         if sparse_flow is not None and matches_a is not None:
             matches_a = matches_a[..., np.newaxis]  # from (height, width) to (height, width, 1)
-            print("New scheme: first + matches (1st=> 2nd frame) given")  # only for debugging, remove afterwards
+            print("New scheme: first + matchtrain_losses (1st=> 2nd frame) given")  # only for debugging, remove afterwards
         else:
             print("Normal scheme: first + second frame given")  # only for debugging, remove afterwards
             input_b = input_b[..., [2, 1, 0]]
@@ -858,8 +858,14 @@ class Net(object):
                 val_true_flow_img = tf.stack([val_true_flow_0, val_true_flow_1], 0)
                 tf.summary.image('valid/true_flow', val_true_flow_img, max_outputs=1)
 
+        if log_smoothed_loss:
+            decay_factor = 0.95
+            # Add exponentially moving averages for losses
+            losses_average_op = _add_loss_summaries(train_loss, val_loss, decay=decay_factor,
+                                                    log_tensorboard=log_tensorboard)
+            tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, losses_average_op)
         # Create the train_op
-        train_operator = slim.learning.create_train_op(
+        training_op = slim.learning.create_train_op(
             train_loss,
             optimizer,
             summarize_gradients=False,
@@ -869,17 +875,17 @@ class Net(object):
             print("Train op before adding exponential moving averages is: {}".format(train_operator))
 
         # ==== Generate smooth version of the training and validation losses ====
-        if log_smoothed_loss:  # running average to plot smoother loss (especially useful to find LR range
-            decay_factor = 0.95  # 0.05 (complementary)
-            # ema = tf.train.ExponentialMovingAverage(decay_factor, name='moving_average')
-            # Create an op that will update the moving averages after each training step.
-            with tf.control_dependencies([train_operator]):  # adds it on top of the current training operator
-                # Updated training operator that adds
-                training_op = _add_loss_summaries(train_loss, val_loss, decay=decay_factor)
-                if log_verbosity > 1:
-                    print("Training op after adding exponential moving averages is: {}".format(training_op))
-        else:  # Use the initial training op
-            training_op = train_operator
+        # if log_smoothed_loss:  # running average to plot smoother loss (especially useful to find LR range
+        #     decay_factor = 0.95  # 0.05 (complementary)
+        #     # ema = tf.train.ExponentialMovingAverage(decay_factor, name='moving_average')
+        #     # Create an op that will update the moving averages after each training step.
+        #     with tf.control_dependencies([train_operator]):  # adds it on top of the current training operator
+        #         # Updated training operator that adds
+        #         training_op = _add_loss_summaries(train_loss, val_loss, decay=decay_factor)
+        #         if log_verbosity > 1:
+        #             print("Training op after adding exponential moving averages is: {}".format(training_op))
+        # else:  # Use the initial training op
+        #     training_op = train_operator
 
         # =======================================================================
 
