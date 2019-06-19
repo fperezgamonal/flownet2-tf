@@ -52,7 +52,7 @@ def optimistic_restore_vars(model_checkpoint_path):
 
 
 # TODO: only works if both train and validation losses are provided! (i.e. if valid_iters < 0 it fails)
-# Adds Exponentially Moving Averages for a collection of losses
+# ==== Generate smooth version (EMA) of the training and validation losses ====
 # Based off: https://github.com/tensorflow/models/blob/master/tutorials/image/cifar10/cifar10.py#L302
 def _add_loss_summaries(train_loss, valid_loss, decay=0.99, summary_name_train='train/smoothed_loss',
                         summary_name_valid='valid/smoothed_loss', log_tensorboard=True):
@@ -858,6 +858,7 @@ class Net(object):
                 val_true_flow_img = tf.stack([val_true_flow_0, val_true_flow_1], 0)
                 tf.summary.image('valid/true_flow', val_true_flow_img, max_outputs=1)
 
+        # Log smoothed loss (EMA, see '_add_loss_summaries' for more details)
         if log_smoothed_loss:
             decay_factor = 0.95
             # Add exponentially moving averages for losses
@@ -871,26 +872,6 @@ class Net(object):
             summarize_gradients=False,
             global_step=checkpoint_global_step_tensor,
         )
-        if log_verbosity > 1:
-            print("Train op after adding exponential moving averages is: {}".format(training_op))
-            print("Listing variables that will be restored (from EMA scope): ")
-            var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-            for var in var_list:
-                print(var)
-        # ==== Generate smooth version of the training and validation losses ====
-        # if log_smoothed_loss:  # running average to plot smoother loss (especially useful to find LR range
-        #     decay_factor = 0.95  # 0.05 (complementary)
-        #     # ema = tf.train.ExponentialMovingAverage(decay_factor, name='moving_average')
-        #     # Create an op that will update the moving averages after each training step.
-        #     with tf.control_dependencies([train_operator]):  # adds it on top of the current training operator
-        #         # Updated training operator that adds
-        #         training_op = _add_loss_summaries(train_loss, val_loss, decay=decay_factor)
-        #         if log_verbosity > 1:
-        #             print("Training op after adding exponential moving averages is: {}".format(training_op))
-        # else:  # Use the initial training op
-        #     training_op = train_operator
-
-        # =======================================================================
 
         # ==== Add validation by defining a custom train_step_fn ====
         # How to run validation on the same session that training (tf.slim)
@@ -918,7 +899,6 @@ class Net(object):
                     train_step_fn.step, total_loss, valid_loss, valid_loss - total_loss))
 
             return [total_loss, should_stop]
-
         # ===========================================================
 
         if checkpoints is not None:
@@ -945,7 +925,7 @@ class Net(object):
                 step_number = int(checkpoint_path.split('-')[-1])
                 checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
                                                             dtype='int64')
-                # TODO: adapt resuming from saver to stacked architectures if it works for one standalone
+                # TODO: adapt resuming from saver to stacked architectures
                 saver = None
             elif isinstance(checkpoints, str):
                 checkpoint_path = checkpoints
