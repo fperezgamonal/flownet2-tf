@@ -872,8 +872,11 @@ class Net(object):
             global_step=checkpoint_global_step_tensor,
         )
         if log_verbosity > 1:
-            print("Train op before adding exponential moving averages is: {}".format(train_operator))
-
+            print("Train op after adding exponential moving averages is: {}".format(training_op))
+            print("Listing variables that will be restored (from EMA scope): ")
+            var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='ExponentialMovingAverage')
+            for var in var_list:
+                print(var)
         # ==== Generate smooth version of the training and validation losses ====
         # if log_smoothed_loss:  # running average to plot smoother loss (especially useful to find LR range
         #     decay_factor = 0.95  # 0.05 (complementary)
