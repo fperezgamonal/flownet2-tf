@@ -51,6 +51,34 @@ def optimistic_restore_vars(model_checkpoint_path):
     return restore_vars
 
 
+# TODO: only works if both train and validation losses are provided! (i.e. if valid_iters < 0 it fails)
+# Adds Exponentially Moving Averages for a collection of losses
+# Based off: https://github.com/tensorflow/models/blob/master/tutorials/image/cifar10/cifar10.py#L302
+def _add_loss_summaries(train_loss, valid_loss, decay=0.99, summary_name_train='train/smoothed_loss',
+                        summary_name_valid='valid/smoothed_loss', log_tensorboard=True):
+    """Add summaries for losses in a given model.
+    Generates moving average for all losses and associated summaries for
+    visualizing the performance of the network.
+    Args:
+      train_loss: Total loss from training (from self.model())
+      valid_loss: validation loss
+      decay: decay factor
+      summary_name_train: name for the smoothed training loss summary
+      summary_name_valid: name for the smoothed validation loss summary
+    Returns:
+      loss_averages_op: op for generating moving averages of losses.
+    """
+    # Compute the moving average of all individual losses and the total loss.
+    loss_averages = tf.train.ExponentialMovingAverage(decay, name='avg')
+    loss_averages_op = loss_averages.apply([train_loss, valid_loss])
+
+    if log_tensorboard:
+        tf.summary.scalar(summary_name_train, loss_averages.average(train_loss))
+        tf.summary.scalar(summary_name_valid, loss_averages.average(valid_loss))
+
+    return loss_averages_op
+
+
 class Mode(Enum):
     TRAIN = 1
     TEST = 2
@@ -845,50 +873,12 @@ class Net(object):
 
         # ==== Generate smooth version of the training and validation losses ====
         if log_smoothed_loss:  # running average to plot smoother loss (especially useful to find LR range
-            decay_factor = 0.95  # 0.05
-            ema = tf.train.ExponentialMovingAverage(decay_factor, name='moving_average')
-        # Create an op that will update the moving averages after each training step.
+            decay_factor = 0.95  # 0.05 (complementary)
+            # ema = tf.train.ExponentialMovingAverage(decay_factor, name='moving_average')
+            # Create an op that will update the moving averages after each training step.
             with tf.control_dependencies([train_operator]):  # adds it on top of the current training operator
-
-                # if train_step_fn.step == 0:  # equal to global step if train_step_fn does not have attribute 'step'
-                #     smoothed_train_loss.append(train_loss)
-                #     if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
-                #         smoothed_valid_loss.append(valid_loss)
-                # else:  # weighted sum/accumulation
-                #     smoothed_loss = smoothing * train_loss + (1 - smoothing) * smoothed_train_loss[-1]
-                #     smoothed_train_loss.append(smoothed_loss)
-                #
-                #     if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
-                #         smoothed_loss = smoothing * val_loss + (1 - smoothing) * smoothed_valid_loss[-1]
-                #         smoothed_valid_loss.append(smoothed_loss)
-                #
-                # # Log to TB
-                # if log_tensorboard:
-                #     tf.summary.scalar('train/smoothed_loss', smoothed_train_loss)
-                #     if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
-                #         tf.summary.scalar('valid/smoothed_loss', smoothed_train_loss)
-
-                # TODO: as is, only works if validation is used
-                def loss_moving_avg(training_loss, validation_loss, exp_mov_avg,
-                                    summary_name_train='train/smoothed_loss', summary_name_valid='valid/smoothed_loss'):
-                    """
-                    Generates moving average for train and validation losses
-                    :return: training operator that includes the exponential moving average of train+val ops
-                    """
-                    # === TRAIN ===
-                    # Compute the moving average of the 'total' training and validation losses
-                    train_op = exp_mov_avg.apply([training_loss, validation_loss])
-
-                    # Log to TB
-                    if log_tensorboard:
-                        tf.summary.scalar(summary_name_train, ema.average(training_loss))
-                        if valid_iters > 0:
-                            tf.summary.scalar(summary_name_valid, ema.average(validation_loss))
-
-                    return train_op
-
                 # Updated training operator that adds
-                training_op = loss_moving_avg(train_loss, val_loss, ema)
+                training_op = _add_loss_summaries(train_loss, val_loss, decay=decay_factor)
         else:  # Use the initial training op
             training_op = train_operator
 
