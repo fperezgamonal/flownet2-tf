@@ -674,16 +674,22 @@ class Net(object):
                 decay_steps = train_params_dict['decay_steps']
                 decay_rate = train_params_dict['decay_rate']  # > 1 so it exponentially increases, does not decay
                 lr_range_niters = train_params_dict['lr_range_niters']
+
             else:  # use default values
                 start_lr = 1e-10
                 end_lr = 1e-1
                 decay_steps = 110
                 decay_rate = 1.25
-                # TODO: add exponential but that explicitly defines an ending maximum learning rate
+            if log_verbosity > 1:
+                print("Learning range test config for mode '{}'".format(train_params_dict['lr_range_mode'].lower()))
+
             if train_params_dict['lr_range_mode'].lower() == 'exponential':
                 # learning_rate = tf.train.exponential_decay(
                 #     start_lr, global_step=checkpoint_global_step_tensor,
                 #     decay_steps=decay_steps, decay_rate=decay_rate)
+                if log_verbosity:
+                    print("max_iters: {}, min_lr: {:.4f}, max_lr: {:.4f}".format(training_schedule['max_iters'],
+                                                                                 start_lr, end_lr))
                 if 'max_steps' in train_params_dict:
                     training_schedule['max_iters'] = train_params_dict['max_steps']
                 learning_rate = exponentially_increasing_lr(checkpoint_global_step_tensor, min_lr=start_lr,
