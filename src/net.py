@@ -783,51 +783,6 @@ class Net(object):
             # By default, all losses are added to the same collection (tf.GraphKeys.LOSSES)
             tf.losses.add_loss(val_loss, loss_collection='validation_losses')
 
-        # ==== Generate smooth version of the training and validation losses ====
-        if log_smoothed_loss:  # running average to plot smoother loss (especially useful to find LR range
-            decay_factor = 0.95  # 0.05
-            # if train_step_fn.step == 0:  # equal to global step if train_step_fn does not have attribute 'step'
-            #     smoothed_train_loss.append(train_loss)
-            #     if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
-            #         smoothed_valid_loss.append(valid_loss)
-            # else:  # weighted sum/accumulation
-            #     smoothed_loss = smoothing * train_loss + (1 - smoothing) * smoothed_train_loss[-1]
-            #     smoothed_train_loss.append(smoothed_loss)
-            #
-            #     if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
-            #         smoothed_loss = smoothing * val_loss + (1 - smoothing) * smoothed_valid_loss[-1]
-            #         smoothed_valid_loss.append(smoothed_loss)
-            #
-            # # Log to TB
-            # if log_tensorboard:
-            #     tf.summary.scalar('train/smoothed_loss', smoothed_train_loss)
-            #     if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
-            #         tf.summary.scalar('valid/smoothed_loss', smoothed_train_loss)
-
-            def loss_moving_avg(loss, collection='losses', decay=0.99, name_average='train_avg',
-                                summary_name='train/smoothed_loss'):
-                """
-                Generates moving average for all loses for train or validation
-                :return: operator for each moving average
-                """
-                # Compute the moving average of all individual losses and the total loss.
-                loss_averages = tf.train.ExponentialMovingAverage(decay, name=name_average)
-                losses = tf.get_collection(collection)
-                loss_averages_op = loss_averages.apply(losses + [loss])
-
-                # Log to TB
-                if log_tensorboard:
-                    tf.summary.scalar(summary_name, loss_averages.average(loss))
-
-                return loss_averages_op
-
-            smoothed_train_loss = loss_moving_avg(train_loss, decay=decay_factor)
-            if valid_iters > 0:
-                smoothed_valid_loss = loss_moving_avg(val_loss, collection='validation_losses',
-                                                      name_average='valid_avg', summary_name='valid/smoothed_loss')
-
-        # =======================================================================
-
         if log_tensorboard:
             summary_loss = tf.summary.scalar('train/loss', train_loss)
             # Show the generated flow in TensorBoard
@@ -888,11 +843,56 @@ class Net(object):
             global_step=checkpoint_global_step_tensor,
         )
 
+        # ==== Generate smooth version of the training and validation losses ====
+        if log_smoothed_loss:  # running average to plot smoother loss (especially useful to find LR range
+            decay_factor = 0.95  # 0.05
+            ema = tf.train.ExponentialMovingAverage(decay_factor, name='moving_average')
         # Create an op that will update the moving averages after each training step.
-        with tf.control_dependencies([train_operator]):  # adds it on top of the current training operator
-            train_operator = tf.group(smoothed_train_loss)
-            if valid_iters > 0:
-                train_operator = tf.group(smoothed_valid_loss)
+            with tf.control_dependencies([train_operator]):  # adds it on top of the current training operator
+
+                # if train_step_fn.step == 0:  # equal to global step if train_step_fn does not have attribute 'step'
+                #     smoothed_train_loss.append(train_loss)
+                #     if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
+                #         smoothed_valid_loss.append(valid_loss)
+                # else:  # weighted sum/accumulation
+                #     smoothed_loss = smoothing * train_loss + (1 - smoothing) * smoothed_train_loss[-1]
+                #     smoothed_train_loss.append(smoothed_loss)
+                #
+                #     if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
+                #         smoothed_loss = smoothing * val_loss + (1 - smoothing) * smoothed_valid_loss[-1]
+                #         smoothed_valid_loss.append(smoothed_loss)
+                #
+                # # Log to TB
+                # if log_tensorboard:
+                #     tf.summary.scalar('train/smoothed_loss', smoothed_train_loss)
+                #     if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
+                #         tf.summary.scalar('valid/smoothed_loss', smoothed_train_loss)
+
+                # TODO: as is, only works if validation is used
+                def loss_moving_avg(training_loss, validation_loss, exp_mov_avg,
+                                    summary_name_train='train/smoothed_loss', summary_name_valid='valid/smoothed_loss'):
+                    """
+                    Generates moving average for train and validation losses
+                    :return: training operator that includes the exponential moving average of train+val ops
+                    """
+                    # === TRAIN ===
+                    # Compute the moving average of the 'total' training and validation losses
+                    train_op = exp_mov_avg.apply([training_loss, validation_loss])
+
+                    # Log to TB
+                    if log_tensorboard:
+                        tf.summary.scalar(summary_name_train, ema.average(training_loss))
+                        if valid_iters > 0:
+                            tf.summary.scalar(summary_name_valid, ema.average(validation_loss))
+
+                    return train_op
+
+                # Updated training operator that adds
+                training_op = loss_moving_avg(train_loss, val_loss, ema)
+        else:  # Use the initial training op
+            training_op = train_operator
+
+        # =======================================================================
 
         # ==== Add validation by defining a custom train_step_fn ====
         # How to run validation on the same session that training (tf.slim)
@@ -1003,7 +1003,7 @@ class Net(object):
                 tf.train.start_queue_runners(session)
                 slim.learning.train_step(
                     session,
-                    train_operator,
+                    training_op,
                     checkpoint_global_step_tensor,
                     {'should_trace': tf.constant(1), 'should_log': tf.constant(1), 'logdir': debug_logdir, }
                 )
@@ -1020,7 +1020,7 @@ class Net(object):
             if checkpoints is not None:
                 if valid_iters > 0:
                     final_loss = slim.learning.train(
-                        train_operator,
+                        training_op,
                         log_dir,
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
                         global_step=checkpoint_global_step_tensor,
@@ -1034,7 +1034,7 @@ class Net(object):
                     )
                 else:
                     final_loss = slim.learning.train(
-                        train_operator,
+                        training_op,
                         log_dir,
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
                         global_step=checkpoint_global_step_tensor,
@@ -1047,7 +1047,7 @@ class Net(object):
             else:
                 if valid_iters > 0:
                     final_loss = slim.learning.train(
-                        train_operator,
+                        training_op,
                         log_dir,
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
                         global_step=checkpoint_global_step_tensor,
@@ -1059,7 +1059,7 @@ class Net(object):
                     )
                 else:
                     final_loss = slim.learning.train(
-                        train_operator,
+                        training_op,
                         log_dir,
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
                         global_step=checkpoint_global_step_tensor,
