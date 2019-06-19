@@ -870,6 +870,8 @@ class Net(object):
             summarize_gradients=False,
             global_step=checkpoint_global_step_tensor,
         )
+        if log_verbosity > 1:
+            print("Train op before adding exponential moving averages is: {}".format(train_operator))
 
         # ==== Generate smooth version of the training and validation losses ====
         if log_smoothed_loss:  # running average to plot smoother loss (especially useful to find LR range
@@ -879,6 +881,8 @@ class Net(object):
             with tf.control_dependencies([train_operator]):  # adds it on top of the current training operator
                 # Updated training operator that adds
                 training_op = _add_loss_summaries(train_loss, val_loss, decay=decay_factor)
+                if log_verbosity > 1:
+                    print("Training op after adding exponential moving averages is: {}".format(training_op))
         else:  # Use the initial training op
             training_op = train_operator
 
