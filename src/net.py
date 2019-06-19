@@ -804,26 +804,27 @@ class Net(object):
             #     if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
             #         tf.summary.scalar('valid/smoothed_loss', smoothed_train_loss)
 
-            def moving_avg(loss_tensor, collection='losses', decay=0.99, name='train_avg'):
+            def loss_moving_avg(loss, collection='losses', decay=0.99, name_average='train_avg',
+                                summary_name='train/smoothed_loss'):
                 """
-                Generates moving average for all loses for the optionally specified collection (train or validation)
-                :return: operators for each moving average
+                Generates moving average for all loses for train or validation
+                :return: operator for each moving average
                 """
                 # Compute the moving average of all individual losses and the total loss.
-                loss_averages = tf.train.ExponentialMovingAverage(decay, name=name)
+                loss_averages = tf.train.ExponentialMovingAverage(decay, name=name_average)
                 losses = tf.get_collection(collection)
-                loss_averages_op = loss_averages.apply(losses + [loss_tensor])
+                loss_averages_op = loss_averages.apply(losses + [loss])
+
+                # Log to TB
+                if log_tensorboard:
+                    tf.summary.scalar(summary_name, loss_averages.average(loss))
 
                 return loss_averages_op
 
-            smoothed_train_loss = moving_avg(train_loss, decay=decay_factor)
+            smoothed_train_loss = loss_moving_avg(train_loss, decay=decay_factor)
             if valid_iters > 0:
-                smoothed_valid_loss = moving_avg(val_loss, collection='validation_losses', name='valid_avg')
-            # Log to moving averages TB
-            if log_tensorboard:
-                tf.summary.scalar('train/smoothed_loss', smoothed_train_loss)
-                if valid_iters > 0:
-                    tf.summary.scalar('valid/smoothed_loss', smoothed_valid_loss)
+                smoothed_valid_loss = loss_moving_avg(val_loss, collection='validation_losses',
+                                                      name_average='valid_avg', summary_name='valid/smoothed_loss')
 
         # =======================================================================
 
@@ -886,6 +887,12 @@ class Net(object):
             summarize_gradients=False,
             global_step=checkpoint_global_step_tensor,
         )
+
+        # Create an op that will update the moving averages after each training step.
+        with tf.control_dependencies([train_operator]):  # adds it on top of the current training operator
+            train_operator = tf.group(smoothed_train_loss)
+            if valid_iters > 0:
+                train_operator = tf.group(smoothed_valid_loss)
 
         # ==== Add validation by defining a custom train_step_fn ====
         # How to run validation on the same session that training (tf.slim)
