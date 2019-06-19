@@ -69,12 +69,12 @@ def _add_loss_summaries(train_loss, valid_loss, decay=0.99, summary_name_train='
       loss_averages_op: op for generating moving averages of losses.
     """
     # Compute the moving average of all individual losses and the total loss.
-    loss_averages = tf.train.ExponentialMovingAverage(decay, name='avg')
-    loss_averages_op = loss_averages.apply([train_loss, valid_loss])
+    ema = tf.train.ExponentialMovingAverage(decay, zero_debias=True, name='avg')
+    loss_averages_op = ema.apply([train_loss, valid_loss])
 
     if log_tensorboard:
-        tf.summary.scalar(summary_name_train, loss_averages.average(train_loss))
-        tf.summary.scalar(summary_name_valid, loss_averages.average(valid_loss))
+        tf.summary.scalar(summary_name_train, ema.average(train_loss))
+        tf.summary.scalar(summary_name_valid, ema.average(valid_loss))
 
     return loss_averages_op
 
@@ -641,11 +641,6 @@ class Net(object):
                 tf.summary.image("train/matches_a", matches_a, max_outputs=1)
             else:
                 tf.summary.image("train/image_b", input_b, max_outputs=1)
-
-        # Initialise variable to track and smooth train+valid losses
-        if log_smoothed_loss:
-            smoothed_train_loss = []
-            smoothed_valid_loss = []
 
         # Initialise global step by parsing checkpoint filename to define learning rate (restoring is done afterwards)
         if checkpoints is not None:
