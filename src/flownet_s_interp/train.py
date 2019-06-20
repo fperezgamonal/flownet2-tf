@@ -360,7 +360,7 @@ if __name__ == '__main__':
         type=bool,
         required=False,
         help='Whether to log an additional smoothed version of the loss (running average)',
-        default=True,
+        default=False,
     )
 
     # ==== Capacity of queues ====
