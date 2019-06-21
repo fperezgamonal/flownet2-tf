@@ -34,7 +34,7 @@ VAL_INTERVAL = 1000  # each N samples, we evaluate the validation set
 # Important notice: tf.slim is considered deprecated so everything should be moved to tf.estimator high level API
 # However, for the scope of the MsC thesis, it is too complicated to write flownet2-tf from scratch again, so we
 # patch it to meet our needs despite its problems
-def optimistic_restore_vars(model_checkpoint_path):
+def optimistic_restore_vars(model_checkpoint_path, reset_global_step=False):
     reader = tf.train.NewCheckpointReader(model_checkpoint_path)
     saved_shapes = reader.get_variable_to_shape_map()
     var_names = sorted([(var.name, var.name.split(':')[0]) for var in tf.global_variables()
@@ -45,6 +45,8 @@ def optimistic_restore_vars(model_checkpoint_path):
     with tf.variable_scope('', reuse=True):
         for var_name, saved_var_name in var_names:
             curr_var = name2var[saved_var_name]
+            if reset_global_step and ("global_step" in saved_var_name):
+                print("var_name: '{}'\nsaved_var_name: '{}'\ncurr_var{}".format(var_name, saved_var_name, curr_var))
             var_shape = curr_var.get_shape().as_list()
             if var_shape == saved_shapes[saved_var_name]:
                 restore_vars.append(curr_var)
@@ -943,7 +945,7 @@ class Net(object):
                     print("last_ckpt_name: '{}'".format(last_ckpt_name))
                     print("ckpt.model_checkpoint_path: '{}'".format(ckpt.model_checkpoint_path))
 
-                vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path)
+                vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path, reset_global_step=False)
                 if log_verbosity > 1:
                     print("Path from which checkpoint state is computed: '{}'".format(os.path.dirname(checkpoint_path)))
                     print("Listing variables that will be restored(optimistic_restore_vars), total: {}:".format(
