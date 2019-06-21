@@ -661,9 +661,12 @@ class Net(object):
             # TODO: adapt resuming from saver to stacked architectures
             elif isinstance(checkpoints, str):
                 checkpoint_path = checkpoints
-                step_number = int(checkpoint_path.split('-')[-1])
-                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
-                                                            dtype='int64')
+                if not reset_global_step:
+                    step_number = int(checkpoint_path.split('-')[-1])
+                    checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
+                                                                dtype='int64')
+                else:
+                    checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype='int64')
             else:
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
         else:
@@ -941,7 +944,7 @@ class Net(object):
 
                 # Get checkpoint state from checkpoint_path (used to restore vars)
                 # last_ckpt_name = "{}.ckpt.index".format(checkpoint_path.split('/')[-1])
-                ckpt = tf.train.get_checkpoint_state(os.path.dirname(checkpoint_path)) #, latest_filename=last_ckpt_name)
+                ckpt = tf.train.get_checkpoint_state(os.path.dirname(checkpoint_path))
                 if log_verbosity > 1:
                     # print("last_ckpt_name: '{}'".format(last_ckpt_name))
                     print("ckpt.model_checkpoint_path: '{}'".format(ckpt.model_checkpoint_path))
