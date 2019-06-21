@@ -45,11 +45,12 @@ def optimistic_restore_vars(model_checkpoint_path, reset_global_step=False):
     with tf.variable_scope('', reuse=True):
         for var_name, saved_var_name in var_names:
             curr_var = name2var[saved_var_name]
-            if reset_global_step:
-                print("var_name: '{}'\nsaved_var_name: '{}'\ncurr_var{}".format(var_name, saved_var_name, curr_var))
             var_shape = curr_var.get_shape().as_list()
             if var_shape == saved_shapes[saved_var_name]:
                 restore_vars.append(curr_var)
+            if reset_global_step and 'global_step' in var_name:
+                print("var_name: '{}'\nsaved_var_name: '{}'\ncurr_var{}".format(var_name, saved_var_name, curr_var))
+                restore_vars.pop(-1)
     return restore_vars
 
 
