@@ -938,6 +938,8 @@ class Net(object):
 
                 # Get checkpoint state from checkpoint_path (used to restore vars)
                 ckpt = tf.train.get_checkpoint_state(os.path.dirname(checkpoint_path))
+                if log_verbosity > 1:
+                    print("ckpt.model_checkpoint_path: {}".format(ckpt.model_checkpoint_path))
 
                 vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path)
                 if log_verbosity > 1:

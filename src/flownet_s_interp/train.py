@@ -219,7 +219,7 @@ if __name__ == '__main__':
         help='Number of iterations for the linear learning rate range test (def.=10000)',
         default=10000,
     )
-    # Exponential test
+    # Exponential test (old params, only start_lr + increasing rate)
     parser.add_argument(
         '--decay_rate',
         type=float,
