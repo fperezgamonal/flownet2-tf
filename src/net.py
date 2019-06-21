@@ -16,8 +16,6 @@ from .cyclic_learning_rate import clr
 from .utils import exponentially_increasing_lr
 slim = tf.contrib.slim
 
-VAL_INTERVAL = 1000  # each N samples, we evaluate the validation set
-
 
 # The optimizer state could not be properly resumed because of the following reasons:
 #   * Actual restoring from checkpoint was done BEFORE defining the graph operations==> only global_step resumed
@@ -45,7 +43,7 @@ def optimistic_restore_vars(model_checkpoint_path, reset_global_step=False):
     with tf.variable_scope('', reuse=True):
         for var_name, saved_var_name in var_names:
             curr_var = name2var[saved_var_name]
-            if reset_global_step and ("global_step" in saved_var_name):
+            if reset_global_step:
                 print("var_name: '{}'\nsaved_var_name: '{}'\ncurr_var{}".format(var_name, saved_var_name, curr_var))
             var_shape = curr_var.get_shape().as_list()
             if var_shape == saved_shapes[saved_var_name]:
