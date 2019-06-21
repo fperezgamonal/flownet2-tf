@@ -96,6 +96,7 @@ def main():
             lr_range_test=FLAGS.lr_range_test,
             train_params_dict=train_params_dict,
             log_smoothed_loss=FLAGS.log_smoothed_loss,
+            reset_global_step=FLAGS.reset_global_step,
         )
     else:
         print("Input_type: 'image_pairs'")
@@ -139,6 +140,7 @@ def main():
             lr_range_test=FLAGS.lr_range_test,
             train_params_dict=train_params_dict,
             log_smoothed_loss=FLAGS.log_smoothed_loss,
+            reset_global_step=FLAGS.reset_global_step,
         )
 
 
