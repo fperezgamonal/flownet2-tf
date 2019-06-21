@@ -16,6 +16,7 @@ from .cyclic_learning_rate import clr
 from .utils import exponentially_increasing_lr
 slim = tf.contrib.slim
 
+VAL_INTERVAL = 1000
 
 # The optimizer state could not be properly resumed because of the following reasons:
 #   * Actual restoring from checkpoint was done BEFORE defining the graph operations==> only global_step resumed
