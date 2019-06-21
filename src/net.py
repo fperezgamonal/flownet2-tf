@@ -1019,21 +1019,21 @@ class Net(object):
                 training_schedule['max_iters'] = train_params_dict['max_steps']
 
             if checkpoints is not None:
-                if reset_global_step:  # assign 0 to global_step instead of that defined in the checkpoint
-                    # Probably do not work since init_fn is run afterwards, hence overwritting these changes
-                    # checkpoint_global_step_tensor.assign(0)
-                    # checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype='int64')
-                    local_init_op = tf.initializers.variables([checkpoint_global_step_tensor,
-                                                               tf.local_variables_initializer()])
-                    print("tf.train.get_or_create_global_step: '{}'".format(tf.train.get_or_create_global_step))
-                else:
-                    local_init_op = 0  # use slim.learning.train default (only tf.local_variables_initializer()
+                # if reset_global_step:  # assign 0 to global_step instead of that defined in the checkpoint
+                #     # Probably do not work since init_fn is run afterwards, hence overwritting these changes
+                #     # checkpoint_global_step_tensor.assign(0)
+                #     # checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype='int64')
+                #     local_init_op = tf.initializers.variables([checkpoint_global_step_tensor,
+                #                                                tf.local_variables_initializer()])
+                #     print("tf.train.get_or_create_global_step: '{}'".format(tf.train.get_or_create_global_step))
+                # else:
+                #     local_init_op = 0  # use slim.learning.train default (only tf.local_variables_initializer()
 
                 if valid_iters > 0:
                     final_loss = slim.learning.train(
                         training_op,
                         log_dir,
-                        local_init_op=local_init_op,
+                        # local_init_op=local_init_op,
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
                         global_step=checkpoint_global_step_tensor,
                         save_summaries_secs=save_summaries_secs,
@@ -1048,7 +1048,7 @@ class Net(object):
                     final_loss = slim.learning.train(
                         training_op,
                         log_dir,
-                        local_init_op=local_init_op,
+                        # local_init_op=local_init_op,
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
                         global_step=checkpoint_global_step_tensor,
                         save_summaries_secs=save_summaries_secs,
