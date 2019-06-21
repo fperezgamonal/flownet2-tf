@@ -1009,6 +1009,8 @@ class Net(object):
                 training_schedule['max_iters'] = train_params_dict['max_steps']
 
             if checkpoints is not None:
+                if reset_global_step:  # assign 0 to global_step instead of that defined in the checkpoint
+                    checkpoint_global_step_tensor.assign(0)
                 if valid_iters > 0:
                     final_loss = slim.learning.train(
                         training_op,
