@@ -18,6 +18,7 @@ slim = tf.contrib.slim
 
 VAL_INTERVAL = 1000
 
+
 # The optimizer state could not be properly resumed because of the following reasons:
 #   * Actual restoring from checkpoint was done BEFORE defining the graph operations==> only global_step resumed
 #   * SLIM required us to use assign_from_checkpoint_fn with the vars retrieved by optimistic_restore_vars
@@ -952,6 +953,7 @@ class Net(object):
                 if log_verbosity > 1:
                     # print("last_ckpt_name: '{}'".format(last_ckpt_name))
                     print("ckpt.model_checkpoint_path: '{}'".format(ckpt.model_checkpoint_path))
+                    print("reset_global_step: {}".format(reset_global_step))
 
                 vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path, reset_global_step=reset_global_step)
                 if log_verbosity > 1:
