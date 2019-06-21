@@ -628,6 +628,7 @@ class Net(object):
         :param lr_range_test:
         :param train_params_dict:
         :param log_smoothed_loss:
+        :param reset_global_step:
 
         :return:
         """
@@ -1022,6 +1023,7 @@ class Net(object):
                     # checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype='int64')
                     local_init_op = tf.initializers.variables([checkpoint_global_step_tensor,
                                                                tf.local_variables_initializer()])
+                    print("tf.train.get_or_create_global_step: '{}'".format(tf.train.get_or_create_global_step))
                 else:
                     local_init_op = 0  # use slim.learning.train default (only tf.local_variables_initializer()
 
