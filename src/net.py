@@ -879,6 +879,7 @@ class Net(object):
             tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, losses_average_op)
 
         if reset_global_step:
+            print("global_step has value: {}".format(tf.train.get_global_step()))
             checkpoint_global_step_tensor.assign(0)
         # Create the train_op
         training_op = slim.learning.create_train_op(
