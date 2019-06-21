@@ -362,6 +362,14 @@ if __name__ == '__main__':
         help='Whether to log an additional smoothed version of the loss (running average)',
         default=False,
     )
+    parser.add_argument(
+        '--reset_global_step',
+        type=bool,
+        required=False,
+        help='Whether to restart global step at 0 if a checkpoint is inputted (useful when resuming training for '
+             'different dataset than the one where the network was trained)',
+        default=False,
+    )
 
     # ==== Capacity of queues ====
     parser.add_argument(
