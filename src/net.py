@@ -689,11 +689,12 @@ class Net(object):
                 # learning_rate = tf.train.exponential_decay(
                 #     start_lr, global_step=checkpoint_global_step_tensor,
                 #     decay_steps=decay_steps, decay_rate=decay_rate)
+
+                if 'max_steps' in train_params_dict:
+                    training_schedule['max_iters'] = train_params_dict['max_steps']
                 if log_verbosity:
                     print("max_iters: {}, min_lr: {:.4f}, max_lr: {:.4f}".format(training_schedule['max_iters'],
                                                                                  start_lr, end_lr))
-                if 'max_steps' in train_params_dict:
-                    training_schedule['max_iters'] = train_params_dict['max_steps']
                 learning_rate = exponentially_increasing_lr(checkpoint_global_step_tensor, min_lr=start_lr,
                                                             max_lr=end_lr, num_iters=training_schedule['max_iters'])
             else:  # linear
@@ -939,10 +940,10 @@ class Net(object):
                 checkpoint_path = checkpoints
 
                 # Get checkpoint state from checkpoint_path (used to restore vars)
-                last_ckpt_name = "{}.ckpt.index".format(checkpoint_path.split('/')[-1])
-                ckpt = tf.train.get_checkpoint_state(os.path.dirname(checkpoint_path), latest_filename=last_ckpt_name)
+                # last_ckpt_name = "{}.ckpt.index".format(checkpoint_path.split('/')[-1])
+                ckpt = tf.train.get_checkpoint_state(os.path.dirname(checkpoint_path)) #, latest_filename=last_ckpt_name)
                 if log_verbosity > 1:
-                    print("last_ckpt_name: '{}'".format(last_ckpt_name))
+                    # print("last_ckpt_name: '{}'".format(last_ckpt_name))
                     print("ckpt.model_checkpoint_path: '{}'".format(ckpt.model_checkpoint_path))
 
                 vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path, reset_global_step=reset_global_step)
