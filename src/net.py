@@ -877,6 +877,9 @@ class Net(object):
             losses_average_op = _add_loss_summaries(train_loss, val_loss, decay=decay_factor,
                                                     log_tensorboard=log_tensorboard)
             tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, losses_average_op)
+
+        if reset_global_step:
+            checkpoint_global_step_tensor.assign(0)
         # Create the train_op
         training_op = slim.learning.create_train_op(
             train_loss,
