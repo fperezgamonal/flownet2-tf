@@ -59,7 +59,7 @@ FLYING_CHAIRS_ALL_DATASET_CONFIG = {
     },
     'PREPROCESS': {
         'scale': False,
-        'crop_height': 320,
+        'crop_height': 384,
         'crop_width': 448,
         'image_a': {
             'translate': {
@@ -305,7 +305,7 @@ SINTEL_ALL_DATASET_CONFIG = {
     },
     'PREPROCESS': {
         'scale': False,
-        'crop_height': 384,
+        'crop_height': 320,
         'crop_width': 768,
         'image_a': {
             'translate': {

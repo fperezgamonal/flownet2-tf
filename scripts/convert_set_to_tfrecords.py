@@ -59,8 +59,6 @@ def image_example(image_a, image_b, matches_a, sparse_flow, flow):
     return example_proto
 
 
-# TODO: create a subfolder in sintel/clean and sintel/final 'flatten' that contains an alphabetical list of files
-# TODO: check if moving the padding into 'load_batch' solves the corruption problem...
 def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chairs', divisor=64):
     # Open a TFRRecordWriter
     filename = os.path.join(FLAGS.out, name + '.tfrecord')
@@ -88,8 +86,8 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                 """
                     We have a stereo-pair but we will arbitrarily only use the 'left' view (any would be ok)
                     By doing so, we can only copy the left (forward) ground truth and significantly reduce the storage
-                     burden.  Also, we follow FlowNet2.0 training and discard a set of difficult sequences (1388, 
-                     to be precise)
+                    burden.  Also, we follow FlowNet2.0 training and discard a set of difficult sequences (1388, 
+                    to be precise)
                 """
                 image_a_path = os.path.join(FLAGS.data_dir, '{0:07d}.png'.format(i))
                 image_b_path = os.path.join(FLAGS.data_dir, '{0:07d}.png'.format(i + 1))
