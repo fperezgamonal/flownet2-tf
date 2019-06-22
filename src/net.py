@@ -642,10 +642,17 @@ class Net(object):
         training_schedule = self.get_training_schedule(training_schedule_str)
         if log_tensorboard:
             tf.summary.image("train/image_a", input_a, max_outputs=1)
+            if valid_iters > 0:
+                tf.summary.image("valid/image_a", val_input_a, max_outputs=1)
+
             if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
                 tf.summary.image("train/matches_a", matches_a, max_outputs=1)
+                if valid_iters > 0:
+                    tf.summary.image("valid/matches_a", val_matches_a, max_outputs=1)
             else:
                 tf.summary.image("train/image_b", input_b, max_outputs=1)
+                if valid_iters > 0:
+                    tf.summary.image("valid/image_b", val_input_b, max_outputs=1)
 
         # Initialise global step by parsing checkpoint filename to define learning rate (restoring is done afterwards)
         if checkpoints is not None:
@@ -688,6 +695,7 @@ class Net(object):
                 end_lr = 1e-1
                 decay_steps = 110
                 decay_rate = 1.25
+                lr_range_niters = 10000
             if log_verbosity > 1:
                 print("Learning range test config for mode '{}'".format(train_params_dict['lr_range_mode'].lower()))
 
