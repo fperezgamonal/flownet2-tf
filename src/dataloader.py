@@ -276,7 +276,8 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             num_readers=num_threads,
             common_queue_capacity=common_queue_capacity,  # this also broke training, we lowered it (og. value = 2048)
             common_queue_min=common_queue_min,  # this also broke training, we lowered it (og. value = 1024)
-            reader_kwargs=reader_kwargs)
+            reader_kwargs=reader_kwargs,
+            shuffle=True,)
 
         if input_type == 'image_matches':
             image_b = None

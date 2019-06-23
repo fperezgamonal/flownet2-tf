@@ -28,7 +28,7 @@ def open_flo_file(filename):
             # print("Reading {0} x {1} flo file".format(w, h))
             data = np.fromfile(f, np.float32, count=2*w*h)
             # Reshape data into 3D array (columns, rows, bands)
-            return np.resize(data, (h, w, 2))
+            return np.resize(data, (w, h, 2))
 
 
 # https://github.com/tensorflow/tensorflow/blob/r1.1/tensorflow/examples/how_tos/reading_data/convert_to_records.py
@@ -61,7 +61,7 @@ def image_example(image_a, image_b, matches_a, sparse_flow, flow):
 
 def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chairs', divisor=64):
     # Open a TFRRecordWriter
-    filename = os.path.join(FLAGS.out, name + '.tfrecord')
+    filename = os.path.join(FLAGS.out, name + '.tfrecords')
     writeOpts = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.ZLIB)
     with tf.python_io.TFRecordWriter(filename, options=writeOpts) as writer:
 
@@ -366,7 +366,7 @@ if __name__ == '__main__':
         '--specify_split',
         type=str,
         required=False,
-        help='Specify that we only want one split: train or val',
+        help='Optionally specify that we only want one split: train or val',
         default='all'
     )
     FLAGS = parser.parse_args()
