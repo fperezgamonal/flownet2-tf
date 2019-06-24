@@ -25,10 +25,10 @@ def open_flo_file(filename):
         else:
             w = np.fromfile(f, np.int32, count=1)[0]
             h = np.fromfile(f, np.int32, count=1)[0]
-            # print("Reading {0} x {1} flo file".format(w, h))
+            # print("Reading {0} x {1} flo file".format(h, w))
             data = np.fromfile(f, np.float32, count=2*w*h)
             # Reshape data into 3D array (columns, rows, bands)
-            return np.resize(data, (w, h, 2))
+            return np.resize(data, (h, w, 2))
 
 
 # https://github.com/tensorflow/tensorflow/blob/r1.1/tensorflow/examples/how_tos/reading_data/convert_to_records.py

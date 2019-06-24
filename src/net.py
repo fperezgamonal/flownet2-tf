@@ -47,11 +47,18 @@ def optimistic_restore_vars(model_checkpoint_path, reset_global_step=False):
             curr_var = name2var[saved_var_name]
             var_shape = curr_var.get_shape().as_list()
             if var_shape == saved_shapes[saved_var_name]:
+                if reset_global_step and 'global_step' in var_name:
+                    print("Found global step with var_name: '{}'".format(var_name))
+                    # print("Removing tensor from restoring variables list...")
+                    # restore_vars.pop(-1)
+                    # Assign 0 (instead of completely removing it from varlist, as it is safer)
+                    print("Resetting its value back to 0 (first iteration)...")
+                    curr_var.assign(0)
+                    print("This should give us 0, global_step= {}".format(tf.train.get_global_step()))
+
+                # For any var, append it to the list of variables to be restored
                 restore_vars.append(curr_var)
-            if reset_global_step and 'global_step' in var_name:
-                print("Found global step with var_name: '{}'".format(var_name))
-                print("Removing tensor from restoring variables list...")
-                restore_vars.pop(-1)
+
     return restore_vars
 
 
@@ -111,7 +118,6 @@ class Net(object):
         """
         return
 
-    # TODO: consider merging all 'sintel' and 'kitti' schedules into one as they are sequential stages (stop if needed)
     def get_training_schedule(self, training_schedule_str):
         if training_schedule_str.lower() == 'fine':  # normally applied after long on FlyingThings3D
             training_schedule = FINE_SCHEDULE
@@ -150,6 +156,20 @@ class Net(object):
 
         return training_schedule
 
+    def get_training_schedule_folder_string(self, training_schedule_str):
+        if 'sintel' in training_schedule_str.lower():  # put all Sintel fine-tuning under the same log folder
+            training_schedule_fld = 'fine_sintel'
+        elif 'fine' in training_schedule_str.lower():  # format it a little better, FT3D for FlyingThings3D
+            training_schedule_fld = "Sfine_FT3D"
+        elif 'clr' in training_schedule_str.lower():  # make it all caps for readability
+            training_schedule_fld = "CLR"
+        elif 'long' in training_schedule_str.lower():
+            training_schedule_fld = "Slong_FC".format(training_schedule_str)  # FC for FlyingChairs
+        else:
+            training_schedule_fld = training_schedule_str  # leave it as is
+
+        return training_schedule_fld
+
     # based on github.com/philferriere/tfoptflow/blob/33e8a701e34c8ce061f17297d40619afbd459ade/tfoptflow/model_pwcnet.py
     # functions: adapt_x, adapt_y, postproc_y_hat (crop)
     def adapt_x(self, input_a, input_b=None, matches_a=None, sparse_flow=None, divisor=64):
@@ -167,7 +187,7 @@ class Net(object):
         input_a = input_a[..., [2, 1, 0]]
         if sparse_flow is not None and matches_a is not None:
             matches_a = matches_a[..., np.newaxis]  # from (height, width) to (height, width, 1)
-            print("New scheme: first + matchtrain_losses (1st=> 2nd frame) given")  # only for debugging, remove afterwards
+            print("New scheme: first + matchtrain_losses (1st=> 2nd frame) given")
         else:
             print("Normal scheme: first + second frame given")  # only for debugging, remove afterwards
             input_b = input_b[..., [2, 1, 0]]
@@ -298,7 +318,7 @@ class Net(object):
         Postprocess the output flows during test mode
         :param pred_flows: predictions
         :param adapt_info: None if input image is multiple of 'divisor', original size otherwise
-        :return: postprocessed flow (cropped to original size if need be)
+        :return: post-processed flow (cropped to original size if need be)
         """
         if adapt_info is not None:  # must define it when padding!
             # pred_flows = pred_flows[:, 0:adapt_info[1], 0:adapt_info[2], :]  # batch!
@@ -309,7 +329,6 @@ class Net(object):
         """
         Postprocess the output flows during train mode
         :param y_hat: predictions
-        :param adapt_info: None if input image is multiple of 'divisor', original size otherwise
         :return: batch loss and metric
         """
 
@@ -464,16 +483,6 @@ class Net(object):
                 assert 2 <= len(path_inputs) <= 6, (
                     'More paths than expected. Expected: I1+I2 (2), I1+MM+SF(3), I1+MM+SF+GTF(4),'
                     '  I1+MM+SF+GT+OCC_MSK+INVMASK(5 to 6)')
-
-                # TODO: check if putting the if statements that check the length under fewer external ifs is simpler
-                # Something like:
-                #   if(input_type=='image_pairs'):
-                #       if compute_metrics:
-                #           if len(...)
-                #           (...)
-                #       else:
-                #           if len(...)
-                #   elif input_....
 
                 if len(path_inputs) == 2 and input_type == 'image_pairs':  # Only image1 + image2 have been provided
                     frame_0 = imread(path_inputs[0])
@@ -883,7 +892,7 @@ class Net(object):
 
         # Log smoothed loss (EMA, see '_add_loss_summaries' for more details)
         if log_smoothed_loss:
-            decay_factor = 0.95
+            decay_factor = 0.99
             # Add exponentially moving averages for losses
             losses_average_op = _add_loss_summaries(train_loss, val_loss, decay=decay_factor,
                                                     log_tensorboard=log_tensorboard)
@@ -919,8 +928,8 @@ class Net(object):
             # calc training losses
             total_loss, should_stop = slim.learning.train_step(sess, train_op, global_step, train_step_kwargs)
 
-            # validate on interval
-            if valid_iters > 0 and (train_step_fn.step % valid_iters == 0):
+            # validate on interval (added condition to avoid evaluating on first step)
+            if valid_iters > 0 and (train_step_fn.step % valid_iters == 0) and train_step_fn.step > 0:
                 valid_loss, valid_delta = sess.run([val_loss, summary_validation_delta])
                 print(">>> global step= {:<5d} | train={:^15.4f} | validation={:^15.4f} | delta={:^15.4f} <<<".format(
                     train_step_fn.step, total_loss, valid_loss, valid_loss - total_loss))
@@ -958,7 +967,6 @@ class Net(object):
                 checkpoint_path = checkpoints
 
                 # Get checkpoint state from checkpoint_path (used to restore vars)
-                # last_ckpt_name = "{}.ckpt.index".format(checkpoint_path.split('/')[-1])
                 ckpt = tf.train.get_checkpoint_state(os.path.dirname(checkpoint_path))
                 if log_verbosity > 1:
                     # print("last_ckpt_name: '{}'".format(last_ckpt_name))
@@ -986,16 +994,7 @@ class Net(object):
         # Create unique logging dir to avoid overwritting of old data (e.g.: when comparing different runs)
         now = datetime.datetime.now()
         date_now = now.strftime('%d-%m-%y_%H-%M-%S')
-        if 'sintel' in training_schedule_str.lower():  # put all Sintel fine-tuning under the same log folder
-            training_schedule_fld = 'fine_sintel'
-        elif 'fine' in training_schedule_str.lower():  # format it a little better, FT3D for FlyingThings3D
-            training_schedule_fld = "Sfine_FT3D"
-        elif 'clr' in training_schedule_str.lower():  # make it all caps for readability
-            training_schedule_fld = "CLR"
-        elif 'long' in training_schedule_str.lower():
-            training_schedule_fld = "Slong_FC".format(training_schedule_str)  # FC for FlyingChairs
-        else:
-            training_schedule_fld = training_schedule_str  # leave it as is
+        training_schedule_fld = self.get_training_schedule_folder_string(training_schedule_str)
 
         log_dir = os.path.join(log_dir, training_schedule_fld, date_now)
 
@@ -1028,16 +1027,6 @@ class Net(object):
                 training_schedule['max_iters'] = train_params_dict['max_steps']
 
             if checkpoints is not None:
-                # if reset_global_step:  # assign 0 to global_step instead of that defined in the checkpoint
-                #     # Probably do not work since init_fn is run afterwards, hence overwritting these changes
-                #     # checkpoint_global_step_tensor.assign(0)
-                #     # checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype='int64')
-                #     local_init_op = tf.initializers.variables([checkpoint_global_step_tensor,
-                #                                                tf.local_variables_initializer()])
-                #     print("tf.train.get_or_create_global_step: '{}'".format(tf.train.get_or_create_global_step))
-                # else:
-                #     local_init_op = 0  # use slim.learning.train default (only tf.local_variables_initializer()
-
                 if valid_iters > 0:
                     final_loss = slim.learning.train(
                         training_op,
