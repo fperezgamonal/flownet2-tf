@@ -6,6 +6,7 @@ from progressbar import ProgressBar, Percentage, Bar
 from imageio import imread
 import tensorflow as tf
 from math import ceil
+import time
 
 FLAGS = None
 
@@ -160,12 +161,9 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
 
             image_a = imread(image_a_path)
             image_b = imread(image_b_path)
-
             matches_a = imread(matches_a_path)
 
-            # Convert from RGB -> BGR
-            image_a = image_a[..., [2, 1, 0]]
-            image_b = image_b[..., [2, 1, 0]]
+            # Add new axis to mask so it has shape: (height x width x num_channels)
             matches_a = matches_a[..., np.newaxis]
 
             # Scale from [0, 255] -> [0.0, 1.0]
@@ -196,7 +194,6 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
             if DEBUG:
                 print("OG shapes before padding (images-matches): ")
                 print("img_a: {0}\nimg_b: {1}\nmch_a: {2}".format(image_a.shape, image_b.shape, matches_a.shape))
-            original_shape = image_a.shape
 
             if height_a % divisor != 0 or width_a % divisor != 0:
                 if DEBUG:
@@ -378,4 +375,7 @@ if __name__ == '__main__':
         raise ValueError('out must exist and be a directory')
     if not os.path.exists(FLAGS.train_val_split):
         raise ValueError('train_val_split must exist')
+    print("INFO: if you wish to debug the dataset creation, please modify 'convert_set_to_tfrecords.py' and set "
+          "DEBUG=True")
+    time.sleep(5)
     main()
