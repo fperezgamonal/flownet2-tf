@@ -698,6 +698,12 @@ class Net(object):
         else:
             checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype='int64')
 
+        # max_steps overrides max_iter which is configured in training_schedules.py
+        if 'max_steps' in train_params_dict:
+            training_schedule['max_iters'] = train_params_dict['max_steps']
+            print("Overwritten default value of max_iters={} by user-inputted={}".format(
+                training_schedule['max_iters'], train_params_dict['max_steps']))
+
         if lr_range_test:  # learning rate range test to bound max/min optimal learning rate (2015, Leslie N. Smith)
             if lr_range_test is not None:  # use the input params
                 start_lr = train_params_dict['start_lr']
@@ -714,10 +720,6 @@ class Net(object):
                 lr_range_niters = 10000
             if log_verbosity > 1:
                 print("Learning range test config for mode '{}'".format(train_params_dict['lr_range_mode'].lower()))
-
-            # max_steps overrides max_iter which is configured in training_schedules.py
-            if 'max_steps' in train_params_dict:
-                training_schedule['max_iters'] = train_params_dict['max_steps']
 
             if train_params_dict['lr_range_mode'].lower() == 'exponential':
                 # learning_rate = tf.train.exponential_decay(
