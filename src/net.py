@@ -11,7 +11,7 @@ from imageio import imread, imsave
 from .flowlib import flow_to_image, write_flow, read_flow, compute_all_metrics, get_metrics
 from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FINETUNE_SINTEL_S1, FINETUNE_SINTEL_S2, \
     FINETUNE_SINTEL_S3, FINETUNE_SINTEL_S4, FINETUNE_SINTEL_S5, FINETUNE_KITTI_S1, FINETUNE_KITTI_S2,\
-    FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LR_RANGE_TEST, CLR_SCHEDULE
+    FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LR_RANGE_TEST, CLR_SCHEDULE, EXP_DECREASING
 from .cyclic_learning_rate import clr
 from .utils import exponentially_increasing_lr, exponentially_decreasing_lr
 slim = tf.contrib.slim
@@ -128,6 +128,8 @@ class Net(object):
             training_schedule = SHORT_SCHEDULE
         elif training_schedule_str.lower() == 'clr':  # cyclical learning rate
             training_schedule = CLR_SCHEDULE
+        elif training_schedule_str.lower() == 'exp_decr':  # exponentially decreasing learning rate (w. min+max LR)
+            training_schedule = EXP_DECREASING
         # SINTEL
         elif training_schedule_str.lower() == 'sintel_s1':  # Fine-tune Sintel (stage 1)
             training_schedule = FINETUNE_SINTEL_S1
