@@ -25,6 +25,27 @@ def exponentially_increasing_lr(global_step, min_lr=1e-10, max_lr=1, num_iters=1
         return exp_incr_lr
 
 
+def exponentially_decreasing_lr(global_step, min_lr=1e-10, max_lr=1, num_iters=10000, name=None):
+    if global_step is None:
+        raise ValueError("global_step is required for cyclic_learning_rate.")
+    with ops.name_scope(name, "exp_decr_lr",
+                        [min_lr, global_step]) as name:
+        learning_rate = ops.convert_to_tensor(min_lr, name="learning_rate")
+        dtype = learning_rate.dtype
+        global_step = math_ops.cast(global_step, dtype)
+
+        def exp_decr_lr():
+            """Helper to recompute learning rate; most helpful in eager-mode."""
+            minlr_div_maxlr = math_ops.divide(min_lr, max_lr)
+            power_iter = math_ops.divide(global_step, num_iters)
+            pow_div = math_ops.pow(minlr_div_maxlr, power_iter)
+            return math_ops.multiply(max_lr, pow_div, name=name)
+
+        if not context.executing_eagerly():
+            exp_decr_lr = exp_decr_lr()
+        return exp_decr_lr
+
+
 # Thanks, https://github.com/tensorflow/tensorflow/issues/4079
 # Replaced by tensorflow built-in (should be quicker?)
 def LeakyReLU(x, leak=0.1, name="lrelu"):

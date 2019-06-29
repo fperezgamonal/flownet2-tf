@@ -13,7 +13,7 @@ from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FI
     FINETUNE_SINTEL_S3, FINETUNE_SINTEL_S4, FINETUNE_SINTEL_S5, FINETUNE_KITTI_S1, FINETUNE_KITTI_S2,\
     FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LR_RANGE_TEST, CLR_SCHEDULE
 from .cyclic_learning_rate import clr
-from .utils import exponentially_increasing_lr
+from .utils import exponentially_increasing_lr, exponentially_decreasing_lr
 slim = tf.contrib.slim
 
 VAL_INTERVAL = 1000
@@ -163,6 +163,8 @@ class Net(object):
             training_schedule_fld = "Sfine_FT3D"
         elif 'clr' in training_schedule_str.lower():  # make it all caps for readability
             training_schedule_fld = "CLR"
+        elif 'exp_decreasing' in training_schedule_str.lower():
+            training_schedule_fld = "exp_decr"
         elif 'long' in training_schedule_str.lower():
             training_schedule_fld = "Slong_FC".format(training_schedule_str)  # FC for FlyingChairs
         else:
@@ -708,13 +710,14 @@ class Net(object):
             if log_verbosity > 1:
                 print("Learning range test config for mode '{}'".format(train_params_dict['lr_range_mode'].lower()))
 
+            # max_steps overrides max_iter which is configured in training_schedules.py
+            if 'max_steps' in train_params_dict:
+                training_schedule['max_iters'] = train_params_dict['max_steps']
+
             if train_params_dict['lr_range_mode'].lower() == 'exponential':
                 # learning_rate = tf.train.exponential_decay(
                 #     start_lr, global_step=checkpoint_global_step_tensor,
                 #     decay_steps=decay_steps, decay_rate=decay_rate)
-
-                if 'max_steps' in train_params_dict:
-                    training_schedule['max_iters'] = train_params_dict['max_steps']
                 if log_verbosity:
                     print("max_iters: {}, min_lr: {:.4f}, max_lr: {:.4f}".format(training_schedule['max_iters'],
                                                                                  start_lr, end_lr))
@@ -741,6 +744,10 @@ class Net(object):
                     print("(CLR) Default max. number of iters being changed from {} to {}".format(
                         training_schedule['max_iters'], new_max_iters))
                 training_schedule['max_iters'] = new_max_iters
+            elif training_schedule['learning_rates'].lower() == 'exp_decr' and training_schedule_str == 'exp_decr':
+                learning_rate = exponentially_decreasing_lr(
+                    checkpoint_global_step_tensor, min_lr=train_params_dict['end_lr'],
+                    max_lr=train_params_dict['start_lr'], num_iters=training_schedule['max_iters'])
             else:
                 learning_rate = 3e-4  # for Adam only!
             # add other policies (1-cycle), cosine-decay, etc.
@@ -1021,10 +1028,6 @@ class Net(object):
                 save_summaries_secs = 10
             else:
                 save_summaries_secs = 180
-
-            # max_steps overrides max_iter which is configured in training_schedules.py
-            if 'max_steps' in train_params_dict:
-                training_schedule['max_iters'] = train_params_dict['max_steps']
 
             if checkpoints is not None:
                 if valid_iters > 0:
