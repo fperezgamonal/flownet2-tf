@@ -47,17 +47,20 @@ def optimistic_restore_vars(model_checkpoint_path, reset_global_step=False):
             curr_var = name2var[saved_var_name]
             var_shape = curr_var.get_shape().as_list()
             if var_shape == saved_shapes[saved_var_name]:
-                if reset_global_step and 'global_step' in var_name:
-                    print("Found global step with var_name: '{}'".format(var_name))
-                    # print("Removing tensor from restoring variables list...")
-                    # restore_vars.pop(-1)
-                    # Assign 0 (instead of completely removing it from varlist, as it is safer)
-                    print("Resetting its value back to 0 (first iteration)...")
-                    curr_var.assign(0)
-                    print("This should give us 0, global_step= {}".format(tf.train.get_global_step()))
+                # if reset_global_step and 'global_step' in var_name:
+                #     print("Found global step with var_name: '{}'".format(var_name))
+                #     # print("Removing tensor from restoring variables list...")
+                #     # restore_vars.pop(-1)
+                #     # Assign 0 (instead of completely removing it from varlist, as it is safer)
+                #     print("Resetting its value back to 0 (first iteration)...")
+                #     curr_var.assign(0)
+                #     print("This should give us 0, global_step= {}".format(tf.train.get_global_step()))
 
                 # For any var, append it to the list of variables to be restored
                 restore_vars.append(curr_var)
+
+                if reset_global_step and 'global_step' in var_name:
+                    restore_vars.pop(-1)  # not ideal but 'assign' is not working for some reason
 
     return restore_vars
 
