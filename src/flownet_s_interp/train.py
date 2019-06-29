@@ -42,6 +42,15 @@ def main():
             'weight_decay': FLAGS.weight_decay,
             'l2_regularization': FLAGS.l2_regularization,
         }
+    # Initialise exponentially decreasing LR (CLR may be too aggressive for fine-tuning)
+    elif FLAGS.training_schedule.lower() == 'exp_decr':
+        train_params_dict = {
+            'start_lr': FLAGS.start_lr,
+            'end_lr': FLAGS.end_lr,
+            'optimizer': FLAGS.optimizer,
+            'weight_decay': FLAGS.weight_decay,
+            'l2_regularization': FLAGS.l2_regularization,
+        }
     else:
         train_params_dict = None
 
