@@ -748,6 +748,7 @@ class Net(object):
                         training_schedule['max_iters'], new_max_iters))
                 training_schedule['max_iters'] = new_max_iters
             elif training_schedule['learning_rates'].lower() == 'exp_decr' and training_schedule_str == 'exp_decr':
+                print("Training schedule is 'exp_decr'")
                 learning_rate = exponentially_decreasing_lr(
                     checkpoint_global_step_tensor, min_lr=train_params_dict['end_lr'],
                     max_lr=train_params_dict['start_lr'], num_iters=training_schedule['max_iters'])
