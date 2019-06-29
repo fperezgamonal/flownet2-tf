@@ -11,6 +11,13 @@
 # learning_rates.insert(0, 1e-10)
 
 # All other params defined as input arguments to train.py scripts
+EXP_DECREASING = {
+    'learning_rates': 'exp_decr',
+    'l2_regularization': 0.0,  # disabled as we work with Adam + Weight Decay
+    'max_iters': 10000,
+    'momentum': 0.9,
+    'momentum2': 0.999,
+}
 CLR_SCHEDULE = {
     'learning_rates': 'clr',
     'l2_regularization': 0.0,  # disabled for now as CLR already introduces decay (exponentially or by a fix 0.5 factor)
