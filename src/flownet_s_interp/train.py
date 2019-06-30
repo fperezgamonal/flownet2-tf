@@ -1,6 +1,7 @@
 from ..dataloader import load_batch
 from .flownet_s_interp import FlowNetS_interp
 import argparse
+from ..utils import str2bool
 
 
 # TODO: update traning scripts for all other architectures with latest changes
@@ -195,7 +196,8 @@ if __name__ == '__main__':
     # ==== Learning rate range test parameters ====
     parser.add_argument(
         '--lr_range_test',
-        type=bool,
+        type=str2bool,
+        nargs='?',
         required=False,
         help='Whether or not to do a learning rate range test (exponentially) to find a good lr range',
         default=False,
@@ -361,21 +363,24 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--log_tensorboard',
-        type=bool,
+        type=str2bool,
+        nargs='?',
         required=False,
         help='Whether to log to Tensorboard or not (only stdout)',
         default=True,
     )
     parser.add_argument(
         '--log_smoothed_loss',
-        type=bool,
+        type=str2bool,
+        nargs='?',
         required=False,
         help='Whether to log an additional smoothed version of the loss (running average)',
         default=False,
     )
     parser.add_argument(
         '--reset_global_step',
-        type=bool,
+        type=str2bool,
+        nargs='?',
         required=False,
         help='Whether to restart global step at 0 if a checkpoint is inputted (useful when resuming training for '
              'different dataset than the one where the network was trained)',
