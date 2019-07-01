@@ -471,8 +471,8 @@ class Net(object):
                 'input_b': input_b,
             }
 
-        training_schedule = LONG_SCHEDULE
-        predictions = self.model(inputs, training_schedule)
+        training_schedule = LONG_SCHEDULE  # any would suffice, as it is not used (??)
+        predictions = self.model(inputs, training_schedule, trainable=False)
         pred_flow = predictions['flow']
 
         saver = tf.train.Saver()
@@ -482,6 +482,11 @@ class Net(object):
             # Read and process the resulting list, one element at a time
             with open(image_paths, 'r') as input_file:
                 path_list = input_file.read()
+
+            if log_metrics2file:
+                basefile = image_paths.split()[-1]
+                logfile = basefile.replace('.txt', '_metrics.log')
+                logfile = open(logfile, 'w+')
 
             for img_idx in range(len(path_list)):
                 # Read + pre-process files
@@ -611,12 +616,12 @@ class Net(object):
                     final_str_formated = get_metrics(metrics)
 
                     if log_metrics2file:
-                        basefile = image_paths.split()[-1]
-                        logfile = basefile.replace('.txt', '_metrics.log')
-                        with open(logfile, 'w') as logfile:
-                            logfile.write(final_str_formated)
+                        logfile.write(final_str_formated)
                     else:  # print to stdout
                         print(final_str_formated)
+
+            if log_metrics2file:
+                logfile.close()
 
     def train(self, log_dir, training_schedule_str, input_a, gt_flow, input_b=None, matches_a=None, sparse_flow=None,
               valid_iters=VAL_INTERVAL, val_input_a=None, val_gt_flow=None, val_input_b=None, val_matches_a=None,

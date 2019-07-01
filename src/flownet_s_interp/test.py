@@ -2,7 +2,7 @@ import argparse
 import os
 from ..net import Mode
 from .flownet_s_interp import FlowNetS_interp
-
+from ..utils import str2bool
 FLAGS = None
 
 
@@ -14,7 +14,7 @@ def main():
     # Test on the data
     if os.path.isfile(FLAGS.input_a) and FLAGS.input_a[:-4] is not '.txt':  # pair of images (not a batch)
         net.test(
-            checkpoint='./checkpoints/FlowNetS/flownet-S.ckpt-0',
+            checkpoint=FLAGS.checkpoint,
             input_a_path=FLAGS.input_a,
             matches_a_path=FLAGS.matches_a,
             out_path=FLAGS.out,
@@ -29,7 +29,7 @@ def main():
         )
     elif os.path.isfile(FLAGS.input_a) and FLAGS.input_a[:-4] is '.txt':  # txt with image list (batch-like)
         net.test_batch(
-            checkpoint='./checkpoints/FlowNetS/flownet-S.ckpt-0',
+            checkpoint=FLAGS.checkpoint,
             image_paths=FLAGS.input_a,
             out_path=FLAGS.out,
             input_type=FLAGS.input_type,
@@ -66,6 +66,13 @@ if __name__ == '__main__':
         default='data/samples/sintel/frame_00186_dm_sparse_flow.flo',
     )
     parser.add_argument(
+        '--checkpoint',
+        type=str,
+        required=True,
+        help='Path to checkpoint to load for inference',
+        default='./checkpoints/FlowNetS/flownet-S.ckpt-0'
+    )
+    parser.add_argument(
         '--out',
         type=str,
         required=False,
@@ -88,21 +95,21 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--save_flo',
-        type=bool,
+        type=str2bool,
         required=False,
         help='whether to save the raw predicted flow in .flo format (see Middlebury specification for more details)',
         default=True,
     )
     parser.add_argument(
         '--compute_metrics',
-        type=bool,
+        type=str2bool,
         required=False,
         help='whether to compute error metrics or not (if True all available metrics are computed, check flowlib.py)',
         default=True,
     )
     parser.add_argument(
         '--log_metrics2file',
-        type=bool,
+        type=str2bool,
         required=False,
         help='whether to log the metrics to a file instead of printing them to stdout',
         default=False,
