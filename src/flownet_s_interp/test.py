@@ -14,6 +14,7 @@ def main():
 
     if DEBUG:
         print("Input file extension (input_a) is: '{}'".format(FLAGS.input_a[-4:]))
+        print("{}".format(FLAGS.input_a[-4:] is '.txt'))
 
     # Test on the data
     if os.path.isfile(FLAGS.input_a) and FLAGS.input_a[-4:] is not '.txt':  # pair of images (not a batch)
