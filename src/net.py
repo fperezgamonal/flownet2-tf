@@ -470,6 +470,9 @@ class Net(object):
                 'input_a': input_a,
                 'input_b': input_b,
             }
+            
+        for key in inputs.items():
+            print(key)
 
         training_schedule = LONG_SCHEDULE  # any would suffice, as it is not used (??)
         predictions = self.model(inputs, training_schedule, trainable=False)
