@@ -4,7 +4,7 @@ from ..net import Mode
 from .flownet_s_interp import FlowNetS_interp
 from ..utils import str2bool
 FLAGS = None
-DEBUG = True
+DEBUG = False
 
 
 # TODO: update other architectures test.py and train.py scripts according to FlownetS + interp

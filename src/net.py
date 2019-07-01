@@ -470,7 +470,7 @@ class Net(object):
                 'input_a': input_a,
                 'input_b': input_b,
             }
-            
+
         for key in inputs.items():
             print(key)
 
