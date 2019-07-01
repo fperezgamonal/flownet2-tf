@@ -14,10 +14,10 @@ def main():
 
     if DEBUG:
         print("Input file extension (input_a) is: '{}'".format(FLAGS.input_a[-4:]))
-        print("{}".format(FLAGS.input_a[-4:] is '.txt'))
+        print("{}".format(FLAGS.input_a[-4:] == '.txt'))
 
     # Test on the data
-    if os.path.isfile(FLAGS.input_a) and FLAGS.input_a[-4:] is not '.txt':  # pair of images (not a batch)
+    if os.path.isfile(FLAGS.input_a) and FLAGS.input_a[-4:] != '.txt':  # pair of images (not a batch)
         print("Inferring on 'single' mode...")
         net.test(
             checkpoint=FLAGS.checkpoint,
@@ -33,7 +33,7 @@ def main():
             occ_mask=FLAGS.occ_mask,
             inv_mask=FLAGS.inv_mask,
         )
-    elif os.path.isfile(FLAGS.input_a) and FLAGS.input_a[-4:] is '.txt':  # txt with image list (batch-like)
+    elif os.path.isfile(FLAGS.input_a) and FLAGS.input_a[-4:] == '.txt':  # txt with image list (batch-like)
         print("Inferring on 'batch' mode...")
         net.test_batch(
             checkpoint=FLAGS.checkpoint,
