@@ -4,6 +4,7 @@ from ..net import Mode
 from .flownet_s_interp import FlowNetS_interp
 from ..utils import str2bool
 FLAGS = None
+DEBUG = True
 
 
 # TODO: update other architectures test.py and train.py scripts according to FlownetS + interp
@@ -13,6 +14,7 @@ def main():
 
     # Test on the data
     if os.path.isfile(FLAGS.input_a) and FLAGS.input_a[:-4] is not '.txt':  # pair of images (not a batch)
+        print("Inferring on 'single' mode...")
         net.test(
             checkpoint=FLAGS.checkpoint,
             input_a_path=FLAGS.input_a,
@@ -28,6 +30,7 @@ def main():
             inv_mask=FLAGS.inv_mask,
         )
     elif os.path.isfile(FLAGS.input_a) and FLAGS.input_a[:-4] is '.txt':  # txt with image list (batch-like)
+        print("Inferring on 'batch' mode...")
         net.test_batch(
             checkpoint=FLAGS.checkpoint,
             image_paths=FLAGS.input_a,
@@ -140,5 +143,7 @@ if __name__ == '__main__':
     # Verify arguments are valid
     if not os.path.exists(FLAGS.input_a):
         raise ValueError('Path to input_a (first image) must exist')
+    if DEBUG:
+        print("Input path to file with several paths or to a single image is:\n{}".format(FLAGS.input_a))
 
     main()
