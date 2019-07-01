@@ -12,6 +12,9 @@ def main():
     # Create a new network
     net = FlowNetS_interp(mode=Mode.TEST)
 
+    if DEBUG:
+        print("Input file extension (input_a) is: '{}'".format(FLAGS.input_a[:-4]))
+        
     # Test on the data
     if os.path.isfile(FLAGS.input_a) and FLAGS.input_a[:-4] is not '.txt':  # pair of images (not a batch)
         print("Inferring on 'single' mode...")
