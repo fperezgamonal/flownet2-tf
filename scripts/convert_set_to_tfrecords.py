@@ -355,6 +355,8 @@ def main():
     if FLAGS.val_split is not None:
         val_split = np.loadtxt(FLAGS.val_split)
         val_idxs = np.flatnonzero(val_split == VAL)
+    else:
+        val_idxs = np.flatnonzeros(train_split == VAL)
 
     # Convert the train and val datasets into .tfrecords format
     if FLAGS.dataset.lower() == 'chairs':
