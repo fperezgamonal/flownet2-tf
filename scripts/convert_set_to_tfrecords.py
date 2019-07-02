@@ -72,11 +72,8 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
         # Define data dir source depending on the split_name
         if 'val' in split_name and FLAGS.valid_data_dir is not None and FLAGS.val_split is not None:
             data_dir = FLAGS.valid_data_dir
-        elif 'train' in split_name and FLAGS.train_data_dir is not None and FLAGS.train_split is not None:
-            data_dir = FLAGS.train_data_dir
         else:
-            raise ValueError("FATAL: invalid split name (expected 'valid' or 'train') or data directory / labels may "
-                             "be empty")
+            data_dir = FLAGS.train_data_dir
 
         for i in indices:
             if dataset == 'flying_chairs':
@@ -356,7 +353,7 @@ def main():
         val_split = np.loadtxt(FLAGS.val_split)
         val_idxs = np.flatnonzero(val_split == VAL)
     else:
-        val_idxs = np.flatnonzeros(train_split == VAL)
+        val_idxs = np.flatnonzero(train_split == VAL)
 
     # Convert the train and val datasets into .tfrecords format
     if FLAGS.dataset.lower() == 'chairs':
