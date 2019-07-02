@@ -4,7 +4,8 @@ import copy
 slim = tf.contrib.slim
 from math import exp
 from .dataset_configs import FLYING_CHAIRS_ALL_DATASET_CONFIG, SINTEL_FINAL_ALL_DATASET_CONFIG,\
-    SINTEL_ALL_DATASET_CONFIG, FLYING_THINGS_3D_ALL_DATASET_CONFIG
+    SINTEL_ALL_DATASET_CONFIG, FLYING_THINGS_3D_ALL_DATASET_CONFIG, FC_TRAIN_SINTEL_VAL_DATASET_CONFIG,\
+    FT3D_TRAIN_SINTEL_VAL_DATASET_CONFIG
 
 _preprocessing_ops = tf.load_op_library(
     tf.resource_loader.get_path_to_datafile("./ops/build/preprocessing.so"))
@@ -87,7 +88,21 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
             raise ValueError('split name {} not recognized'.format(split_name))
 
         # Width and height accounting for needed padding to match network dimensions
-        image_height, image_width = dataset_config['PADDED_IMAGE_HEIGHT'], dataset_config['PADDED_IMAGE_WIDTH']
+        # Different origins for train and val
+        if dataset_config == FC_TRAIN_SINTEL_VAL_DATASET_CONFIG or \
+                dataset_config == FT3D_TRAIN_SINTEL_VAL_DATASET_CONFIG:
+            print("Dataset selected uses two different origins for train and validation images(make sure it is OK!)")
+            if split_name == 'train':
+                image_height, image_width = dataset_config['PADDED_IMAGE_HEIGHT'][0], \
+                                            dataset_config['PADDED_IMAGE_WIDTH'][0]
+            elif split_name == 'valid':
+                image_height, image_width = dataset_config['PADDED_IMAGE_HEIGHT'][1], \
+                                            dataset_config['PADDED_IMAGE_WIDTH'][1]
+            else:
+                raise ValueError("FATAL: unexpected 'split_name'. Must be either 'train' or 'valid'")
+
+        else:  # train and val are subsets of the same set
+            image_height, image_width = dataset_config['PADDED_IMAGE_HEIGHT'], dataset_config['PADDED_IMAGE_WIDTH']
         reader = tf.TFRecordReader
         if input_type == 'image_matches':
             keys_to_features = {
@@ -256,8 +271,8 @@ def _generate_coeff(param, discount_coeff=tf.constant(1.0), default_value=tf.con
 
 
 # TODO: fix bug with data augmentation
-def load_batch(dataset_config_str, split_name, global_step=None, input_type='image_pairs', common_queue_capacity=256,
-               common_queue_min=128, capacity_in_batches_train=4, capacity_in_batches_val=1, num_threads=8):
+def load_batch(dataset_config_str, split_name, global_step=None, input_type='image_pairs', common_queue_capacity=128,
+               common_queue_min=64, capacity_in_batches_train=4, capacity_in_batches_val=1, num_threads=8):
 
     if dataset_config_str.lower() == 'flying_things3d':
         dataset_config = FLYING_THINGS_3D_ALL_DATASET_CONFIG
@@ -265,6 +280,10 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
         dataset_config = SINTEL_FINAL_ALL_DATASET_CONFIG
     elif dataset_config_str.lower() == 'sintel_all':  # clean + final
         dataset_config = SINTEL_ALL_DATASET_CONFIG
+    elif dataset_config_str.lower() == 'fc_sintel':  # FC (train) + Sintel (validation)
+        dataset_config = FC_TRAIN_SINTEL_VAL_DATASET_CONFIG
+    elif dataset_config_str.lower() == 'ft3d_sintel':  # FT3D (train) + Sintel (validation)
+        dataset_config = FT3D_TRAIN_SINTEL_VAL_DATASET_CONFIG
     else:  # flying_chairs
         dataset_config = FLYING_CHAIRS_ALL_DATASET_CONFIG
 
@@ -301,8 +320,15 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             if not input_type == 'image_matches':
                 image_b = image_b / 255.0
 
-        crop = [dataset_config['PREPROCESS']['crop_height'],
-                dataset_config['PREPROCESS']['crop_width']]
+        if dataset_config_str.lower() == 'fc_sintel' or dataset_config_str.lower() == 'ft3d_sintel':
+            if split_name == 'train':
+                crop = [dataset_config['PREPROCESS']['crop_height'][0],
+                        dataset_config['PREPROCESS']['crop_width'][0]]
+            elif split_name == 'valid':
+                crop = [dataset_config['PREPROCESS']['crop_height'][1],
+                        dataset_config['PREPROCESS']['crop_width'][1]]
+            else:
+                raise ValueError("FATAL: unexpected 'split_name'. Must be either 'train' or 'valid'")
         config_a = config_to_arrays(dataset_config['PREPROCESS']['image_a'])
         config_b = config_to_arrays(dataset_config['PREPROCESS']['image_b'])
 

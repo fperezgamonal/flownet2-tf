@@ -60,9 +60,9 @@ def image_example(image_a, image_b, matches_a, sparse_flow, flow):
     return example_proto
 
 
-def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chairs', divisor=64):
+def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying_chairs', divisor=64):
     # Open a TFRRecordWriter
-    filename = os.path.join(FLAGS.out, name + '.tfrecords')
+    filename = os.path.join(FLAGS.out, split_name + '.tfrecords')
     writeOpts = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.ZLIB)
     with tf.python_io.TFRecordWriter(filename, options=writeOpts) as writer:
 
@@ -149,6 +149,77 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
                                                     'frame_{0:05d}_dm_sparse_flow.flo'.format(i+1))
                 else:
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+            elif dataset == 'fc_sintel':
+                if 'train' in split_name:
+                    image_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1.png'.format(i + 1))
+                    image_b_path = os.path.join(FLAGS.data_dir, '{0:05d}_img2.png'.format(i + 1))
+                    flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_flow.flo'.format(i + 1))
+                    if matcher == 'sift':
+                        matches_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_sift_mask.png'.format(i + 1))
+                        sparse_flow_path = os.path.join(FLAGS.data_dir,
+                                                        '{0:05d}_img1_sift_sparse_flow.flo'.format(i + 1))
+                    elif matcher == 'deepmatching':
+                        matches_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_dm_mask.png'.format(i + 1))
+                        sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_dm_sparse_flow.flo'.format(i + 1))
+                    # add more matchers if need be (more elif's)
+                    else:
+                        raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+
+                elif 'val' in split_name:
+                    pass_dir = 'final'
+                    image_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 1))
+                    image_b_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 2))
+                    flow_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i + 1))
+                    if matcher == 'sift':
+                        matches_a_path = os.path.join(FLAGS.data_dir, pass_dir,
+                                                      'frame_{0:05d}_sift_mask.png'.format(i + 1))
+                        sparse_flow_path = os.path.join(FLAGS.data_dir, pass_dir,
+                                                        'frame_{0:05d}_sift_sparse_flow.flo'.format(i + 1))
+                    elif matcher == 'deepmatching':
+                        matches_a_path = os.path.join(FLAGS.data_dir, pass_dir,
+                                                      'frame_{0:05d}_dm_mask.png'.format(i + 1))
+                        sparse_flow_path = os.path.join(FLAGS.data_dir, pass_dir,
+                                                        'frame_{0:05d}_dm_sparse_flow.flo'.format(i + 1))
+                    else:
+                        raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                else:
+                    raise ValueError("Invalid split name ('train' (training) or 'val' (validation)")
+
+            elif dataset == 'ft3d_sintel':
+                if 'train' in split_name:
+                    image_a_path = os.path.join(FLAGS.data_dir, '{0:07d}.png'.format(i))
+                    image_b_path = os.path.join(FLAGS.data_dir, '{0:07d}.png'.format(i + 1))
+                    flow_path = os.path.join(FLAGS.data_dir, '{0:07d}.flo'.format(i))
+                    if matcher == 'sift':
+                        matches_a_path = os.path.join(FLAGS.data_dir, '{0:07d}_sift_mask.png'.format(i))
+                        sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:07d}_sift_sparse_flow.flo'.format(i))
+                    elif matcher == 'deepmatching':
+                        matches_a_path = os.path.join(FLAGS.data_dir, '{0:07d}_dm_mask.png'.format(i))
+                        sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:07d}_dm_sparse_flow.flo'.format(i))
+                    # add more matchers if need be (more elif's)
+                    else:
+                        raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+
+                elif 'val' in split_name:
+                    pass_dir = 'final'
+                    image_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 1))
+                    image_b_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 2))
+                    flow_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i + 1))
+                    if matcher == 'sift':
+                        matches_a_path = os.path.join(FLAGS.data_dir, pass_dir,
+                                                      'frame_{0:05d}_sift_mask.png'.format(i + 1))
+                        sparse_flow_path = os.path.join(FLAGS.data_dir, pass_dir,
+                                                        'frame_{0:05d}_sift_sparse_flow.flo'.format(i + 1))
+                    elif matcher == 'deepmatching':
+                        matches_a_path = os.path.join(FLAGS.data_dir, pass_dir,
+                                                      'frame_{0:05d}_dm_mask.png'.format(i + 1))
+                        sparse_flow_path = os.path.join(FLAGS.data_dir, pass_dir,
+                                                        'frame_{0:05d}_dm_sparse_flow.flo'.format(i + 1))
+                    else:
+                        raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                else:
+                    raise ValueError("Invalid split name ('train' (training) or 'val' (validation)")
+
             # Add more datasets here
             # elif dataset == 'another_of_dataset':
             else:
@@ -270,9 +341,11 @@ def convert_dataset(indices, name, matcher='deepmatching', dataset='flying_chair
 
 def main():
     # Load train/val split into arrays
-    train_val_split = np.loadtxt(FLAGS.train_val_split)
-    train_idxs = np.flatnonzero(train_val_split == TRAIN)
-    val_idxs = np.flatnonzero(train_val_split == VAL)
+    train_split = np.loadtxt(FLAGS.train_split)
+    train_idxs = np.flatnonzero(train_split == TRAIN)
+    if FLAGS.val_split is not None:
+        val_split = np.loadtxt(FLAGS.val_split)
+        val_idxs = np.flatnonzero(val_split == VAL)
 
     # Convert the train and val datasets into .tfrecords format
     if 'chairs' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'chairs':
@@ -300,6 +373,16 @@ def main():
         train_name = 'sintel_train_all'
         val_name = 'sintel_val_all'
         set_name = 'sintel_all'
+    elif 'fc_sintel' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'fc_sintel':
+        print("Chosen dataset is 'Flying Chairs (train) + MPI-Sintel (Validation)'")
+        train_name = 'fc_sintel_train'
+        val_name = 'fc_sintel_val'
+        set_name = 'fc_sintel'
+    elif 'ft3d_sintel' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'ft3d_sintel':
+        print("Chosen dataset is 'Flying Things 3D (train) + MPI-Sintel (Validation)'")
+        train_name = 'ft3d_sintel_train'
+        val_name = 'ft3d_sintel_val'
+        set_name = 'ft3d_sintel'
     # Add more datasets here (to change the final tfrecords name)
     # elif 'set_name' in FLAGS.data_dir:
     else:
@@ -328,23 +411,39 @@ def main():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--data_dir',
+        '--train_data_dir',
         type=str,
         required=True,
-        help='Directory that includes all .png and .flo files in the dataset'
+        help='Directory that includes all .png and .flo files in the training split of the dataset',
+    )
+    parser.add_argument(
+        '--valid_data_dir',
+        type=str,
+        required=False,
+        help='Directory that includes all .png and .flo files in the validation split of the dataset (if left empty '
+             'we assume it is the same as train_data_dir',
+        default=None,
     )
     parser.add_argument(
         '--dataset',
         type=str,
         required=False,
         help="Dataset name: 'chairs', 'things', 'sintel', 'kitti'",
-        default='chairs'
+        default='chairs',
     )
     parser.add_argument(
-        '--train_val_split',
+        '--train_split',
         type=str,
         required=True,
-        help='Path to text file with train-validation split (1-train, 2-validation)'
+        help='Path to text file indicating training samples with a label=1',
+    )
+    parser.add_argument(
+        '--val_split',
+        type=str,
+        required=False,
+        help='Path to text file indicating validation samples with a label=2 (may be different than training, if left '
+             'empty, we assume that --train_split contains at least one validation sample',
+        default=None,
     )
     parser.add_argument(
         '--out',
@@ -369,12 +468,12 @@ if __name__ == '__main__':
     FLAGS = parser.parse_args()
 
     # Verify arguments are valid
-    if not os.path.isdir(FLAGS.data_dir):
-        raise ValueError('data_dir must exist and be a directory')
+    if not os.path.isdir(FLAGS.train_data_dir):
+        raise ValueError('train_data_dir must exist and be a directory')
     if not os.path.isdir(FLAGS.out):
         raise ValueError('out must exist and be a directory')
-    if not os.path.exists(FLAGS.train_val_split):
-        raise ValueError('train_val_split must exist')
+    if not os.path.exists(FLAGS.train_split):
+        raise ValueError('train_split must exist')
     print("INFO: if you wish to debug the dataset creation, please modify 'convert_set_to_tfrecords.py' and set "
           "DEBUG=True")
     time.sleep(5)
