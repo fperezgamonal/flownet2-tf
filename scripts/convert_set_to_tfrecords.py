@@ -69,17 +69,26 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
         # Load each data sample (image_a, image_b, matches_a, sparse_flow, flow) and write it to the TFRecord
         count = 0
         pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=len(indices)).start()
+        # Define data dir source depending on the split_name
+        if split_name == 'valid' and FLAGS.valid_data_dir is not None and FLAGS.val_split is not None:
+            data_dir = FLAGS.valid_data_dir
+        elif split_name == 'train' and FLAGS.train_data_dir is not None and FLAGS.train_split is not None:
+            data_dir = FLAGS.train_data_dir
+        else:
+            raise ValueError("FATAL: invalid split name (expected 'valid' or 'train') or data directory / labels may "
+                             "be empty")
+
         for i in indices:
             if dataset == 'flying_chairs':
-                image_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1.png'.format(i + 1))
-                image_b_path = os.path.join(FLAGS.data_dir, '{0:05d}_img2.png'.format(i + 1))
-                flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_flow.flo'.format(i + 1))
+                image_a_path = os.path.join(data_dir, '{0:05d}_img1.png'.format(i + 1))
+                image_b_path = os.path.join(data_dir, '{0:05d}_img2.png'.format(i + 1))
+                flow_path = os.path.join(data_dir, '{0:05d}_flow.flo'.format(i + 1))
                 if matcher == 'sift':
-                    matches_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_sift_mask.png'.format(i + 1))
-                    sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_sift_sparse_flow.flo'.format(i + 1))
+                    matches_a_path = os.path.join(data_dir, '{0:05d}_img1_sift_mask.png'.format(i + 1))
+                    sparse_flow_path = os.path.join(data_dir, '{0:05d}_img1_sift_sparse_flow.flo'.format(i + 1))
                 elif matcher == 'deepmatching':
-                    matches_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_dm_mask.png'.format(i + 1))
-                    sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_dm_sparse_flow.flo'.format(i + 1))
+                    matches_a_path = os.path.join(data_dir, '{0:05d}_img1_dm_mask.png'.format(i + 1))
+                    sparse_flow_path = os.path.join(data_dir, '{0:05d}_img1_dm_sparse_flow.flo'.format(i + 1))
                 # add more matchers if need be (more elif's)
                 else:
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
@@ -90,95 +99,95 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     burden.  Also, we follow FlowNet2.0 training and discard a set of difficult sequences (1388, 
                     to be precise)
                 """
-                image_a_path = os.path.join(FLAGS.data_dir, '{0:07d}.png'.format(i))
-                image_b_path = os.path.join(FLAGS.data_dir, '{0:07d}.png'.format(i + 1))
-                flow_path = os.path.join(FLAGS.data_dir, '{0:07d}.flo'.format(i))
+                image_a_path = os.path.join(data_dir, '{0:07d}.png'.format(i))
+                image_b_path = os.path.join(data_dir, '{0:07d}.png'.format(i + 1))
+                flow_path = os.path.join(data_dir, '{0:07d}.flo'.format(i))
                 if matcher == 'sift':
-                    matches_a_path = os.path.join(FLAGS.data_dir, '{0:07d}_sift_mask.png'.format(i))
-                    sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:07d}_sift_sparse_flow.flo'.format(i))
+                    matches_a_path = os.path.join(data_dir, '{0:07d}_sift_mask.png'.format(i))
+                    sparse_flow_path = os.path.join(data_dir, '{0:07d}_sift_sparse_flow.flo'.format(i))
                 elif matcher == 'deepmatching':
-                    matches_a_path = os.path.join(FLAGS.data_dir, '{0:07d}_dm_mask.png'.format(i))
-                    sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:07d}_dm_sparse_flow.flo'.format(i))
+                    matches_a_path = os.path.join(data_dir, '{0:07d}_dm_mask.png'.format(i))
+                    sparse_flow_path = os.path.join(data_dir, '{0:07d}_dm_sparse_flow.flo'.format(i))
                 # add more matchers if need be (more elif's)
                 else:
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
 
             elif dataset == 'sintel_clean':
                 pass_dir = 'clean'
-                image_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
-                image_b_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
-                flow_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.flo'.format(i+1))
+                image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
+                image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
+                flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.flo'.format(i+1))
                 if matcher == 'sift':
-                    matches_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}_sift_mask.png'.format(i+1))
-                    sparse_flow_path = os.path.join(FLAGS.data_dir, pass_dir,
+                    matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_sift_mask.png'.format(i+1))
+                    sparse_flow_path = os.path.join(data_dir, pass_dir,
                                                     'frame_{0:04d}_sift_sparse_flow.flo'.format(i+1))
                 elif matcher == 'deepmatching':
-                    matches_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}_dm_mask.png'.format(i+1))
-                    sparse_flow_path = os.path.join(FLAGS.data_dir, pass_dir,
+                    matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_dm_mask.png'.format(i+1))
+                    sparse_flow_path = os.path.join(data_dir, pass_dir,
                                                     'frame_{0:04d}_dm_sparse_flow.flo'.format(i+1))
                 else:
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
 
             elif dataset == 'sintel_final':
                 pass_dir = 'final'
-                image_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
-                image_b_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
-                flow_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}.flo'.format(i+1))
+                image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
+                image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
+                flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.flo'.format(i+1))
                 if matcher == 'sift':
-                    matches_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}_sift_mask.png'.format(i+1))
-                    sparse_flow_path = os.path.join(FLAGS.data_dir, pass_dir,
+                    matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_sift_mask.png'.format(i+1))
+                    sparse_flow_path = os.path.join(data_dir, pass_dir,
                                                     'frame_{0:04d}_sift_sparse_flow.flo'.format(i+1))
                 elif matcher == 'deepmatching':
-                    matches_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:04d}_dm_mask.png'.format(i+1))
-                    sparse_flow_path = os.path.join(FLAGS.data_dir, pass_dir,
+                    matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_dm_mask.png'.format(i+1))
+                    sparse_flow_path = os.path.join(data_dir, pass_dir,
                                                     'frame_{0:04d}_dm_sparse_flow.flo'.format(i+1))
                 else:
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
             elif dataset == 'sintel_all':
                 pass_dir = 'final'
-                image_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.png'.format(i+1))
-                image_b_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.png'.format(i+2))
-                flow_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i+1))
+                image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i+1))
+                image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i+2))
+                flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i+1))
                 if matcher == 'sift':
-                    matches_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}_sift_mask.png'.format(i+1))
-                    sparse_flow_path = os.path.join(FLAGS.data_dir, pass_dir,
+                    matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}_sift_mask.png'.format(i+1))
+                    sparse_flow_path = os.path.join(data_dir, pass_dir,
                                                     'frame_{0:05d}_sift_sparse_flow.flo'.format(i+1))
                 elif matcher == 'deepmatching':
-                    matches_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}_dm_mask.png'.format(i+1))
-                    sparse_flow_path = os.path.join(FLAGS.data_dir, pass_dir,
+                    matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}_dm_mask.png'.format(i+1))
+                    sparse_flow_path = os.path.join(data_dir, pass_dir,
                                                     'frame_{0:05d}_dm_sparse_flow.flo'.format(i+1))
                 else:
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
             elif dataset == 'fc_sintel':
                 if 'train' in split_name:
-                    image_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1.png'.format(i + 1))
-                    image_b_path = os.path.join(FLAGS.data_dir, '{0:05d}_img2.png'.format(i + 1))
-                    flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_flow.flo'.format(i + 1))
+                    image_a_path = os.path.join(data_dir, '{0:05d}_img1.png'.format(i + 1))
+                    image_b_path = os.path.join(data_dir, '{0:05d}_img2.png'.format(i + 1))
+                    flow_path = os.path.join(data_dir, '{0:05d}_flow.flo'.format(i + 1))
                     if matcher == 'sift':
-                        matches_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_sift_mask.png'.format(i + 1))
-                        sparse_flow_path = os.path.join(FLAGS.data_dir,
+                        matches_a_path = os.path.join(data_dir, '{0:05d}_img1_sift_mask.png'.format(i + 1))
+                        sparse_flow_path = os.path.join(data_dir,
                                                         '{0:05d}_img1_sift_sparse_flow.flo'.format(i + 1))
                     elif matcher == 'deepmatching':
-                        matches_a_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_dm_mask.png'.format(i + 1))
-                        sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:05d}_img1_dm_sparse_flow.flo'.format(i + 1))
+                        matches_a_path = os.path.join(data_dir, '{0:05d}_img1_dm_mask.png'.format(i + 1))
+                        sparse_flow_path = os.path.join(data_dir, '{0:05d}_img1_dm_sparse_flow.flo'.format(i + 1))
                     # add more matchers if need be (more elif's)
                     else:
                         raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
 
                 elif 'val' in split_name:
                     pass_dir = 'final'
-                    image_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 1))
-                    image_b_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 2))
-                    flow_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i + 1))
+                    image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 1))
+                    image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 2))
+                    flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i + 1))
                     if matcher == 'sift':
-                        matches_a_path = os.path.join(FLAGS.data_dir, pass_dir,
+                        matches_a_path = os.path.join(data_dir, pass_dir,
                                                       'frame_{0:05d}_sift_mask.png'.format(i + 1))
-                        sparse_flow_path = os.path.join(FLAGS.data_dir, pass_dir,
+                        sparse_flow_path = os.path.join(data_dir, pass_dir,
                                                         'frame_{0:05d}_sift_sparse_flow.flo'.format(i + 1))
                     elif matcher == 'deepmatching':
-                        matches_a_path = os.path.join(FLAGS.data_dir, pass_dir,
+                        matches_a_path = os.path.join(data_dir, pass_dir,
                                                       'frame_{0:05d}_dm_mask.png'.format(i + 1))
-                        sparse_flow_path = os.path.join(FLAGS.data_dir, pass_dir,
+                        sparse_flow_path = os.path.join(data_dir, pass_dir,
                                                         'frame_{0:05d}_dm_sparse_flow.flo'.format(i + 1))
                     else:
                         raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
@@ -187,33 +196,33 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
 
             elif dataset == 'ft3d_sintel':
                 if 'train' in split_name:
-                    image_a_path = os.path.join(FLAGS.data_dir, '{0:07d}.png'.format(i))
-                    image_b_path = os.path.join(FLAGS.data_dir, '{0:07d}.png'.format(i + 1))
-                    flow_path = os.path.join(FLAGS.data_dir, '{0:07d}.flo'.format(i))
+                    image_a_path = os.path.join(data_dir, '{0:07d}.png'.format(i))
+                    image_b_path = os.path.join(data_dir, '{0:07d}.png'.format(i + 1))
+                    flow_path = os.path.join(data_dir, '{0:07d}.flo'.format(i))
                     if matcher == 'sift':
-                        matches_a_path = os.path.join(FLAGS.data_dir, '{0:07d}_sift_mask.png'.format(i))
-                        sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:07d}_sift_sparse_flow.flo'.format(i))
+                        matches_a_path = os.path.join(data_dir, '{0:07d}_sift_mask.png'.format(i))
+                        sparse_flow_path = os.path.join(data_dir, '{0:07d}_sift_sparse_flow.flo'.format(i))
                     elif matcher == 'deepmatching':
-                        matches_a_path = os.path.join(FLAGS.data_dir, '{0:07d}_dm_mask.png'.format(i))
-                        sparse_flow_path = os.path.join(FLAGS.data_dir, '{0:07d}_dm_sparse_flow.flo'.format(i))
+                        matches_a_path = os.path.join(data_dir, '{0:07d}_dm_mask.png'.format(i))
+                        sparse_flow_path = os.path.join(data_dir, '{0:07d}_dm_sparse_flow.flo'.format(i))
                     # add more matchers if need be (more elif's)
                     else:
                         raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
 
                 elif 'val' in split_name:
                     pass_dir = 'final'
-                    image_a_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 1))
-                    image_b_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 2))
-                    flow_path = os.path.join(FLAGS.data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i + 1))
+                    image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 1))
+                    image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 2))
+                    flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i + 1))
                     if matcher == 'sift':
-                        matches_a_path = os.path.join(FLAGS.data_dir, pass_dir,
+                        matches_a_path = os.path.join(data_dir, pass_dir,
                                                       'frame_{0:05d}_sift_mask.png'.format(i + 1))
-                        sparse_flow_path = os.path.join(FLAGS.data_dir, pass_dir,
+                        sparse_flow_path = os.path.join(data_dir, pass_dir,
                                                         'frame_{0:05d}_sift_sparse_flow.flo'.format(i + 1))
                     elif matcher == 'deepmatching':
-                        matches_a_path = os.path.join(FLAGS.data_dir, pass_dir,
+                        matches_a_path = os.path.join(data_dir, pass_dir,
                                                       'frame_{0:05d}_dm_mask.png'.format(i + 1))
-                        sparse_flow_path = os.path.join(FLAGS.data_dir, pass_dir,
+                        sparse_flow_path = os.path.join(data_dir, pass_dir,
                                                         'frame_{0:05d}_dm_sparse_flow.flo'.format(i + 1))
                     else:
                         raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
@@ -348,37 +357,37 @@ def main():
         val_idxs = np.flatnonzero(val_split == VAL)
 
     # Convert the train and val datasets into .tfrecords format
-    if 'chairs' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'chairs':
-        print("Chosen dataset is 'FlyingChairs'")
+    if 'chairs' in FLAGS.train_data_dir.lower() or FLAGS.dataset.lower() == 'chairs':
+        print("Chosen dataset is 'FlyingChairs'  (train + val)")
         train_name = 'fc_train_all'
         val_name = 'fc_val_all'
         set_name = 'flying_chairs'
-    elif 'things' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'things':
-        print("Chosen dataset is 'FlyingThings3D'")
+    elif 'things' in FLAGS.train_data_dir.lower() or FLAGS.dataset.lower() == 'things':
+        print("Chosen dataset is 'FlyingThings3D'  (train + val)")
         train_name = 'ft3d_train_all'
         val_name = 'ft3d_val_all'
         set_name = 'flying_things3D'
-    elif 'sintel_clean' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'sintel_clean':
-        print("Chosen dataset is 'MPI-Sintel (clean pass)'")
+    elif 'sintel_clean' in FLAGS.train_data_dir.lower() or FLAGS.dataset.lower() == 'sintel_clean':
+        print("Chosen dataset is 'MPI-Sintel (clean pass)  (train + val)'")
         train_name = 'sintel_clean_train_all'
         val_name = 'sintel_clean_val_all'
         set_name = 'sintel_clean'
-    elif 'sintel_final' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'sintel_final':
-        print("Chosen dataset is 'MPI-Sintel (final pass)'")
+    elif 'sintel_final' in FLAGS.train_data_dir.lower() or FLAGS.dataset.lower() == 'sintel_final':
+        print("Chosen dataset is 'MPI-Sintel (final pass)  (train + val)'")
         train_name = 'sintel_final_train_all'
         val_name = 'sintel_final_val_all'
         set_name = 'sintel_final'
-    elif 'sintel_all' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'sintel_all':
-        print("Chosen dataset is 'MPI-Sintel (final + clean pass)'")
+    elif 'sintel_all' in FLAGS.train_data_dir.lower() or FLAGS.dataset.lower() == 'sintel_all':
+        print("Chosen dataset is 'MPI-Sintel (final + clean pass)  (train + val)'")
         train_name = 'sintel_train_all'
         val_name = 'sintel_val_all'
         set_name = 'sintel_all'
-    elif 'fc_sintel' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'fc_sintel':
+    elif 'fc_sintel' in FLAGS.train_data_dir.lower() or FLAGS.dataset.lower() == 'fc_sintel':
         print("Chosen dataset is 'Flying Chairs (train) + MPI-Sintel (Validation)'")
         train_name = 'fc_sintel_train'
         val_name = 'fc_sintel_val'
         set_name = 'fc_sintel'
-    elif 'ft3d_sintel' in FLAGS.data_dir.lower() or FLAGS.dataset.lower() == 'ft3d_sintel':
+    elif 'ft3d_sintel' in FLAGS.train_data_dir.lower() or FLAGS.dataset.lower() == 'ft3d_sintel':
         print("Chosen dataset is 'Flying Things 3D (train) + MPI-Sintel (Validation)'")
         train_name = 'ft3d_sintel_train'
         val_name = 'ft3d_sintel_val'
@@ -386,7 +395,7 @@ def main():
     # Add more datasets here (to change the final tfrecords name)
     # elif 'set_name' in FLAGS.data_dir:
     else:
-        print("Chosen dataset is 'FlyingChairs'")
+        print("Chosen dataset is 'FlyingChairs (train + val)'")
         train_name = 'flying_chairs_train'
         val_name = 'flying_chairs_val'
         set_name = 'flying_chairs'
@@ -428,7 +437,7 @@ if __name__ == '__main__':
         '--dataset',
         type=str,
         required=False,
-        help="Dataset name: 'chairs', 'things', 'sintel', 'kitti'",
+        help="Dataset name: 'chairs', 'things', 'sintel', 'kitti', 'fc_sintel', 'ft3d_sintel'",
         default='chairs',
     )
     parser.add_argument(
