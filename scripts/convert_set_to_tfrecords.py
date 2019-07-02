@@ -89,6 +89,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 # add more matchers if need be (more elif's)
                 else:
                     raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+
             elif dataset == 'flying_things3D':
                 """
                     We have a stereo-pair but we will arbitrarily only use the 'left' view (any would be ok)
@@ -235,6 +236,8 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 print("Path to source images/flows are:")
                 print("img_a: {0}\nimg_b: {1}\nmch_a: {2}\nsp_flow: {3}\nflow: {4}\n".format(
                     image_a_path, image_b_path, matches_a_path, sparse_flow_path, flow_path))
+            # Flush all prints (get stuck for some reason)
+            sys.stdout.flush()
 
             image_a = imread(image_a_path)
             image_b = imread(image_b_path)
