@@ -70,9 +70,9 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
         count = 0
         pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=len(indices)).start()
         # Define data dir source depending on the split_name
-        if split_name == 'val' and FLAGS.valid_data_dir is not None and FLAGS.val_split is not None:
+        if 'val' in split_name and FLAGS.valid_data_dir is not None and FLAGS.val_split is not None:
             data_dir = FLAGS.valid_data_dir
-        elif split_name == 'train' and FLAGS.train_data_dir is not None and FLAGS.train_split is not None:
+        elif 'train' in split_name and FLAGS.train_data_dir is not None and FLAGS.train_split is not None:
             data_dir = FLAGS.train_data_dir
         else:
             raise ValueError("FATAL: invalid split name (expected 'valid' or 'train') or data directory / labels may "
