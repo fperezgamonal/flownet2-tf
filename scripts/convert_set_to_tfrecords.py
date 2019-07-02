@@ -357,37 +357,37 @@ def main():
         val_idxs = np.flatnonzero(val_split == VAL)
 
     # Convert the train and val datasets into .tfrecords format
-    if 'chairs' in FLAGS.train_data_dir.lower() or FLAGS.dataset.lower() == 'chairs':
+    if FLAGS.dataset.lower() == 'chairs':
         print("Chosen dataset is 'FlyingChairs'  (train + val)")
         train_name = 'fc_train_all'
         val_name = 'fc_val_all'
         set_name = 'flying_chairs'
-    elif 'things' in FLAGS.train_data_dir.lower() or FLAGS.dataset.lower() == 'things':
+    elif FLAGS.dataset.lower() == 'things':
         print("Chosen dataset is 'FlyingThings3D'  (train + val)")
         train_name = 'ft3d_train_all'
         val_name = 'ft3d_val_all'
         set_name = 'flying_things3D'
-    elif 'sintel_clean' in FLAGS.train_data_dir.lower() or FLAGS.dataset.lower() == 'sintel_clean':
+    elif FLAGS.dataset.lower() == 'sintel_clean':
         print("Chosen dataset is 'MPI-Sintel (clean pass)  (train + val)'")
         train_name = 'sintel_clean_train_all'
         val_name = 'sintel_clean_val_all'
         set_name = 'sintel_clean'
-    elif 'sintel_final' in FLAGS.train_data_dir.lower() or FLAGS.dataset.lower() == 'sintel_final':
+    elif FLAGS.dataset.lower() == 'sintel_final':
         print("Chosen dataset is 'MPI-Sintel (final pass)  (train + val)'")
         train_name = 'sintel_final_train_all'
         val_name = 'sintel_final_val_all'
         set_name = 'sintel_final'
-    elif 'sintel_all' in FLAGS.train_data_dir.lower() or FLAGS.dataset.lower() == 'sintel_all':
+    elif FLAGS.dataset.lower() == 'sintel_all':
         print("Chosen dataset is 'MPI-Sintel (final + clean pass)  (train + val)'")
         train_name = 'sintel_train_all'
         val_name = 'sintel_val_all'
         set_name = 'sintel_all'
-    elif 'fc_sintel' in FLAGS.train_data_dir.lower() or FLAGS.dataset.lower() == 'fc_sintel':
+    elif FLAGS.dataset.lower() == 'fc_sintel':
         print("Chosen dataset is 'Flying Chairs (train) + MPI-Sintel (Validation)'")
         train_name = 'fc_sintel_train'
         val_name = 'fc_sintel_val'
         set_name = 'fc_sintel'
-    elif 'ft3d_sintel' in FLAGS.train_data_dir.lower() or FLAGS.dataset.lower() == 'ft3d_sintel':
+    elif FLAGS.dataset.lower() == 'ft3d_sintel':
         print("Chosen dataset is 'Flying Things 3D (train) + MPI-Sintel (Validation)'")
         train_name = 'ft3d_sintel_train'
         val_name = 'ft3d_sintel_val'
@@ -395,6 +395,7 @@ def main():
     # Add more datasets here (to change the final tfrecords name)
     # elif 'set_name' in FLAGS.data_dir:
     else:
+        print("Reverted to default dataset...")
         print("Chosen dataset is 'FlyingChairs (train + val)'")
         train_name = 'flying_chairs_train'
         val_name = 'flying_chairs_val'
