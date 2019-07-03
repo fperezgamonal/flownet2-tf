@@ -565,8 +565,8 @@ FC_TRAIN_SINTEL_VAL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 8,
     'PATHS': {
-        'train': '/datasets/GPI/optical_flow/TFrecords/interp/fc_sintel_train.tfrecords',
-        'valid': '/datasets/GPI/optical_flow/TFrecords/interp/fc_sintel_val.tfrecords',
+        'train': './data/tfrecords/interp/fc_sintel_train.tfrecords',
+        'valid': './data/tfrecords/interp/fc_sintel_val.tfrecords',
     },
     'PREPROCESS': {
         'scale': False,
@@ -690,8 +690,8 @@ FT3D_TRAIN_SINTEL_VAL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 4,
     'PATHS': {
-        'train': '/datasets/GPI/optical_flow/TFrecords/interp/ft3d_sintel_train.tfrecords',
-        'valid': '/datasets/GPI/optical_flow/TFrecords/interp/ft3d_sintel_val.tfrecords',
+        'train': './data/tfrecords/interp/ft3d_sintel_train.tfrecords',
+        'valid': './data/tfrecords/interp/ft3d_sintel_val.tfrecords',
     },
     'PREPROCESS': {
         'scale': False,
