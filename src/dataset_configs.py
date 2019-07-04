@@ -1197,8 +1197,8 @@ FC_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 8,
     'PATHS': {
-        'train': './data/tfrecords/interp/fc_sintel_train.tfrecords',
-        'valid': './data/tfrecords/interp/fc_sintel_val.tfrecords',
+        'train': './data/tfrecords/interp/mixed/fc_sintel_train.tfrecords',
+        'valid': './data/tfrecords/interp/mixed/fc_sintel_val.tfrecords',
     },
     'PREPROCESS': {
         'scale': False,
