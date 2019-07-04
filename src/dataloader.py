@@ -5,7 +5,7 @@ slim = tf.contrib.slim
 from math import exp
 from .dataset_configs import FLYING_CHAIRS_ALL_DATASET_CONFIG, SINTEL_FINAL_ALL_DATASET_CONFIG,\
     SINTEL_ALL_DATASET_CONFIG, FLYING_THINGS_3D_ALL_DATASET_CONFIG, FC_TRAIN_SINTEL_VAL_DATASET_CONFIG,\
-    FT3D_TRAIN_SINTEL_VAL_DATASET_CONFIG, FLYING_CHAIRS_MINI_DATASET_CONFIG, FLYING_THINGS_3D_MINI_DATASET_CONFIG, SINTEL_MINI_DATASET_CONFIG
+    FT3D_TRAIN_SINTEL_VAL_DATASET_CONFIG, FLYING_CHAIRS_MINI_DATASET_CONFIG, FLYING_THINGS_3D_MINI_DATASET_CONFIG, SINTEL_MINI_DATASET_CONFIG, FT3D_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG, FC_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG
 
 _preprocessing_ops = tf.load_op_library(
     tf.resource_loader.get_path_to_datafile("./ops/build/preprocessing.so"))
@@ -290,6 +290,10 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
         dataset_config = FLYING_THINGS_3D_MINI_DATASET_CONFIG
     elif dataset_config_str.lower() == 'sintel_mini':
         dataset_config = SINTEL_MINI_DATASET_CONFIG
+    elif dataset_config_str.lower() == 'fc_sintel_mini':
+        dataset_config = FC_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG
+    elif dataset_config_str.lower() == 'ft3d_sintel_mini':
+        dataset_config = FT3D_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG
     # Add more dataset configurations here
     else:  # flying_chairs
         dataset_config = FLYING_CHAIRS_ALL_DATASET_CONFIG
