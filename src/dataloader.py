@@ -381,6 +381,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
         dataset_config = FC_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG
     elif dataset_config_str.lower() == 'ft3d_sintel_mini':
         dataset_config = FT3D_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG
+    # Add more dataset configurations here
     else:  # flying_chairs
         dataset_config = FLYING_CHAIRS_ALL_DATASET_CONFIG
 
