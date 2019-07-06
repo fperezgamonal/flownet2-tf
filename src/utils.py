@@ -21,16 +21,15 @@ def exponentially_increasing_lr(global_step, min_lr=1e-10, max_lr=1, num_iters=1
         raise ValueError("global_step is required for cyclic_learning_rate.")
     with ops.name_scope(name, "exp_incr_lr",
                         [min_lr, global_step]) as name:
-        learning_rate = ops.convert_to_tensor(min_lr, name="learning_rate")
-        dtype = learning_rate.dtype
-        global_step = math_ops.cast(global_step, dtype)
+        learning_rate = tf.convert_to_tensor(min_lr, name="learning_rate")
+        global_step = tf.cast(global_step, learning_rate.dtype)
 
         def exp_incr_lr():
             """Helper to recompute learning rate; most helpful in eager-mode."""
-            maxlr_div_minlr = math_ops.divide(max_lr, min_lr)
-            power_iter = math_ops.divide(global_step, num_iters)
-            pow_div = math_ops.pow(maxlr_div_minlr, power_iter)
-            return math_ops.multiply(min_lr, pow_div, name=name)
+            maxlr_div_minlr = tf.divide(max_lr, min_lr)
+            power_iter = tf.divide(global_step, num_iters)
+            pow_div = tf.pow(maxlr_div_minlr, power_iter)
+            return tf.multiply(min_lr, pow_div, name=name)
 
         if not context.executing_eagerly():
             exp_incr_lr = exp_incr_lr()
@@ -42,20 +41,77 @@ def exponentially_decreasing_lr(global_step, min_lr=1e-10, max_lr=1, num_iters=1
         raise ValueError("global_step is required for cyclic_learning_rate.")
     with ops.name_scope(name, "exp_decr_lr",
                         [min_lr, global_step]) as name:
-        learning_rate = ops.convert_to_tensor(min_lr, name="learning_rate")
-        dtype = learning_rate.dtype
-        global_step = math_ops.cast(global_step, dtype)
+        learning_rate = tf.convert_to_tensor(min_lr, name="learning_rate")
+        global_step = tf.cast(global_step, learning_rate.dtype)
 
         def exp_decr_lr():
             """Helper to recompute learning rate; most helpful in eager-mode."""
-            minlr_div_maxlr = math_ops.divide(min_lr, max_lr)
-            power_iter = math_ops.divide(global_step, num_iters)
-            pow_div = math_ops.pow(minlr_div_maxlr, power_iter)
-            return math_ops.multiply(max_lr, pow_div, name=name)
+            minlr_div_maxlr = tf.divide(min_lr, max_lr)
+            power_iter = tf.divide(global_step, num_iters)
+            pow_div = tf.pow(minlr_div_maxlr, power_iter)
+            return tf.multiply(max_lr, pow_div, name=name)
 
         if not context.executing_eagerly():
             exp_decr_lr = exp_decr_lr()
         return exp_decr_lr
+
+
+# From https://github.com/philferriere/tfoptflow/blob/master/tfoptflow/lr.py
+def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.99994, mode='triangular2', op_name=None):
+    """Computes a cyclic learning rate, based on L.N. Smith's "Cyclical learning rates for training neural networks."
+    [https://arxiv.org/pdf/1506.01186.pdf]
+    This method lets the learning rate cyclically vary between the minimum (base_lr) and the maximum (max_lr)
+    achieving improved classification accuracy and often in fewer iterations.
+    This code returns the cyclic learning rate computed as:
+    ```python
+    cycle = floor( 1 + global_step / ( 2 * step_size ) )
+    x = abs( global_step / step_size – 2 * cycle + 1 )
+    clr = learning_rate + ( max_lr – learning_rate ) * max( 0 , 1 - x )
+    ```
+    Policies:
+        'triangular': Default, linearly increasing then linearly decreasing the learning rate at each cycle.
+        'triangular2': The same as the triangular policy except the learning rate difference is cut in half at the end
+        of each cycle. This means the learning rate difference drops after each cycle.
+        'exp_range': The learning rate varies between the minimum and maximum boundaries and each boundary value
+        declines by an exponential factor of: gamma^global_step.
+    Args:
+        global_step: Session global step.
+        base_lr: Initial learning rate and minimum bound of the cycle.
+        max_lr:  Maximum learning rate bound.
+        step_size: Number of iterations in half a cycle. The paper suggests 2-8 x training iterations in epoch.
+        gamma: Constant in 'exp_range' mode gamma**(global_step)
+        mode: One of {'triangular', 'triangular2', 'exp_range'}. Default 'triangular'.
+        name: String.  Optional name of the operation.  Defaults to 'CyclicLearningRate'.
+    Returns:
+        The cyclic learning rate.
+    """
+    assert (mode in ['triangular', 'triangular2', 'exp_range'])
+    lr = tf.convert_to_tensor(base_lr, name="learning_rate")
+    global_step = tf.cast(g_step_op, lr.dtype)
+    step_size = tf.cast(step_size, lr.dtype)
+
+    # computing: cycle = floor( 1 + global_step / ( 2 * step_size ) )
+    double_step = tf.multiply(2., step_size)
+    global_div_double_step = tf.divide(global_step, double_step)
+    cycle = tf.floor(tf.add(1., global_div_double_step))
+
+    # computing: x = abs( global_step / step_size – 2 * cycle + 1 )
+    double_cycle = tf.multiply(2., cycle)
+    global_div_step = tf.divide(global_step, step_size)
+    tmp = tf.subtract(global_div_step, double_cycle)
+    x = tf.abs(tf.add(1., tmp))
+
+    # computing: clr = learning_rate + ( max_lr – learning_rate ) * max( 0, 1 - x )
+    a1 = tf.maximum(0., tf.subtract(1., x))
+    a2 = tf.subtract(max_lr, lr)
+    clr = tf.multiply(a1, a2)
+
+    if mode == 'triangular2':
+        clr = tf.divide(clr, tf.cast(tf.pow(2, tf.cast(cycle - 1, tf.int32)), tf.float32))
+    if mode == 'exp_range':
+        clr = tf.multiply(tf.pow(gamma, global_step), clr)
+
+    return tf.add(clr, lr, name=op_name)
 
 
 # Thanks, https://github.com/tensorflow/tensorflow/issues/4079

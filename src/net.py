@@ -13,7 +13,7 @@ from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FI
     FINETUNE_SINTEL_S3, FINETUNE_SINTEL_S4, FINETUNE_SINTEL_S5, FINETUNE_KITTI_S1, FINETUNE_KITTI_S2,\
     FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LR_RANGE_TEST, CLR_SCHEDULE, EXP_DECREASING
 from .cyclic_learning_rate import clr
-from .utils import exponentially_increasing_lr, exponentially_decreasing_lr
+from .utils import exponentially_increasing_lr, exponentially_decreasing_lr, _lr_cyclic
 slim = tf.contrib.slim
 
 VAL_INTERVAL = 1000
@@ -739,16 +739,24 @@ class Net(object):
                 if log_verbosity > 1:
                     print("base learning rate: {}, maximum learning rate: {}, step_size: {}, max_iters: {}".format(
                         start_lr, end_lr, lr_range_niters, train_params_dict['max_steps']))
-                learning_rate = clr.cyclic_learning_rate(checkpoint_global_step_tensor, learning_rate=start_lr,
-                                                         max_lr=end_lr,  step_size=lr_range_niters, mode='triangular')
+
+                learning_rate = _lr_cyclic(g_step_op=checkpoint_global_step_tensor, base_lr=start_lr, max_lr=end_lr,
+                                           step_size=lr_range_niters, mode='triangular')
+
+                # learning_rate = clr.cyclic_learning_rate(checkpoint_global_step_tensor, learning_rate=start_lr,
+                #                                          max_lr=end_lr,  step_size=lr_range_niters, mode='triangular')
 
         elif isinstance(training_schedule['learning_rates'], str):  # we are using a non-piecewise learning
             # cyclical learning rate forked from: https://github.com/mhmoodlan/cyclic-learning-rate
             if training_schedule['learning_rates'].lower() == 'clr' and training_schedule_str == 'clr':
-                learning_rate = clr.cyclic_learning_rate(
-                    checkpoint_global_step_tensor, train_params_dict['clr_min_lr'], train_params_dict['clr_max_lr'],
-                    train_params_dict['clr_stepsize'], train_params_dict['clr_gamma'], train_params_dict['clr_mode'],
-                )
+                learning_rate = _lr_cyclic(
+                    g_step_op=checkpoint_global_step_tensor, base_lr=train_params_dict['clr_min_lr'],
+                    max_lr=train_params_dict['clr_max_lr'], step_size=train_params_dict['clr_stepsize'],
+                    gamma=train_params_dict['clr_gamma'], mode=train_params_dict['clr_mode'])
+                # learning_rate = clr.cyclic_learning_rate(
+                #     checkpoint_global_step_tensor, train_params_dict['clr_min_lr'], train_params_dict['clr_max_lr'],
+                #     train_params_dict['clr_stepsize'], train_params_dict['clr_gamma'], train_params_dict['clr_mode'],
+                # )
                 # Change max_iter to correspond to the end of the last cycle (in fact is still approximate but closer)
                 new_max_iters = 2 * train_params_dict['clr_stepsize'] * train_params_dict['clr_num_cycles']
 
@@ -785,12 +793,17 @@ class Net(object):
                     #     * Simply swap the min_lr for the max_momentum and viceversa
                     #     * By doing so, we have the expected behaviour, when momentum is maximum, lr is minimum
                     #     * The stepsize remains the same and by using 'triangular' mode, all momentum cycles have
-                    #     matching amplitude
-                    momentum = clr.cyclic_learning_rate(checkpoint_global_step_tensor,
-                                                        learning_rate=train_params_dict['max_momentum'],
-                                                        max_lr=train_params_dict['min_momentum'],
-                                                        step_size=train_params_dict['clr_stepsize'],
-                                                        mode='triangular')
+                    #     matching amplitude (desired?)
+                    # momentum = clr.cyclic_learning_rate(checkpoint_global_step_tensor,
+                    #                                     learning_rate=train_params_dict['max_momentum'],
+                    #                                     max_lr=train_params_dict['min_momentum'],
+                    #                                     step_size=train_params_dict['clr_stepsize'],
+                    #                                     mode='triangular')
+                    momentum = _lr_cyclic(g_step_op=checkpoint_global_step_tensor,
+                                          base_lr=train_params_dict['max_momentum'],
+                                          max_lr=train_params_dict['min_momentum'],
+                                          step_size=train_params_dict['clr_stepsize'],
+                                          mode='triangular')
 
                     # Track momentum value (just for debugging initially)
                     if log_verbosity > 1 and log_tensorboard:
