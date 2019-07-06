@@ -1039,8 +1039,10 @@ class Net(object):
         else:
             if lr_range_test:
                 save_summaries_secs = 10
+                save_interval_secs = 10000  # effectively deactivates saving checkpoints when doing LR range tests
             else:
                 save_summaries_secs = 180
+                save_interval_secs = 300  # Save one checkpoint once every 5 minutes
 
             if checkpoints is not None:
                 if valid_iters > 0:
@@ -1051,6 +1053,7 @@ class Net(object):
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
                         global_step=checkpoint_global_step_tensor,
                         save_summaries_secs=save_summaries_secs,
+                        save_interval_secs=save_interval_secs,
                         number_of_steps=training_schedule['max_iters'],
                         train_step_fn=train_step_fn,
                         saver=saver,
@@ -1066,6 +1069,7 @@ class Net(object):
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
                         global_step=checkpoint_global_step_tensor,
                         save_summaries_secs=save_summaries_secs,
+                        save_interval_secs=save_interval_secs,
                         number_of_steps=training_schedule['max_iters'],
                         saver=saver,
                         init_fn=init_fn,
@@ -1079,6 +1083,7 @@ class Net(object):
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
                         global_step=checkpoint_global_step_tensor,
                         save_summaries_secs=save_summaries_secs,
+                        save_interval_secs=save_interval_secs,
                         number_of_steps=training_schedule['max_iters'],
                         train_step_fn=train_step_fn,
                         saver=saver,
@@ -1091,6 +1096,7 @@ class Net(object):
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
                         global_step=checkpoint_global_step_tensor,
                         save_summaries_secs=save_summaries_secs,
+                        save_interval_secs=save_interval_secs,
                         number_of_steps=training_schedule['max_iters'],
                         # train_step_fn=train_step_fn,
                         saver=saver,
