@@ -806,7 +806,7 @@ class Net(object):
                                           mode='triangular')
 
                 else:  # Use fixed momentum
-                    if train_params_dict['momentum'] is not None:
+                    if train_params_dict['momentum'] is None:
                         if train_params_dict['max_momentum'] is not None and \
                                 train_params_dict['min_momentum'] is not None and lr_range_test:
                             # Use cyclical momentum (only decreasing half-cycle while LR increases)
@@ -816,10 +816,10 @@ class Net(object):
                                                   step_size=lr_range_niters,
                                                   mode='triangular')
                         else:
-                            momentum = train_params_dict['momentum']
+                            momentum = 0.9
                     else:
-                        momentum = 0.9  # some reasonable default
-                        
+                        momentum = train_params_dict['momentum']
+
                 # Track momentum value (just for debugging initially)
                 if log_verbosity > 1 and log_tensorboard:
                     print("Logging cyclic momentum to tensorboard...")
