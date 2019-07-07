@@ -812,7 +812,16 @@ class Net(object):
 
                 else:  # Use fixed momentum
                     if train_params_dict['momentum'] is not None:
-                        momentum = train_params_dict['momentum']
+                        if train_params_dict['max_momentum'] is not None and \
+                                train_params_dict['min_momentum'] is not None and lr_range_test:
+                            # Use cyclical momentum (only decreasing half-cycle while LR increases)
+                            momentum = _lr_cyclic(g_step_op=checkpoint_global_step_tensor,
+                                                  base_lr=train_params_dict['max_momentum'],
+                                                  max_lr=train_params_dict['min_momentum'],
+                                                  step_size=lr_range_niters,
+                                                  mode='triangular')
+                        else:
+                            momentum = train_params_dict['momentum']
                     else:
                         momentum = 0.9  # some reasonable default
 
