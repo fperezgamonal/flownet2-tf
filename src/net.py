@@ -805,11 +805,6 @@ class Net(object):
                                           step_size=train_params_dict['clr_stepsize'],
                                           mode='triangular')
 
-                    # Track momentum value (just for debugging initially)
-                    if log_verbosity > 1 and log_tensorboard:
-                        print("Logging cyclic momentum to tensorboard...")
-                        tf.summary.scalar('cyclic_momentum', momentum)
-
                 else:  # Use fixed momentum
                     if train_params_dict['momentum'] is not None:
                         if train_params_dict['max_momentum'] is not None and \
@@ -824,6 +819,11 @@ class Net(object):
                             momentum = train_params_dict['momentum']
                     else:
                         momentum = 0.9  # some reasonable default
+                        
+                # Track momentum value (just for debugging initially)
+                if log_verbosity > 1 and log_tensorboard:
+                    print("Logging cyclic momentum to tensorboard...")
+                    tf.summary.scalar('cyclic_momentum', momentum)
 
                 optimizer = tf.train.MomentumOptimizer(learning_rate, momentum, use_nesterov=True)
             # AdamW (w. proper weight decay not L2 regularisation), as suggested in https://arxiv.org/abs/1711.05101
