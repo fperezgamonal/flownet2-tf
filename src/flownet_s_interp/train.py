@@ -24,6 +24,8 @@ def main():
             'lr_range_niters': FLAGS.lr_range_niters,
             'optimizer': FLAGS.optimizer,
             'momentum': FLAGS.momentum,
+            'min_momentum': FLAGS.min_momentum,
+            'max_momentum': FLAGS.max_momentum,
             'weight_decay': FLAGS.weight_decay,
         }
     # Initialise CLR parameters (define dictionary). Note that if max_steps=stepsize we have a linear range test!
