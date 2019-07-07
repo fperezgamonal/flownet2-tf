@@ -86,7 +86,7 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
         The cyclic learning rate.
     """
     assert (mode in ['triangular', 'triangular2', 'exp_range'])
-    lr = tf.convert_to_tensor(base_lr, name="learning_rate")
+    lr = tf.convert_to_tensor(base_lr)
     global_step = tf.cast(g_step_op, lr.dtype)
     step_size = tf.cast(step_size, lr.dtype)
 

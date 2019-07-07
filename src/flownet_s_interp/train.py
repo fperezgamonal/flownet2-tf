@@ -231,21 +231,6 @@ if __name__ == '__main__':
         help='Number of iterations for the linear learning rate range test (def.=10000)',
         default=10000,
     )
-    # Exponential test (old params, only start_lr + increasing rate)
-    parser.add_argument(
-        '--decay_rate',
-        type=float,
-        required=False,
-        help='decay_rate of the exponentially increasing learning rate to test range',
-        default=1.25,
-    )
-    parser.add_argument(
-        '--decay_steps',
-        type=float,
-        required=False,
-        help='Normalising constant in the exponent of the e^(x) that controls the slope',
-        default=110,
-    )
     # ==== Cyclic Learning Rate (CLR) parameters ====
     parser.add_argument(
         '--clr_min_lr',
