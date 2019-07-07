@@ -19,8 +19,6 @@ def main():
             'lr_range_mode': FLAGS.lr_range_mode,
             'start_lr': FLAGS.start_lr,
             'end_lr': FLAGS.end_lr,
-            'decay_rate': FLAGS.decay_rate,
-            'decay_steps': FLAGS.decay_steps,
             'lr_range_niters': FLAGS.lr_range_niters,
             'optimizer': FLAGS.optimizer,
             'momentum': FLAGS.momentum,
