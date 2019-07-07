@@ -24,7 +24,7 @@ class FlowNetSD(Net):
                                 # We will do our own padding to match the original Caffe code
                                 padding='VALID'):
 
-                weights_regularizer = slim.l2_regularizer(training_schedule['weight_decay'])
+                weights_regularizer = slim.l2_regularizer(training_schedule['l2_regularization'])
                 with slim.arg_scope([slim.conv2d], weights_regularizer=weights_regularizer):
                     conv0 = slim.conv2d(pad(concat_inputs), 64, 3, scope='conv0')
                     conv1 = slim.conv2d(pad(conv0), 64, 3, stride=2, scope='conv1')

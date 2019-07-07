@@ -784,8 +784,8 @@ class Net(object):
             # Momentum (SGD + Momentum)
             elif train_params_dict['optimizer'].lower() == 'momentum':
                 # Overides default in config
-                if train_params_dict['l2_regularization'] is not None:
-                    training_schedule['l2_regularization'] = train_params_dict['l2_regularization']
+                if train_params_dict['weight_decay'] is not None:
+                    training_schedule['l2_regularization'] = train_params_dict['weight_decay']
                 # Use cyclic momentum if using CLR (accelerates convergence)
                 if training_schedule['learning_rates'].lower() == 'clr' and training_schedule_str == 'clr' and \
                    train_params_dict['min_momentum'] is not None and train_params_dict['max_momentum'] is not None:
@@ -833,8 +833,8 @@ class Net(object):
                 optimizer = tf.train.AdamOptimizer(learning_rate, training_schedule['momentum'],
                                                    training_schedule['momentum2'])
         else:  # default to Adam
-            if train_params_dict['l2_regularization'] is not None:
-                training_schedule['l2_regularization'] = train_params_dict['l2_regularization']
+            if train_params_dict['weight_decay'] is not None:
+                training_schedule['l2_regularization'] = train_params_dict['weight_decay']
             optimizer = tf.train.AdamOptimizer(learning_rate, training_schedule['momentum'],
                                                training_schedule['momentum2'])
 
