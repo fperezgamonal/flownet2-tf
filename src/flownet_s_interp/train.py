@@ -65,7 +65,8 @@ def main():
             common_queue_min=FLAGS.common_queue_min,
             num_threads=FLAGS.num_threads,
             capacity_in_batches_train=FLAGS.capacity_in_batches_train,
-            capacity_in_batches_val=FLAGS.capacity_in_batches_val)
+            capacity_in_batches_val=FLAGS.capacity_in_batches_val,
+            batch_size=FLAGS.batch_size,)
         # Validation
         if FLAGS.val_iters > 0:
             val_input_a, val_matches_a, val_sparse_flow, val_flow = load_batch(
@@ -75,7 +76,8 @@ def main():
                 common_queue_min=FLAGS.common_queue_min,
                 num_threads=FLAGS.num_threads,
                 capacity_in_batches_train=FLAGS.capacity_in_batches_train,
-                capacity_in_batches_val=FLAGS.capacity_in_batches_val)
+                capacity_in_batches_val=FLAGS.capacity_in_batches_val,
+                batch_size=FLAGS.batch_size,)
 
         else:
             val_input_a = None
@@ -114,7 +116,8 @@ def main():
             common_queue_min=FLAGS.common_queue_min,
             num_threads=FLAGS.num_threads,
             capacity_in_batches_train=FLAGS.capacity_in_batches_train,
-            capacity_in_batches_val=FLAGS.capacity_in_batches_val)
+            capacity_in_batches_val=FLAGS.capacity_in_batches_val,
+            batch_size=FLAGS.batch_size,)
         # Validation
         if FLAGS.val_iters > 0:
             val_input_a, val_input_b,  val_flow = load_batch(
@@ -123,7 +126,8 @@ def main():
                 common_queue_min=FLAGS.common_queue_min,
                 num_threads=FLAGS.num_threads,
                 capacity_in_batches_train=FLAGS.capacity_in_batches_train,
-                capacity_in_batches_val=FLAGS.capacity_in_batches_val)
+                capacity_in_batches_val=FLAGS.capacity_in_batches_val,
+                batch_size=FLAGS.batch_size,)
         else:
             val_input_a = None
             val_input_b = None
@@ -360,7 +364,15 @@ if __name__ == '__main__':
              'different dataset than the one where the network was trained)',
         default=False,
     )
-
+    # ==== Batch size ====
+    # Overrides training_schedules.py default
+    parser.add_argument(
+        '--batch_size',
+        type=int,
+        required=False,
+        help='integer that specifies the batch size',
+        default=4,
+    )
     # ==== Capacity of queues ====
     parser.add_argument(
         '--common_queue_capacity',
