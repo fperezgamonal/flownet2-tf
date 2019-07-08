@@ -56,12 +56,16 @@ def exponentially_decreasing_lr(global_step, min_lr=1e-10, max_lr=1, num_iters=1
         return exp_decr_lr
 
 
+# TODO: separate cyclical learning rate and cyclical momentum into two separate functions
 # From https://github.com/philferriere/tfoptflow/blob/master/tfoptflow/lr.py
-def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.99994, mode='triangular2', op_name=None):
+def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.99994, mode='triangular2', one_cycle=False,
+               annealing_factor=1e-3, op_name=None):
     """Computes a cyclic learning rate, based on L.N. Smith's "Cyclical learning rates for training neural networks."
     [https://arxiv.org/pdf/1506.01186.pdf]
     This method lets the learning rate cyclically vary between the minimum (base_lr) and the maximum (max_lr)
     achieving improved classification accuracy and often in fewer iterations.
+    08/07/19: added one_cycle policy based on the Keras implementation from:
+     https://www.kaggle.com/robotdreams/one-cycle-policy-with-keras
     This code returns the cyclic learning rate computed as:
     ```python
     cycle = floor( 1 + global_step / ( 2 * step_size ) )
@@ -75,13 +79,17 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
         'exp_range': The learning rate varies between the minimum and maximum boundaries and each boundary value
         declines by an exponential factor of: gamma^global_step.
     Args:
-        global_step: Session global step.
+        g_step_op: Session global step.
         base_lr: Initial learning rate and minimum bound of the cycle.
         max_lr:  Maximum learning rate bound.
         step_size: Number of iterations in half a cycle. The paper suggests 2-8 x training iterations in epoch.
         gamma: Constant in 'exp_range' mode gamma**(global_step)
         mode: One of {'triangular', 'triangular2', 'exp_range'}. Default 'triangular'.
-        name: String.  Optional name of the operation.  Defaults to 'CyclicLearningRate'.
+        one_cycle: if true, follow the one cycle policy, annealing the LR at the end
+        (see https://arxiv.org/abs/1803.09820)
+        annealing_factor: if one_cycle, the annealing factor (e.g.: to what order of magnitude we reduce the base_lr in
+        the annealing part at the end)
+        op_name: String.  Optional name of the operation.
     Returns:
         The cyclic learning rate.
     """
@@ -103,15 +111,83 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
 
     # computing: clr = learning_rate + ( max_lr – learning_rate ) * max( 0, 1 - x )
     a1 = tf.maximum(0., tf.subtract(1., x))
-    a2 = tf.subtract(max_lr, lr)
+    if one_cycle and cycle == 2:
+        a2 = tf.subtract(lr, lr * annealing_factor)
+    else:  # for anything else than one cycle with LR (not momentum, exitted above)
+        a2 = tf.subtract(max_lr, lr)
     clr = tf.multiply(a1, a2)
 
-    if mode == 'triangular2':
+    if mode == 'triangular2' and not one_cycle:
         clr = tf.divide(clr, tf.cast(tf.pow(2, tf.cast(cycle - 1, tf.int32)), tf.float32))
-    if mode == 'exp_range':
+    if mode == 'exp_range' and not one_cycle:
         clr = tf.multiply(tf.pow(gamma, global_step), clr)
 
-    return tf.add(clr, lr, name=op_name)
+    if one_cycle and cycle == 2:
+        return tf.subtract(lr, clr, name=op_name)
+    else:
+        return tf.add(lr, clr, name=op_name)
+
+
+def _mom_cyclic(g_step_op, base_mom=None, max_mom=None, step_size=None, gamma=0.99994, mode='triangular',
+                one_cycle=False, op_name=None):
+    """Computes a cyclic momentum as in https://arxiv.org/abs/1803.09820. Notice we leave triangular2 and exp_range ena-
+    bled but we do not know if this types of policies help with a cyclical momentum with CLR (not used in 1cycle)
+    This code returns the cyclic momentum computed as:
+    ```python
+    cycle = floor( 1 + global_step / ( 2 * step_size ) )
+    x = abs( global_step / step_size – 2 * cycle + 1 )
+    cmom = max_mom - ( max_mom – base_mom ) * max( 0 , 1 - x )
+    ```
+    Policies:
+        'triangular': Default, linearly decreasing the momentum then linearly increasing it at each cycle (reverse beha-
+        viour to the CLR).
+        'triangular2': The same as the triangular policy except the momentum difference is cut in half at the end
+        of each cycle. This means the momentum difference drops after each cycle.
+        'exp_range': The momentum varies between the minimum and maximum boundaries and each boundary value
+        declines by an exponential factor of: gamma^global_step.
+    Args:
+        g_step_op: Session global step.
+        base_mom: Initial momentum and minimum bound of the cycle.
+        max_mom:  Maximum momentum bound.
+        step_size: Number of iterations in half a cycle. The paper suggests 2-8 x training iterations in epoch (CLR).
+        gamma: Constant in 'exp_range' mode gamma**(global_step)
+        mode: One of {'triangular', 'triangular2', 'exp_range'}. Default 'triangular'.
+        one_cycle: if true, follow the one cycle policy, keeping the momentum constant at the maximum bound
+        op_name: String.  Optional name of the operation.
+    Returns:
+        The cyclic momentum.
+    """
+    assert (mode in ['triangular', 'triangular2', 'exp_range'])
+    mom = tf.convert_to_tensor(base_mom)
+    global_step = tf.cast(g_step_op, mom.dtype)
+    step_size = tf.cast(step_size, mom.dtype)
+
+    # computing: cycle = floor( 1 + global_step / ( 2 * step_size ) )
+    double_step = tf.multiply(2., step_size)
+    global_div_double_step = tf.divide(global_step, double_step)
+    cycle = tf.floor(tf.add(1., global_div_double_step))
+
+    if one_cycle and cycle == 2:
+        return tf.identity(max_mom, name=op_name)
+    else:
+        # computing: x = abs( global_step / step_size – 2 * cycle + 1 )
+        double_cycle = tf.multiply(2., cycle)
+        global_div_step = tf.divide(global_step, step_size)
+        tmp = tf.subtract(global_div_step, double_cycle)
+        x = tf.abs(tf.add(1., tmp))
+
+        # computing: cmom = max_mom - ( max_mom – mom ) * max( 0, 1 - x )
+        a1 = tf.maximum(0., tf.subtract(1., x))
+        a2 = tf.subtract(max_mom, mom)
+        cmom = tf.multiply(a1, a2)
+
+        # Not tested (Leslie does not mention whether CM is used with CLR w. more than 1 cycle or how it is decayed
+        if mode == 'triangular2' and not one_cycle:
+            cmom = tf.divide(cmom, tf.cast(tf.pow(2, tf.cast(cycle - 1, tf.int32)), tf.float32))
+        if mode == 'exp_range' and not one_cycle:
+            cmom = tf.multiply(tf.pow(gamma, global_step), cmom)
+
+        return tf.subtract(max_mom, cmom, name=op_name)
 
 
 # Thanks, https://github.com/tensorflow/tensorflow/issues/4079
