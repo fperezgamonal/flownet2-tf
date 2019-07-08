@@ -56,7 +56,6 @@ def exponentially_decreasing_lr(global_step, min_lr=1e-10, max_lr=1, num_iters=1
         return exp_decr_lr
 
 
-# TODO: separate cyclical learning rate and cyclical momentum into two separate functions
 # From https://github.com/philferriere/tfoptflow/blob/master/tfoptflow/lr.py
 def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.99994, mode='triangular2', one_cycle=False,
                annealing_factor=1e-3, op_name=None):

@@ -18,6 +18,15 @@ EXP_DECREASING = {
     'momentum': 0.9,
     'momentum2': 0.999,
 }
+
+ONECYCLE_SCHEDULE = {
+    'learning_rates': 'one_cycle',
+    'l2_regularization': 0.0,  # disabled for now as CLR already introduces decay (exponentially or by a fix 0.5 factor)
+    'max_iters': 30000,  # left as default
+    'momentum': 0.9,
+    'momentum2': 0.999,
+}
+
 CLR_SCHEDULE = {
     'learning_rates': 'clr',
     'l2_regularization': 0.0,  # disabled for now as CLR already introduces decay (exponentially or by a fix 0.5 factor)
