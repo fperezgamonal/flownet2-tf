@@ -307,23 +307,6 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             # image_a, matches_a, sparse_flow, flow = map(tf.to_float, [image_a, matches_a, sparse_flow, flow])
             # image_a, matches_a = map(tf.to_float, [image_a, matches_a])
 
-            print("type(image_a): {}".format(type(image_a)))
-            print("Statistics of current batch (to ensure we are shuffling)")
-            print("==== Image A ====")
-            print("Maximum: {0}, minimum: {1}, mean: {2}".format(np.max(image_a), np.min(image_a),
-                                                                 np.mean(image_a)))
-            print("==== Matches A ====")
-            print("Maximum: {0} (==1), minimum: {1} (==0), mean: {2}".format(np.max(matches_a),
-                                                                             np.min(matches_a),
-                                                                             np.mean(matches_a)))
-            print("==== Sparse flow (plenty of zeros) ====")
-            print("Maximum: {0}, minimum: {1}, mean: {2}".format(np.max(sparse_flow), np.min(sparse_flow),
-                                                                 np.mean(sparse_flow)))
-
-            print("==== (GT) flow ====")
-            print("Maximum: {0}, minimum: {1}, mean: {2}".format(np.max(flow), np.min(flow),
-                                                                 np.mean(flow)))
-
             image_a, matches_a = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a, matches_a])  # flow is float32
         else:
             matches_a = None
@@ -360,6 +343,40 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             matches_as = None
             sparse_flows = None
             image_as, image_bs, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b, flow])
+
+        print("Statistics of current batch (to ensure we are shuffling)")
+        sess = tf.Session()
+        image_as_mean = tf.reduce_mean(image_as)
+        image_as_min = tf.reduce_min(image_as)
+        image_as_max = tf.reduce_max(image_as)
+
+        matches_as_mean = tf.reduce_mean(matches_as)
+        matches_as_min = tf.reduce_min(matches_as)
+        matches_as_max = tf.reduce_max(matches_as)
+
+        sparseflows_as_mean = tf.reduce_mean(sparse_flows)
+        sparseflows_as_min = tf.reduce_min(sparse_flows)
+        sparseflows_as_max = tf.reduce_max(sparse_flows)
+
+        flows_as_mean = tf.reduce_mean(flows)
+        flows_as_min = tf.reduce_min(flows)
+        flows_as_max = tf.reduce_max(flows)
+
+        print("==== Image A ====")
+        print("Maximum: {0}, minimum: {1}, mean: {2}".format(sess.run(image_as_max), sess.run(image_as_min),
+                                                             sess.run(image_as_mean)))
+        print("==== Matches A ====")
+        print("Maximum: {0} (==1), minimum: {1} (==0), mean: {2}".format(sess.run(matches_as_max),
+                                                                         sess.run(matches_as_min),
+                                                                         sess.run(matches_as_mean)))
+        print("==== Sparse flow (plenty of zeros) ====")
+        print("Maximum: {0}, minimum: {1}, mean: {2}".format(sess.run(sparseflows_as_max), sess.run(sparseflows_as_min),
+                                                             sess.run(sparseflows_as_mean)))
+
+        print("==== (GT) flow ====")
+        print("Maximum: {0}, minimum: {1}, mean: {2}".format(sess.run(flows_as_max), sess.run(flows_as_min),
+                                                             sess.run(flows_as_mean)))
+
 
         #
         # Perform data augmentation on GPU  fperezgamonal: typo, it does not work on the GPU, only on the CPU!
