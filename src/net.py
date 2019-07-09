@@ -157,6 +157,7 @@ class Net(object):
             training_schedule = LR_RANGE_TEST
         else:  # long schedule as default
             training_schedule = LONG_SCHEDULE  # Normally applied from scratch on FlyingChairs
+            training_schedule = LONG_SCHEDULE  # Normally applied from scratch on FlyingChairs
 
         return training_schedule
 
@@ -658,6 +659,7 @@ class Net(object):
         if log_verbosity <= 1:  # print loss and tfinfo to stdout
             tf.logging.set_verbosity(tf.logging.INFO)
         else:  # debug info (more verbose)
+            print("Verbosity set to {}".format(log_verbosity))
             tf.logging.set_verbosity(tf.logging.DEBUG)
 
         training_schedule = self.get_training_schedule(training_schedule_str)
@@ -756,7 +758,6 @@ class Net(object):
                                            step_size=lr_range_niters, mode='triangular')
 
         elif isinstance(training_schedule['learning_rates'], str) and not lr_range_test:  # non-piecewise learning
-            # cyclical learning rate forked from: https://github.com/mhmoodlan/cyclic-learning-rate
             if training_schedule['learning_rates'].lower() == 'clr' and training_schedule_str == 'clr':
                 if log_verbosity > 1:
                     print("Learning rate policy is CLR (Cyclical Learning Rate)")
