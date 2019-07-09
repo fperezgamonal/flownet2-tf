@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
+import numpy as np
 import copy
 slim = tf.contrib.slim
 from math import exp
@@ -341,6 +342,22 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             matches_as = None
             sparse_flows = None
             image_as, image_bs, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b, flow])
+
+        print("Statistics of current batch (to ensure we are shuffling)")
+        print("==== Image A ====")
+        print("Maximum: {0}, minimum: {1}, mean: {2}".format(np.max(image_as, axis=0), np.min(image_as, axis=0),
+                                                             np.mean(image_as, axis=0)))
+        print("==== Matches A ====")
+        print("Maximum: {0} (==1), minimum: {1} (==0), mean: {2}".format(np.max(image_as, axis=0),
+                                                                         np.min(image_as, axis=0),
+                                                                         np.mean(image_as, axis=0)))
+        print("==== Sparse flow (plenty of zeros) ====")
+        print("Maximum: {0}, minimum: {1}, mean: {2}".format(np.max(sparse_flows, axis=0), np.min(sparse_flows, axis=0),
+                                                             np.mean(sparse_flows, axis=0)))
+
+        print("==== (GT) flow ====")
+        print("Maximum: {0}, minimum: {1}, mean: {2}".format(np.max(flows, axis=0), np.min(flows, axis=0),
+                                                             np.mean(flows, axis=0)))
 
         #
         # Perform data augmentation on GPU  fperezgamonal: typo, it does not work on the GPU, only on the CPU!

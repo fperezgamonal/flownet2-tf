@@ -364,6 +364,14 @@ if __name__ == '__main__':
              'different dataset than the one where the network was trained)',
         default=False,
     )
+    parser.add_argument(
+        '--summarise_grads',
+        type=str2bool,
+        nargs='?',
+        required=False,
+        help='Whether to add weights distribution and histograms to Tensorboard or not (useful to debug))',
+        default=False,
+    )
     # ==== Batch size ====
     # Overrides training_schedules.py default
     parser.add_argument(

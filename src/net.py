@@ -625,7 +625,8 @@ class Net(object):
     def train(self, log_dir, training_schedule_str, input_a, gt_flow, input_b=None, matches_a=None, sparse_flow=None,
               valid_iters=VAL_INTERVAL, val_input_a=None, val_gt_flow=None, val_input_b=None, val_matches_a=None,
               val_sparse_flow=None, checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True,
-              lr_range_test=False, train_params_dict=None, log_smoothed_loss=True, reset_global_step=False):
+              lr_range_test=False, train_params_dict=None, log_smoothed_loss=True, reset_global_step=False,
+              summarise_grads=False):
 
         # Add validation batches as input? Used only once every val_interval steps...?
         """
@@ -651,6 +652,7 @@ class Net(object):
         :param train_params_dict:
         :param log_smoothed_loss:
         :param reset_global_step:
+        :param summarise_grads:
 
         :return:
         """
@@ -693,9 +695,15 @@ class Net(object):
                 checkpoint_path = checkpoints
                 if not reset_global_step:
                     step_number = int(checkpoint_path.split('-')[-1])
+                    if log_verbosity > 1:
+                        print("Defining global step by parsing model filename...")
+                        print("Found step number: {}".format(step_number))
+
                     checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
                                                                 dtype='int64')
                 else:
+                    if log_verbosity > 1:
+                        print("Defining global step as 0 (reset_global_step = True)")
                     checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype='int64')
             else:
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
@@ -958,7 +966,7 @@ class Net(object):
         training_op = slim.learning.create_train_op(
             train_loss,
             optimizer,
-            summarize_gradients=False,
+            summarize_gradients=summarise_grads,
             global_step=checkpoint_global_step_tensor,
         )
 
@@ -1016,6 +1024,11 @@ class Net(object):
                                                             dtype='int64')
                 # TODO: adapt resuming from saver to stacked architectures
                 saver = None
+            # TODO: double-check but it seems that if we remove the last checkpoint and keep and older point this fails
+            # It can be patched by renaming the desired checkpoint to the name of the latest one
+            # This happens because get checkpoint state searches for the latest filename in the folder so
+            # ckpt.checkpoint_path keeps the old name, not updating to the "new" latest or the one specified by user
+            # This behaviour is not desired when fine-tuning from a checkpoint which is not the latest (very frequent!)
             elif isinstance(checkpoints, str):
                 checkpoint_path = checkpoints
 
