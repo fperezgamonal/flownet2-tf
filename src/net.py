@@ -664,7 +664,7 @@ class Net(object):
         if log_tensorboard:
             tf.summary.image("train/image_a", input_a, max_outputs=1)
             if log_verbosity > 1:
-                print("type(input_a): {}".format(type(input_a)))
+                tf.summary.scalar('debug/image_a_mean', tf.reduce_mean(input_a))
             if valid_iters > 0:
                 tf.summary.image("valid/image_a", val_input_a, max_outputs=1)
 
