@@ -1094,7 +1094,7 @@ class Net(object):
                     {'should_trace': tf.constant(1), 'should_log': tf.constant(1), 'logdir': debug_logdir, }
                 )
         else:
-            if lr_range_test:
+            if lr_range_test or log_verbosity > 2:
                 save_summaries_secs = 10
                 save_interval_secs = 10000  # effectively deactivates saving checkpoints when doing LR range tests
             else:
