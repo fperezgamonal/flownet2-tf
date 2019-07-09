@@ -46,8 +46,6 @@ class FlowNetS_interp(Net):
                 with slim.arg_scope([slim.conv2d], weights_regularizer=weights_regularizer):
                     with slim.arg_scope([slim.conv2d], stride=2):
                         conv_1 = slim.conv2d(pad(concat_inputs, 3), 64, 7, scope='conv1')
-
-                        tf.summary.image("debug/conv_1_weights", conv_1, max_outputs=1)
                         conv_2 = slim.conv2d(pad(conv_1, 2), 128, 5, scope='conv2')
                         conv_3 = slim.conv2d(pad(conv_2, 2), 256, 5, scope='conv3')
 
