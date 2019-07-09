@@ -686,7 +686,7 @@ class Net(object):
                 tf.summary.image("train/image_b", input_b, max_outputs=1)
                 if valid_iters > 0:
                     tf.summary.image("valid/image_b", val_input_b, max_outputs=1)
-                
+
         # Initialise global step by parsing checkpoint filename to define learning rate (restoring is done afterwards)
         if checkpoints is not None:
             # Create the initial assignment op
