@@ -47,6 +47,7 @@ def main():
             'start_lr': FLAGS.start_lr,
             'end_lr': FLAGS.end_lr,
             'optimizer': FLAGS.optimizer,
+            'momentum': FLAGS.momentum,
             'weight_decay': FLAGS.weight_decay,
         }
     else:
