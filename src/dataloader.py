@@ -343,6 +343,8 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             sparse_flows = None
             image_as, image_bs, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b, flow])
 
+        print("type(image_as): {}".format(type(image_as)))
+
         print("Statistics of current batch (to ensure we are shuffling)")
         print("==== Image A ====")
         print("Maximum: {0}, minimum: {1}, mean: {2}".format(np.max(image_as), np.min(image_as),
