@@ -362,20 +362,24 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
         flows_as_min = tf.reduce_min(flows)
         flows_as_max = tf.reduce_max(flows)
 
+        sess.run([image_as_min, image_as_max, image_as_mean, matches_as_min, matches_as_max, matches_as_mean,
+                  sparseflows_as_mean, sparseflows_as_min, sparseflows_as_max, flows_as_mean, flows_as_min,
+                  flows_as_max])
+
         print("==== Image A ====")
-        print("Maximum: {0}, minimum: {1}, mean: {2}".format(sess.run(image_as_max), sess.run(image_as_min),
-                                                             sess.run(image_as_mean)))
+        print("Maximum: {0}, minimum: {1}, mean: {2}".format(image_as_max, image_as_min,
+                                                             image_as_mean))
         print("==== Matches A ====")
-        print("Maximum: {0} (==1), minimum: {1} (==0), mean: {2}".format(sess.run(matches_as_max),
-                                                                         sess.run(matches_as_min),
-                                                                         sess.run(matches_as_mean)))
+        print("Maximum: {0} (==1), minimum: {1} (==0), mean: {2}".format(matches_as_max,
+                                                                         matches_as_min,
+                                                                         matches_as_mean))
         print("==== Sparse flow (plenty of zeros) ====")
-        print("Maximum: {0}, minimum: {1}, mean: {2}".format(sess.run(sparseflows_as_max), sess.run(sparseflows_as_min),
-                                                             sess.run(sparseflows_as_mean)))
+        print("Maximum: {0}, minimum: {1}, mean: {2}".format(sparseflows_as_max, sparseflows_as_min,
+                                                             sparseflows_as_mean))
 
         print("==== (GT) flow ====")
-        print("Maximum: {0}, minimum: {1}, mean: {2}".format(sess.run(flows_as_max), sess.run(flows_as_min),
-                                                             sess.run(flows_as_mean)))
+        print("Maximum: {0}, minimum: {1}, mean: {2}".format(flows_as_max, flows_as_min,
+                                                             flows_as_mean))
 
 
         #
