@@ -345,19 +345,19 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
 
         print("Statistics of current batch (to ensure we are shuffling)")
         print("==== Image A ====")
-        print("Maximum: {0}, minimum: {1}, mean: {2}".format(np.max(image_as, axis=0), np.min(image_as, axis=0),
-                                                             np.mean(image_as, axis=0)))
+        print("Maximum: {0}, minimum: {1}, mean: {2}".format(np.max(image_as), np.min(image_as),
+                                                             np.mean(image_as)))
         print("==== Matches A ====")
-        print("Maximum: {0} (==1), minimum: {1} (==0), mean: {2}".format(np.max(image_as, axis=0),
-                                                                         np.min(image_as, axis=0),
-                                                                         np.mean(image_as, axis=0)))
+        print("Maximum: {0} (==1), minimum: {1} (==0), mean: {2}".format(np.max(image_as),
+                                                                         np.min(image_as),
+                                                                         np.mean(image_as)))
         print("==== Sparse flow (plenty of zeros) ====")
-        print("Maximum: {0}, minimum: {1}, mean: {2}".format(np.max(sparse_flows, axis=0), np.min(sparse_flows, axis=0),
-                                                             np.mean(sparse_flows, axis=0)))
+        print("Maximum: {0}, minimum: {1}, mean: {2}".format(np.max(sparse_flows), np.min(sparse_flows),
+                                                             np.mean(sparse_flows)))
 
         print("==== (GT) flow ====")
-        print("Maximum: {0}, minimum: {1}, mean: {2}".format(np.max(flows, axis=0), np.min(flows, axis=0),
-                                                             np.mean(flows, axis=0)))
+        print("Maximum: {0}, minimum: {1}, mean: {2}".format(np.max(flows), np.min(flows),
+                                                             np.mean(flows)))
 
         #
         # Perform data augmentation on GPU  fperezgamonal: typo, it does not work on the GPU, only on the CPU!
