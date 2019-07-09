@@ -628,7 +628,6 @@ class Net(object):
               lr_range_test=False, train_params_dict=None, log_smoothed_loss=True, reset_global_step=False,
               summarise_grads=False):
 
-        # Add validation batches as input? Used only once every val_interval steps...?
         """
         runs training on the network from which this method is called.
         :param log_dir:
@@ -664,6 +663,8 @@ class Net(object):
         training_schedule = self.get_training_schedule(training_schedule_str)
         if log_tensorboard:
             tf.summary.image("train/image_a", input_a, max_outputs=1)
+            if log_verbosity > 1:
+                print("type(input_a): {}".format(type(input_a)))
             if valid_iters > 0:
                 tf.summary.image("valid/image_a", val_input_a, max_outputs=1)
 
