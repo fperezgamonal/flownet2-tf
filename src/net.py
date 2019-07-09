@@ -663,10 +663,20 @@ class Net(object):
         training_schedule = self.get_training_schedule(training_schedule_str)
         if log_tensorboard:
             tf.summary.image("train/image_a", input_a, max_outputs=1)
-            if log_verbosity > 1:
+            # Temporal to check we properly shuffle training and validation batches
+            if log_verbosity > 2:
                 tf.summary.scalar('debug/image_a_mean', tf.reduce_mean(input_a))
+                tf.summary.scalar('debug/matches_a_mean', tf.reduce_mean(matches_a))
+                tf.summary.scalar('debug/sparse_a_mean', tf.reduce_mean(sparse_flow))
+                tf.summary.scalar('debug/gtflow_a_mean', tf.reduce_mean(gt_flow))
             if valid_iters > 0:
                 tf.summary.image("valid/image_a", val_input_a, max_outputs=1)
+
+                if log_verbosity > 2:
+                    tf.summary.scalar('debug/val_image_a_mean', tf.reduce_mean(val_input_a))
+                    tf.summary.scalar('debug/val_matches_a_mean', tf.reduce_mean(val_matches_a))
+                    tf.summary.scalar('debug/val_sparse_a_mean', tf.reduce_mean(val_sparse_flow))
+                    tf.summary.scalar('debug/val_gtflow_a_mean', tf.reduce_mean(val_gt_flow))
 
             if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
                 tf.summary.image("train/matches_a", matches_a, max_outputs=1)
@@ -676,7 +686,7 @@ class Net(object):
                 tf.summary.image("train/image_b", input_b, max_outputs=1)
                 if valid_iters > 0:
                     tf.summary.image("valid/image_b", val_input_b, max_outputs=1)
-
+                
         # Initialise global step by parsing checkpoint filename to define learning rate (restoring is done afterwards)
         if checkpoints is not None:
             # Create the initial assignment op
