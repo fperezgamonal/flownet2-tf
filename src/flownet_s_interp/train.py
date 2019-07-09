@@ -106,6 +106,7 @@ def main():
             train_params_dict=train_params_dict,
             log_smoothed_loss=FLAGS.log_smoothed_loss,
             reset_global_step=FLAGS.reset_global_step,
+            summarise_grads=FLAGS.summarise_grads,
         )
     else:
         print("Input_type: 'image_pairs'")
@@ -152,6 +153,7 @@ def main():
             train_params_dict=train_params_dict,
             log_smoothed_loss=FLAGS.log_smoothed_loss,
             reset_global_step=FLAGS.reset_global_step,
+            summarise_grads=FLAGS.summarise_grads,
         )
 
 
