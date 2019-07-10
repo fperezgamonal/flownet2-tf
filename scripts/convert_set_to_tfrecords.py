@@ -251,6 +251,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 p_fill_in = random_percentage/100
                 matches_a = np.random.choice([0, 1], size=image_a.shape[:-1], p=[1 - p_fill_in, p_fill_in]).astype(
                     np.uint64)
+                matches_a = matches_a[..., np.newaxis]  # add extra axis so it has the shape height x width x num_ch
                 # Replicate matches_a to have a multi-channel mask to select sparse_flow
                 random_mask = matches_a == 1  # convert to boolean for masking
                 random_mask_rep = np.repeat(random_mask[:, :, np.newaxis], 2, axis=2)
