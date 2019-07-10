@@ -424,19 +424,19 @@ def main():
     if FLAGS.specify_split == 'train':  # only create train split
         print("Current split: {}".format(train_name))
         convert_dataset(train_idxs, train_name, matcher=FLAGS.matcher, dataset=set_name,
-                        sparse_from_gt=FLAGS.sparse_from_gt)
+                        sparse_from_gt=FLAGS.sparse_flow_from_gt)
 
     elif FLAGS.specify_split == 'val':  # only create validation split
         print("Current split: {}".format(val_name))
         convert_dataset(val_idxs, val_name, matcher=FLAGS.matcher, dataset=set_name,
-                        sparse_from_gt=FLAGS.sparse_from_gt)
+                        sparse_from_gt=FLAGS.sparse_flow_from_gt)
     else:  # create both
         print("Current split: {}".format(train_name))
         convert_dataset(train_idxs, train_name, matcher=FLAGS.matcher, dataset=set_name,
-                        sparse_from_gt=FLAGS.sparse_from_gt)
+                        sparse_from_gt=FLAGS.sparse_flow_from_gt)
         print("Current split: {}".format(val_name))
         convert_dataset(val_idxs, val_name, matcher=FLAGS.matcher, dataset=set_name,
-                        sparse_from_gt=FLAGS.sparse_from_gt)
+                        sparse_from_gt=FLAGS.sparse_flow_from_gt)
 
 
 if __name__ == '__main__':
