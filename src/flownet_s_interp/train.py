@@ -25,6 +25,7 @@ def main():
             'min_momentum': FLAGS.min_momentum,
             'max_momentum': FLAGS.max_momentum,
             'weight_decay': FLAGS.weight_decay,
+            'clip_grad_norm': FLAGS.clip_grad_norm,
         }
     # Initialise CLR parameters (define dictionary). Note that if max_steps=stepsize we have a linear range test!
     elif FLAGS.training_schedule.lower() == 'clr':
@@ -40,6 +41,7 @@ def main():
             'min_momentum': FLAGS.min_momentum,
             'max_momentum': FLAGS.max_momentum,
             'weight_decay': FLAGS.weight_decay,
+            'clip_grad_norm': FLAGS.clip_grad_norm,
         }
     # Initialise exponentially decreasing LR (CLR may be too aggressive for fine-tuning)
     elif FLAGS.training_schedule.lower() == 'exp_decr':
@@ -49,6 +51,7 @@ def main():
             'optimizer': FLAGS.optimizer,
             'momentum': FLAGS.momentum,
             'weight_decay': FLAGS.weight_decay,
+            'clip_grad_norm': FLAGS.clip_grad_norm,
         }
     else:
         train_params_dict = None
@@ -374,6 +377,15 @@ if __name__ == '__main__':
         required=False,
         help='Whether to add weights distribution and histograms to Tensorboard or not (useful to debug))',
         default=False,
+    )
+    # ==== Gradient norm clipping (to mitigate exploding gradients) ====
+    # Overrides training_schedules.py default
+    parser.add_argument(
+        '--clip_grad_norm',
+        type=float,
+        required=False,
+        help='If > 0, clip gradient norms by this value (to mitigate exploding gradients)',
+        default=0,
     )
     # ==== Batch size ====
     # Overrides training_schedules.py default

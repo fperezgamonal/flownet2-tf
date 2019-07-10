@@ -980,6 +980,7 @@ class Net(object):
             optimizer,
             summarize_gradients=summarise_grads,
             global_step=checkpoint_global_step_tensor,
+            clip_gradient_norm=train_params_dict['clip_grad_norm'],
         )
 
         # ==== Add validation by defining a custom train_step_fn ====
