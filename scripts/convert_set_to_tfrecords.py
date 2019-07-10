@@ -60,7 +60,8 @@ def image_example(image_a, image_b, matches_a, sparse_flow, flow):
     return example_proto
 
 
-def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying_chairs', divisor=64):
+def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying_chairs', divisor=64,
+                    sparse_from_gt=None):
     # Open a TFRRecordWriter
     filename = os.path.join(FLAGS.out, split_name + '.tfrecords')
     writeOpts = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.ZLIB)
@@ -239,12 +240,29 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
             # Flush all prints (get stuck for some reason)
             sys.stdout.flush()
 
+            # Read all inputs
             image_a = imread(image_a_path)
             image_b = imread(image_b_path)
-            matches_a = imread(matches_a_path)
+            flow = open_flo_file(flow_path)
 
-            # Add new axis to mask so it has shape: (height x width x num_channels)
-            matches_a = matches_a[..., np.newaxis]
+            if sparse_from_gt is not None:  # provide sparse flow + mask by sampling random points from gt_flow
+                # Randomly select a 'sparse_from_gt' percentage (from 1 to sparse_from_gt with 0.5 step)
+                random_percentage = np.random.choice(np.arange(1, sparse_from_gt+0.5, 0.5))
+                p_fill_in = random_percentage/100
+                matches_a = np.random.choice([0, 1], size=image_a.shape[:-1], p=[1 - p_fill_in, p_fill_in]).astype(
+                    np.uint64)
+                # Replicate matches_a to have a multi-channel mask to select sparse_flow
+                random_mask = matches_a == 1  # convert to boolean for masking
+                random_mask_rep = np.repeat(random_mask[:, :, np.newaxis], 2, axis=2)
+                # Create sparse_flow mask by copying values in indices == 1 in random_mask from gt_flow
+                sparse_flow = np.zeros(flow.shape)
+                sparse_flow[random_mask_rep] = flow[random_mask_rep]
+
+            else:
+                matches_a = imread(matches_a_path)
+                # Add new axis to mask so it has shape: (height x width x num_channels)
+                matches_a = matches_a[..., np.newaxis]
+                sparse_flow = open_flo_file(sparse_flow_path)
 
             # Scale from [0, 255] -> [0.0, 1.0]
             image_a = image_a / 255.0
@@ -305,8 +323,6 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
 
             # Pad flows as well for training (to compute the loss)
             # From net.py: apply_y()
-            flow = open_flo_file(flow_path)
-            sparse_flow = open_flo_file(sparse_flow_path)
             flow_height, flow_width, flow_ch = flow.shape
             sparse_height, sparse_width, sparse_ch = sparse_flow.shape
 
@@ -407,17 +423,20 @@ def main():
     print("Generating TFRecords...")
     if FLAGS.specify_split == 'train':  # only create train split
         print("Current split: {}".format(train_name))
-        convert_dataset(train_idxs, train_name, matcher=FLAGS.matcher, dataset=set_name)
+        convert_dataset(train_idxs, train_name, matcher=FLAGS.matcher, dataset=set_name,
+                        sparse_from_gt=FLAGS.sparse_from_gt)
 
     elif FLAGS.specify_split == 'val':  # only create validation split
         print("Current split: {}".format(val_name))
-        convert_dataset(val_idxs, val_name, matcher=FLAGS.matcher, dataset=set_name)
-
+        convert_dataset(val_idxs, val_name, matcher=FLAGS.matcher, dataset=set_name,
+                        sparse_from_gt=FLAGS.sparse_from_gt)
     else:  # create both
         print("Current split: {}".format(train_name))
-        convert_dataset(train_idxs, train_name, matcher=FLAGS.matcher, dataset=set_name)
+        convert_dataset(train_idxs, train_name, matcher=FLAGS.matcher, dataset=set_name,
+                        sparse_from_gt=FLAGS.sparse_from_gt)
         print("Current split: {}".format(val_name))
-        convert_dataset(val_idxs, val_name, matcher=FLAGS.matcher, dataset=set_name)
+        convert_dataset(val_idxs, val_name, matcher=FLAGS.matcher, dataset=set_name,
+                        sparse_from_gt=FLAGS.sparse_from_gt)
 
 
 if __name__ == '__main__':
@@ -476,6 +495,15 @@ if __name__ == '__main__':
         required=False,
         help='Optionally specify that we only want one split: train or val',
         default='all'
+    )
+    parser.add_argument(
+        '--sparse_flow_from_gt',
+        type=int,
+        required=False,
+        help='If not None, instead of using the DM/SIFT matches to define the sparse flow, sample a percentage of '
+             'random indices of the ground truth flow (this number specifies a maximum percentage, the minimum is 1%)'
+             ' and by default we randomly select the % for each training and validation sample',
+        default=None,
     )
     FLAGS = parser.parse_args()
 
