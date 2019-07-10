@@ -1060,7 +1060,7 @@ class Net(object):
                     for var in vars2restore:
                         print(var)
 
-                saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=2,
+                saver = tf.train.Saver(max_to_keep=3, keep_checkpoint_every_n_hours=1,
                                        var_list=vars2restore if checkpoint_path else None)
                 # Define init function to assign variables from checkpoint
                 init_fn = tf.contrib.framework.assign_from_checkpoint_fn(checkpoint_path, vars2restore)
@@ -1096,12 +1096,12 @@ class Net(object):
                     {'should_trace': tf.constant(1), 'should_log': tf.constant(1), 'logdir': debug_logdir, }
                 )
         else:
-            if lr_range_test or log_verbosity > 2:
+            if lr_range_test:
                 save_summaries_secs = 10
                 save_interval_secs = 10000  # effectively deactivates saving checkpoints when doing LR range tests
             else:
-                save_summaries_secs = 180
-                save_interval_secs = 300  # Save one checkpoint once every 5 minutes
+                save_summaries_secs = 60
+                save_interval_secs = 120  # Save one checkpoint once every 3 minutes
 
             if checkpoints is not None:
                 if valid_iters > 0:
