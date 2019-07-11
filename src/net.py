@@ -772,6 +772,15 @@ class Net(object):
                     print("(CLR) Default max. number of iters being changed from {} to {}".format(
                         training_schedule['max_iters'], new_max_iters))
                 training_schedule['max_iters'] = new_max_iters
+            elif training_schedule['learning_rates'].lower() == 'one_cycle' and training_schedule_str == 'one_cycle':
+                if log_verbosity > 1:
+                    print("Learning rate policy is 1-cycle (CLR with only 1 longer cycle + LR annealing at the end)")
+                learning_rate = _lr_cyclic(
+                    g_step_op=checkpoint_global_step_tensor, base_lr=train_params_dict['clr_min_lr'],
+                    max_lr=train_params_dict['clr_max_lr'], step_size=train_params_dict['clr_stepsize'],
+                    gamma=train_params_dict['clr_gamma'], mode='triangular', one_cycle=True,
+                    annealing_factor=train_params_dict['one_cycle_annealing_factor'])
+                # Define total length of the 1cycle + annealing by overwriting maximum number of iterations
             elif training_schedule['learning_rates'].lower() == 'exp_decr' and training_schedule_str == 'exp_decr':
                 if log_verbosity > 1:
                     print("Training schedule is 'exp_decr' (exponentially decreasing LR)")
@@ -810,11 +819,16 @@ class Net(object):
                         train_params_dict['max_momentum'] is not None):
                     if log_verbosity > 1:
                         print("Momentum optimizer used together with CLR/1cycle, will be using cyclical momentum")
+                        if training_schedule['learning_rates'].lower() == 'one_cycle':
+                            one_cycle = True
+                        else:
+                            one_cycle = False
                     momentum = _mom_cyclic(g_step_op=checkpoint_global_step_tensor,
                                            base_mom=train_params_dict['min_momentum'],
                                            max_mom=train_params_dict['max_momentum'],
                                            gamma=train_params_dict['clr_gamma'],
-                                           step_size=train_params_dict['clr_stepsize'], mode='triangular')
+                                           step_size=train_params_dict['clr_stepsize'], mode='triangular',
+                                           one_cycle=one_cycle)
 
                 else:  # Use fixed momentum
                     if train_params_dict['momentum'] is None:

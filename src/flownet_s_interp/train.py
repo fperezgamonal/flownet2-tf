@@ -13,7 +13,7 @@ def main():
     else:
         checkpoints = None  # double-check None
 
-    # initialise range test values (exponentially increasing lr to be tested)
+    # initialise range test values (exponentially/linearly increasing lr to be tested)
     if FLAGS.lr_range_test and FLAGS.training_schedule.lower() == 'lr_range_test':
         train_params_dict = {
             'lr_range_mode': FLAGS.lr_range_mode,
@@ -27,7 +27,7 @@ def main():
             'weight_decay': FLAGS.weight_decay,
             'clip_grad_norm': FLAGS.clip_grad_norm,
         }
-    # Initialise CLR parameters (define dictionary). Note that if max_steps=stepsize we have a linear range test!
+    # Initialise CLR parameters (define dictionary).
     elif FLAGS.training_schedule.lower() == 'clr':
         train_params_dict = {
             'clr_min_lr': FLAGS.clr_min_lr,
@@ -36,6 +36,19 @@ def main():
             'clr_num_cycles': FLAGS.clr_num_cycles,
             'clr_gamma': FLAGS.clr_gamma,
             'clr_mode': FLAGS.clr_mode,
+            'optimizer': FLAGS.optimizer,
+            'momentum': FLAGS.momentum,
+            'min_momentum': FLAGS.min_momentum,
+            'max_momentum': FLAGS.max_momentum,
+            'weight_decay': FLAGS.weight_decay,
+            'clip_grad_norm': FLAGS.clip_grad_norm,
+        }
+    elif FLAGS.training_schedule.lower() == 'one_cycle':
+        train_params_dict = {
+            'clr_min_lr': FLAGS.clr_min_lr,
+            'clr_max_lr': FLAGS.clr_max_lr,
+            'clr_stepsize': FLAGS.clr_stepsize,
+            'one_cycle_annealing_factor': FLAGS.one_cycle_annealing_factor,
             'optimizer': FLAGS.optimizer,
             'momentum': FLAGS.momentum,
             'min_momentum': FLAGS.min_momentum,
@@ -283,6 +296,14 @@ if __name__ == '__main__':
         help="Type of cyclic learning rate: 'triangular', 'triangular2' or 'exponential' (see Leslie N.Smith paper "
              "for more information)",
         default=5,
+    )
+    parser.add_argument(
+        '--one_cycle_annealing_factor',
+        type=float,
+        required=False,
+        help="Annealing factor if 1-cycle policy is used (LR will decrease linearly between clr_min_lr and"
+             " clr_min_lr * annealing_factor until max_iters is reached)",
+        default=1e-3,
     )
     # Overrides value defined in selected schedule training_schedules.py
     parser.add_argument(
