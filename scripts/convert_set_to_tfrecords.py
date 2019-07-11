@@ -249,14 +249,14 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 # Randomly select a 'sparse_from_gt' percentage (from 1 to sparse_from_gt with 0.5 step)
                 random_percentage = np.random.choice(np.arange(1, sparse_from_gt+0.5, 0.5))
                 p_fill_in = random_percentage/100
-                matches_a = np.random.choice([0, 1], size=image_a.shape[:-1], p=[1 - p_fill_in, p_fill_in]).astype(
+                matches_a = np.random.choice([0, 255], size=image_a.shape[:-1], p=[1 - p_fill_in, p_fill_in]).astype(
                     np.uint64)
                 if DEBUG:
                     print("Percentage of pixels to sample from gt_flow: {}".format(
-                        np.sum(matches_a == 1) / np.product(image_a.shape[:-1])))
+                        100 * (np.sum(matches_a == 1) / np.product(image_a.shape[:-1]))))
                     print("Should be in the range {}-{}".format(1, sparse_from_gt))
                 # Replicate matches_a to have a multi-channel mask to select sparse_flow
-                random_mask = matches_a == 1  # convert to boolean for masking
+                random_mask = matches_a == 255  # convert to boolean for masking
                 matches_a = matches_a[..., np.newaxis]  # add extra axis so it has the shape height x width x num_ch
                 random_mask_rep = np.repeat(random_mask[:, :, np.newaxis], 2, axis=2)
                 # Create sparse_flow mask by copying values in indices == 1 in random_mask from gt_flow
