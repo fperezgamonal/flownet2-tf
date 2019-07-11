@@ -251,13 +251,20 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 p_fill_in = random_percentage/100
                 matches_a = np.random.choice([0, 1], size=image_a.shape[:-1], p=[1 - p_fill_in, p_fill_in]).astype(
                     np.uint64)
+                if DEBUG:
+                    print("Percentage of pixels to sample from gt_flow: {}".format(
+                        np.sum(matches_a == 1) / np.product(image_a.shape[:-1])))
+                    print("Should be in the range {}-{}".format(1, sparse_from_gt))
                 # Replicate matches_a to have a multi-channel mask to select sparse_flow
                 random_mask = matches_a == 1  # convert to boolean for masking
                 matches_a = matches_a[..., np.newaxis]  # add extra axis so it has the shape height x width x num_ch
                 random_mask_rep = np.repeat(random_mask[:, :, np.newaxis], 2, axis=2)
                 # Create sparse_flow mask by copying values in indices == 1 in random_mask from gt_flow
-                sparse_flow = np.zeros(flow.shape)
+                sparse_flow = np.zeros(flow.shape).astype(np.float32)
                 sparse_flow[random_mask_rep] = flow[random_mask_rep]
+                if DEBUG:
+                    print("Sparse flow should have be of the same type as flow")
+                    print("sparse_flow.dtype: {}, flow.dtype: {}".format(sparse_flow.dtype, flow.dtype))
 
             else:
                 matches_a = imread(matches_a_path)
@@ -286,13 +293,14 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                                                                    "Images have shape: {0}, mask: {1}".format(
                 image_a.shape[:-1], matches_a.shape[:-1]))
             # Assert correct number of channels
-            assert channels_ma == 1, ("FATAL: mask should be binary but the number of channels is not one but {0}".format(
+            assert channels_ma == 1, ("FATAL: mask should be binary but the number of channels is not 1 but {0}".format(
                 channels_ma
             ))
 
             if DEBUG:
                 print("OG shapes before padding (images-matches): ")
                 print("img_a: {0}\nimg_b: {1}\nmch_a: {2}".format(image_a.shape, image_b.shape, matches_a.shape))
+                print("matches has unique values: {}".format(np.unique(matches_a)))
 
             if height_a % divisor != 0 or width_a % divisor != 0:
                 if DEBUG:
