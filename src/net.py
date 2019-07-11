@@ -11,7 +11,7 @@ from imageio import imread, imsave
 from .flowlib import flow_to_image, write_flow, read_flow, compute_all_metrics, get_metrics
 from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FINETUNE_SINTEL_S1, FINETUNE_SINTEL_S2, \
     FINETUNE_SINTEL_S3, FINETUNE_SINTEL_S4, FINETUNE_SINTEL_S5, FINETUNE_KITTI_S1, FINETUNE_KITTI_S2,\
-    FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LR_RANGE_TEST, CLR_SCHEDULE, EXP_DECREASING
+    FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LR_RANGE_TEST, CLR_SCHEDULE, EXP_DECREASING, ONECYCLE_SCHEDULE
 from .utils import exponentially_increasing_lr, exponentially_decreasing_lr, _lr_cyclic, _mom_cyclic
 slim = tf.contrib.slim
 
@@ -82,7 +82,7 @@ def _add_loss_summaries(train_loss, valid_loss, decay=0.99, summary_name_train='
       loss_averages_op: op for generating moving averages of losses.
     """
     # Compute the moving average of all individual losses and the total loss.
-    ema = tf.train.ExponentialMovingAverage(decay, zero_debias=True)
+    ema = tf.train.ExponentialMovingAverage(decay, zero_debias=True)  # zero_debias should reduce the bias towards 0
     loss_averages_op = ema.apply([train_loss, valid_loss])
 
     if log_tensorboard:
@@ -129,6 +129,8 @@ class Net(object):
             training_schedule = CLR_SCHEDULE
         elif training_schedule_str.lower() == 'exp_decr':  # exponentially decreasing learning rate (w. min+max LR)
             training_schedule = EXP_DECREASING
+        elif training_schedule_str.lower() == 'one_cycle':  # 1-cycle policy (CLR w. only 1 cycle + LR annealing)
+            training_schedule = ONECYCLE_SCHEDULE
         # SINTEL
         elif training_schedule_str.lower() == 'sintel_s1':  # Fine-tune Sintel (stage 1)
             training_schedule = FINETUNE_SINTEL_S1
@@ -168,6 +170,8 @@ class Net(object):
             training_schedule_fld = "Sfine_FT3D"
         elif 'clr' in training_schedule_str.lower():  # make it all caps for readability
             training_schedule_fld = "CLR"
+        elif 'one_cycle' in training_schedule_str.lower():
+            training_schedule_fld = '1cycle'
         elif 'exp_decreasing' in training_schedule_str.lower():
             training_schedule_fld = "exp_decr"
         elif 'long' in training_schedule_str.lower():
