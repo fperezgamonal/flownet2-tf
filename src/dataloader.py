@@ -289,6 +289,13 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
     else:  # flying_chairs
         dataset_config = FLYING_CHAIRS_ALL_DATASET_CONFIG
 
+    if batch_size is not None:
+        print("Batch size changed from training_schedules.py default '{}' to '{}'".format(
+            dataset_config['BATCH_SIZE'], batch_size))
+    else:
+        print("Batch size kept to default value: {}".format(dataset_config['BATCH_SIZE']))
+        batch_size = dataset_config['BATCH_SIZE']
+
     reader_kwargs = {'options': tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.ZLIB)}
     with tf.name_scope('load_batch'):
         dataset = __get_dataset(dataset_config, split_name, input_type=input_type)
@@ -461,12 +468,6 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
         #     # Perform flow augmentation using spatial parameters from data augmentation
         #     flows = _preprocessing_ops.flow_augmentation(
         #         flows, transforms_from_a, transforms_from_b, crop)
-
-        if batch_size is not None:
-            print("Batch size changed from training_schedules.py default '{}' to '{}'".format(
-                dataset_config['BATCH_SIZE'], batch_size))
-        else:
-            batch_size = dataset_config['BATCH_SIZE']
 
         if input_type == 'image_matches':
             if split_name == 'valid':
