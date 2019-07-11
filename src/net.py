@@ -686,8 +686,24 @@ class Net(object):
 
             if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
                 tf.summary.image("train/matches_a", matches_a, max_outputs=1)
+                sparse_flow_0 = sparse_flow[0, :, :, :]
+                sparse_flow_0 = tf.py_func(flow_to_image, [sparse_flow_0], tf.uint8)
+                # sparse_flow_0 = tf.py_function(func=flow_to_image, inp=[sparse_flow_0], Tout=tf.uint8)
+                sparse_flow_1 = sparse_flow[1, :, :, :]
+                sparse_flow_1 = tf.py_func(flow_to_image, [sparse_flow_1], tf.uint8)
+                # sparse_flow_1 = tf.py_function(func=flow_to_image, inp=[sparse_flow_1], Tout=tf.uint8)
+                sparse_flow_img = tf.stack([sparse_flow_0, sparse_flow_1], 0)
+                tf.summary.image('train/sparse_flow', sparse_flow_img, max_outputs=1)
                 if valid_iters > 0:
                     tf.summary.image("valid/matches_a", val_matches_a, max_outputs=1)
+                    val_sparse_flow_0 = val_sparse_flow[0, :, :, :]
+                    val_sparse_flow_0 = tf.py_func(flow_to_image, [val_sparse_flow_0], tf.uint8)
+                    # val_sparse_flow_0 = tf.py_function(func=flow_to_image, inp=[val_sparse_flow_0], Tout=tf.uint8)
+                    val_sparse_flow_1 = val_sparse_flow[1, :, :, :]
+                    val_sparse_flow_1 = tf.py_func(flow_to_image, [val_sparse_flow_1], tf.uint8)
+                    # val_sparse_flow_1 = tf.py_function(func=flow_to_image, inp=[val_sparse_flow_1], Tout=tf.uint8)
+                    sparse_flow_img = tf.stack([val_sparse_flow_0, val_sparse_flow_1], 0)
+                    tf.summary.image('train/sparse_flow', sparse_flow_img, max_outputs=1)
             else:
                 tf.summary.image("train/image_b", input_b, max_outputs=1)
                 if valid_iters > 0:
