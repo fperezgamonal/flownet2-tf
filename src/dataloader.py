@@ -431,6 +431,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
         #         flows, transforms_from_a, transforms_from_b, crop)
 
         if input_type == 'image_matches':
+            print("(dataloader.py): input_type is 'image_matches'; split is '{}'".format(split_name))
             if split_name == 'valid':
                 return tf.train.batch([image_as, matches_as, sparse_flows, flows],
                                       enqueue_many=True,
@@ -447,6 +448,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                                       allow_smaller_final_batch=False,
                                       num_threads=num_threads)
         else:
+            print("(dataloader.py): input_type is 'image_pairs'; split is '{}'".format(split_name))
             if split_name == 'valid':
                 return tf.train.batch([image_as, image_bs, flows],
                                       enqueue_many=True,
