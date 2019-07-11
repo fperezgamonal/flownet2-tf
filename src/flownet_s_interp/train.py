@@ -415,7 +415,7 @@ if __name__ == '__main__':
         type=int,
         required=False,
         help='integer that specifies the batch size',
-        default=4,
+        default=None,
     )
     # ==== Capacity of queues ====
     parser.add_argument(
