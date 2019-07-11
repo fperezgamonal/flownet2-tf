@@ -253,7 +253,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     np.uint64)
                 if DEBUG:
                     print("Percentage of pixels to sample from gt_flow: {}".format(
-                        100 * (np.sum(matches_a == 1) / np.product(image_a.shape[:-1]))))
+                        100 * (np.sum(matches_a == 255) / np.product(image_a.shape[:-1]))))
                     print("Should be in the range {}-{}".format(1, sparse_from_gt))
                 # Replicate matches_a to have a multi-channel mask to select sparse_flow
                 random_mask = matches_a == 255  # convert to boolean for masking
@@ -262,6 +262,8 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 # Create sparse_flow mask by copying values in indices == 1 in random_mask from gt_flow
                 sparse_flow = np.zeros(flow.shape).astype(np.float32)
                 sparse_flow[random_mask_rep] = flow[random_mask_rep]
+                print("sparse_flow and flow have {} equal elements ({}%)".format(
+                    np.sum(sparse_flow == flow), np.sum(sparse_flow == flow) / np.product(image_a.shape[:-1])))
                 if DEBUG:
                     print("Sparse flow should have be of the same type as flow")
                     print("sparse_flow.dtype: {}, flow.dtype: {}".format(sparse_flow.dtype, flow.dtype))
