@@ -59,7 +59,7 @@ class FlowNetS_interp(Net):
                     conv6_1 = slim.conv2d(pad(conv6), 1024, 3, scope='conv6_1')
 
                     """ START: Refinement Network """
-                    with slim.arg_scope([slim.conv2d_transpose], biases_initializer=None):
+                    with slim.arg_scope([slim.conv2d_transpose], biases_initializer=tf.zeros_initializer()):
                         predict_flow6 = slim.conv2d(pad(conv6_1), 2, 3,
                                                     scope='predict_flow6',
                                                     activation_fn=None)
