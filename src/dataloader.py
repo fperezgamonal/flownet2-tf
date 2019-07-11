@@ -351,45 +351,6 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             sparse_flows = None
             image_as, image_bs, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b, flow])
 
-        #  Hangs execution (conflict with the session created by TF slim (most likely))
-        # print("Statistics of current batch (to ensure we are shuffling)")
-        # sess = tf.Session()
-        # image_as_mean = tf.reduce_mean(image_as)
-        # image_as_min = tf.reduce_min(image_as)
-        # image_as_max = tf.reduce_max(image_as)
-        #
-        # matches_as_mean = tf.reduce_mean(matches_as)
-        # matches_as_min = tf.reduce_min(matches_as)
-        # matches_as_max = tf.reduce_max(matches_as)
-        #
-        # sparseflows_as_mean = tf.reduce_mean(sparse_flows)
-        # sparseflows_as_min = tf.reduce_min(sparse_flows)
-        # sparseflows_as_max = tf.reduce_max(sparse_flows)
-        #
-        # flows_as_mean = tf.reduce_mean(flows)
-        # flows_as_min = tf.reduce_min(flows)
-        # flows_as_max = tf.reduce_max(flows)
-        #
-        # sess.run([image_as_min, image_as_max, image_as_mean, matches_as_min, matches_as_max, matches_as_mean,
-        #           sparseflows_as_mean, sparseflows_as_min, sparseflows_as_max, flows_as_mean, flows_as_min,
-        #           flows_as_max])
-        #
-        # print("==== Image A ====")
-        # print("Maximum: {0}, minimum: {1}, mean: {2}".format(image_as_max, image_as_min,
-        #                                                      image_as_mean))
-        # print("==== Matches A ====")
-        # print("Maximum: {0} (==1), minimum: {1} (==0), mean: {2}".format(matches_as_max,
-        #                                                                  matches_as_min,
-        #                                                                  matches_as_mean))
-        # print("==== Sparse flow (plenty of zeros) ====")
-        # print("Maximum: {0}, minimum: {1}, mean: {2}".format(sparseflows_as_max, sparseflows_as_min,
-        #                                                      sparseflows_as_mean))
-        #
-        # print("==== (GT) flow ====")
-        # print("Maximum: {0}, minimum: {1}, mean: {2}".format(flows_as_max, flows_as_min,
-        #                                                      flows_as_mean))
-
-
         #
         # Perform data augmentation on GPU  fperezgamonal: typo, it does not work on the GPU, only on the CPU!
         # TODO: despite not reporting segmentation fault, the process is killed when data_augmentation is added. Test:
