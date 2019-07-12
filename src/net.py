@@ -631,7 +631,7 @@ class Net(object):
               valid_iters=VAL_INTERVAL, val_input_a=None, val_gt_flow=None, val_input_b=None, val_matches_a=None,
               val_sparse_flow=None, checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True,
               lr_range_test=False, train_params_dict=None, log_smoothed_loss=True, reset_global_step=False,
-              summarise_grads=False):
+              summarise_grads=False, add_hfem=False, lambda_w=0.01, hfem_perc=40):
 
         """
         runs training on the network from which this method is called.
@@ -657,6 +657,9 @@ class Net(object):
         :param log_smoothed_loss:
         :param reset_global_step:
         :param summarise_grads:
+        :param add_hfem
+        :param lambda_w
+        :param hfem_perc
 
         :return:
         """
@@ -935,8 +938,9 @@ class Net(object):
             # Define model operations (graph) to compute loss (VALIDATION)
             val_predictions = self.model(val_inputs, training_schedule, trainable=False)  # test does not specify this
 
-        # Compute losses
-        train_loss = self.loss(gt_flow, predictions)
+        # Compute losses (optionally add hard flow mining)
+        train_loss = self.loss(gt_flow, predictions, add_hard_flow_mining=add_hfem, lambda_weight=lambda_w,
+                               hard_examples_perc=hfem_perc)
         if log_verbosity > 1:
             print("\n >>> train_loss=", train_loss)
         if valid_iters > 0:
