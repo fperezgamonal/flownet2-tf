@@ -261,10 +261,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 random_mask_rep = np.repeat(random_mask[:, :, np.newaxis], 2, axis=2)
                 # Create sparse_flow mask by copying values in indices == 1 in random_mask from gt_flow
                 sparse_flow = np.zeros(flow.shape).astype(np.float32)
-                copy_sparse_flow = sparse_flow
                 sparse_flow[random_mask_rep] = flow[random_mask_rep]
-                print("sparse_flow and flow have {} equal elements ({}%)".format(
-                    np.sum(sparse_flow != copy_sparse_flow), np.sum(sparse_flow != copy_sparse_flow) / np.product(image_a.shape[:-1])))
                 if DEBUG:
                     print("Sparse flow should have be of the same type as flow")
                     print("sparse_flow.dtype: {}, flow.dtype: {}".format(sparse_flow.dtype, flow.dtype))
