@@ -3,6 +3,7 @@ from tensorflow.python.framework import ops
 from tensorflow.python.ops import math_ops
 from tensorflow.python.eager import context
 import argparse
+import numpy as np
 
 
 def str2bool(v):
@@ -212,9 +213,49 @@ def average_endpoint_error(labels, predictions):
 
         squared_difference = tf.square(tf.subtract(predictions, labels))
         # sum across channels: sum[(X - Y)^2] -> N, H, W, 1
-        loss = tf.reduce_sum(squared_difference, 3, keepdims=True)
-        loss = tf.sqrt(loss)
-        return tf.reduce_sum(loss) / num_samples
+        epe = tf.reduce_sum(squared_difference, 3, keepdims=True)  # sum across channels (u,v)
+        epe = tf.sqrt(epe)
+        return tf.reduce_sum(epe) / num_samples, epe  # reduced to one number, mean/average epe (sum/num_samples)
+
+
+def aepe_hfem(epe, labels, predictions, lambda_w=0.01, perc_hfem=40):
+    """
+    Given labels and predictions of size (N, H, W, 2), calculates average endpoint error:
+    sqrt[sum_across_channels{(X - Y)^2}] but only for the p percentage of pixels with largest error
+    This resembles the approach in the paper "Deep Flow-Guided Video Inpainting" by Rui Xu et. al where they increase
+    the contribution to the loss for what they consider hard flow examples (which happen to be mostly on edges).
+    Originally they use the L1 norm.
+    :param epe:  average endpoint error (still in matrix form!) based on which we define the hard examples as those with
+     larger error
+    :param labels: ground truth flow fields
+    :param predictions: predicted flow field at a given scale returned by the network
+    :param lambda_w: weight of this Hard Flow Example Mining error (relative to AEPE)
+    :param perc_hfem: percentage of pixels to consider as Hard Examples (i.e.: top 40%)
+    """
+    # Convert all variables that are not tensors into tensors
+    lambda_w = tf.convert_to_tensor(lambda_w, name='lambda')
+    perc_hfem = tf.convert_to_tensor(perc_hfem, name='perc_hardflows')
+
+    with tf.name_scope(None, "aepe_hfem", (predictions, labels)) as scope:
+        predictions = tf.to_float(predictions)
+        labels = tf.to_float(labels)
+        predictions.get_shape().assert_is_compatible_with(labels.get_shape())
+        # 1. Sort pixels in decreasing order based on their EPE (decreasing)
+        # epe_flatten = np.reshape(epe, np.product(epe.shape))  # flatten matrix for easier sorting
+        epe_flatten = tf.reshape(epe, tf.reduce_prod(tf.shape(epe)))
+        # epe_f_top_err = np.argsort(epe_flatten)[::-1]  # sort in decreasing value
+        epe_f_top_err = tf.argsort(epe_flatten, direction='DESCENDING')
+        # 2. Pick first p percentage (w. corresponding indices)
+        # top_k = int(np.round((perc_hm / 100) * np.prod(epe.shape)))  # compute the number of samples considered hard
+        top_k = tf.cast(tf.round(tf.multiply(tf.divide(perc_hfem, 100), tf.reduce_prod(tf.shape(epe)))), tf.int32)
+        # # 3. Create mask to only take into account pixels in step 2
+        # HM_mask = np.zeros(epe_flatten.shape)
+        # HM_mask[epe_f_top_err[:top_k]] = 1
+        # HM_mask = np.reshape(HM_mask, epe.shape)
+
+        # 4. Compute AEPE for pixels in 2 (we only miss the tf.reduce_sum(loss)/ num_hard_examples
+        # lambda * sum(EPE[hard_flows]) / len(hard_flows)
+        return tf.multiply(lambda_w, tf.reduce_sum(epe_flatten[HM_mask == 1]) / np.sum(HM_mask == 1))
 
 
 def pad(tensor, num=1):
