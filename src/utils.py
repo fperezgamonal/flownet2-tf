@@ -227,8 +227,6 @@ def aepe_hfem(epe, lambda_w=0.01, perc_hfem=40):
     Originally they use the L1 norm.
     :param epe:  average endpoint error (still in matrix form!) based on which we define the hard examples as those with
      larger error
-    :param labels: ground truth flow fields
-    :param predictions: predicted flow field at a given scale returned by the network
     :param lambda_w: weight of this Hard Flow Example Mining error (relative to AEPE)
     :param perc_hfem: percentage of pixels to consider as Hard Examples (i.e.: top 40%)
     Commented: numpy logic, above it's TF equivalent (luckily TF 2.0 will default to eager mode...)

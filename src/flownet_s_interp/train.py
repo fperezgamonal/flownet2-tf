@@ -124,6 +124,9 @@ def main():
             log_smoothed_loss=FLAGS.log_smoothed_loss,
             reset_global_step=FLAGS.reset_global_step,
             summarise_grads=FLAGS.summarise_grads,
+            add_hfem=FLAGS.add_hard_flow_example_mining,
+            lambda_w=FLAGS.hfem_lambda_w,
+            hfem_perc=FLAGS.hfem_perc_hard,
         )
     else:
         print("Input_type: 'image_pairs'")
@@ -171,6 +174,9 @@ def main():
             log_smoothed_loss=FLAGS.log_smoothed_loss,
             reset_global_step=FLAGS.reset_global_step,
             summarise_grads=FLAGS.summarise_grads,
+            add_hfem=FLAGS.add_hard_flow_example_mining,
+            lambda_w=FLAGS.hfem_lambda_w,
+            hfem_perc=FLAGS.hfem_perc_hard,
         )
 
 
@@ -416,6 +422,30 @@ if __name__ == '__main__':
         required=False,
         help='integer that specifies the batch size',
         default=None,
+    )
+    # ==== Losses =====
+    # Add Hard Flow Example Mining params
+    parser.add_argument(
+        '--add_hard_flow_example_mining',
+        type=str2bool,
+        nargs='?',
+        required=False,
+        help='Whether to add an extra cost for the hard examples (defined as those with largest EPE loss)',
+        default=False,
+    )
+    parser.add_argument(
+        '--hfem_lambda_w',
+        type=float,
+        required=False,
+        help='If we use HFEM, relative weight of the added loss (i.e.: AEPE + lambda * HFEM_AEPE)',
+        default=0.01
+    )
+    parser.add_argument(
+        '--hfem_perc_hard',
+        type=float,
+        required=False,
+        help='If we use HFEM, percentage of pixels to be considered hard (i.e.: top 40%)',
+        default=40.0,
     )
     # ==== Capacity of queues ====
     parser.add_argument(
