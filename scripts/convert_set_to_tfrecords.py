@@ -14,7 +14,7 @@ FLAGS = None
 TRAIN = 1
 VAL = 2
 # Any other value means that some image is not used for a reason (e.g.: in FlyingThings3D, complicated examples)
-DEBUG = True  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
+DEBUG = False  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
 
 
 # https://stackoverflow.com/questions/28013200/reading-middlebury-flow-files-with-python-bytes-array-numpy
