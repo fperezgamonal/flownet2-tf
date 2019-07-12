@@ -36,7 +36,8 @@ class FlowNetS_interp(Net):
                                 # Only backprop this network if trainable
                                 trainable=trainable,
                                 # He (aka MSRA) weight initialization
-                                weights_initializer=tf.contrib.layers.variance_scaling_initializer(),
+                                weights_initializer=tf.contrib.layers.variance_scaling_initializer(
+                                    factor=2.0, mode='FAN_IN', uniform=False, seed=None, dtype=tf.float32),
                                 # LeakyReLU, changed custom to TF's built-in
                                 activation_fn=lambda x: tf.nn.leaky_relu(x, alpha=0.1),
                                 # We will do our own padding to match the original Caffe code
