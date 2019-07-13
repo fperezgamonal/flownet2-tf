@@ -801,8 +801,7 @@ class Net(object):
                 learning_rate = _lr_cyclic(
                     g_step_op=checkpoint_global_step_tensor, base_lr=train_params_dict['clr_min_lr'],
                     max_lr=train_params_dict['clr_max_lr'], step_size=train_params_dict['clr_stepsize'],
-                    gamma=train_params_dict['clr_gamma'], mode='triangular', one_cycle=True,
-                    annealing_factor=train_params_dict['one_cycle_annealing_factor'])
+                    mode='triangular', one_cycle=True, annealing_factor=train_params_dict['one_cycle_annealing_factor'])
                 # Define total length of the 1cycle + annealing by overwriting maximum number of iterations
             elif training_schedule['learning_rates'].lower() == 'exp_decr' and training_schedule_str == 'exp_decr':
                 if log_verbosity > 1:
