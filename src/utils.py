@@ -95,6 +95,8 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
         The cyclic learning rate.
     """
     assert (mode in ['triangular', 'triangular2', 'exp_range'])
+    one_cycle_target = 2
+    one_cycle_tar = tf.convert_to_tensor(one_cycle_target)
     lr = tf.convert_to_tensor(base_lr)
     global_step = tf.cast(g_step_op, lr.dtype)
     step_size = tf.cast(step_size, lr.dtype)
@@ -112,7 +114,7 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
     x = tf.abs(tf.add(1., tmp))
 
     a1 = tf.maximum(0., tf.subtract(1., x))  # max(0, 1-x)
-    if one_cycle and tf.equal(cycle, 2):
+    if one_cycle and tf.equal(cycle, one_cycle_tar):
         tf.print(cycle)
         tf.print(cycle.dtype)
         # computing: clr = learning_rate - ( learning_rate – learning_rate * anneal_factor ) * max( 0, 1 - x )
@@ -127,7 +129,7 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
     if mode == 'exp_range' and not one_cycle:
         clr = tf.multiply(tf.pow(gamma, global_step), clr)
 
-    if one_cycle and tf.equal(cycle, 2):
+    if one_cycle and tf.equal(cycle, one_cycle_tar):
         return tf.subtract(lr, clr, name=op_name)
     else:
         return tf.add(lr, clr, name=op_name)
@@ -163,6 +165,8 @@ def _mom_cyclic(g_step_op, base_mom=None, max_mom=None, step_size=None, gamma=0.
         The cyclic momentum.
     """
     assert (mode in ['triangular', 'triangular2', 'exp_range'])
+    one_cycle_target = 2
+    one_cycle_tar = tf.convert_to_tensor(one_cycle_target)
     mom = tf.convert_to_tensor(base_mom)
     global_step = tf.cast(g_step_op, mom.dtype)
     step_size = tf.cast(step_size, mom.dtype)
@@ -172,7 +176,7 @@ def _mom_cyclic(g_step_op, base_mom=None, max_mom=None, step_size=None, gamma=0.
     global_div_double_step = tf.divide(global_step, double_step)
     cycle = tf.floor(tf.add(1., global_div_double_step))
 
-    if one_cycle and tf.equal(cycle, 2):
+    if one_cycle and tf.equal(cycle, one_cycle_tar):
         tf.print(cycle)
         tf.print(cycle.dtype)
         return tf.identity(max_mom, name=op_name)
