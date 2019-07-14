@@ -103,7 +103,7 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
     # computing: cycle = floor( 1 + global_step / ( 2 * step_size ) )
     double_step = tf.multiply(2., step_size)
     global_div_double_step = tf.divide(global_step, double_step)
-    cycle = tf.cast(tf.floor(tf.add(1., global_div_double_step)), tf.int32)
+    cycle = tf.floor(tf.add(1., global_div_double_step))
 
     # computing: x = abs( global_step / step_size – 2 * cycle + 1 )
     double_cycle = tf.multiply(2., cycle)
@@ -112,6 +112,7 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
     x = tf.abs(tf.add(1., tmp))
 
     a1 = tf.maximum(0., tf.subtract(1., x))  # max(0, 1-x)
+    tf.print(cycle)
     if one_cycle and tf.equal(cycle, 2):
         # computing: clr = learning_rate - ( learning_rate – learning_rate * anneal_factor ) * max( 0, 1 - x )
         a2 = tf.subtract(lr, tf.multiply(lr, anneal_fact))
