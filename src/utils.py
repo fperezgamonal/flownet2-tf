@@ -96,11 +96,11 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
     """
     assert (mode in ['triangular', 'triangular2', 'exp_range'])
     one_cycle_target = 2
-    one_cycle_tar = tf.convert_to_tensor(one_cycle_target)
     lr = tf.convert_to_tensor(base_lr)
     global_step = tf.cast(g_step_op, lr.dtype)
     step_size = tf.cast(step_size, lr.dtype)
     anneal_fact = tf.cast(annealing_factor, lr.dtype)
+    one_cycle_tar = tf.cast(one_cycle_target, lr.dtype)
 
     # computing: cycle = floor( 1 + global_step / ( 2 * step_size ) )
     double_step = tf.multiply(2., step_size)
@@ -166,10 +166,10 @@ def _mom_cyclic(g_step_op, base_mom=None, max_mom=None, step_size=None, gamma=0.
     """
     assert (mode in ['triangular', 'triangular2', 'exp_range'])
     one_cycle_target = 2
-    one_cycle_tar = tf.convert_to_tensor(one_cycle_target)
     mom = tf.convert_to_tensor(base_mom)
     global_step = tf.cast(g_step_op, mom.dtype)
     step_size = tf.cast(step_size, mom.dtype)
+    one_cycle_tar = tf.cast(one_cycle_target, mom.dtype)
 
     # computing: cycle = floor( 1 + global_step / ( 2 * step_size ) )
     double_step = tf.multiply(2., step_size)
