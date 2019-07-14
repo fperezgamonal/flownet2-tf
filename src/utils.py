@@ -135,7 +135,7 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
         clr = tf.multiply(tf.pow(gamma, global_step), clr)
 
     new_lr = tf.cond(tf.logical_and(tf.equal(one_cycle_value, tf.constant(True)), tf.equal(cycle, one_cycle_tar)),
-                     lambda: tf.add(lr, clr), lambda: tf.add(lr, clr))
+                     lambda: tf.subtract(lr, clr), lambda: tf.add(lr, clr))
 
     return new_lr
     # if one_cycle and tf.equal(cycle, one_cycle_tar):
