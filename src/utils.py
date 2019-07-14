@@ -103,7 +103,7 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
     # computing: cycle = floor( 1 + global_step / ( 2 * step_size ) )
     double_step = tf.multiply(2., step_size)
     global_div_double_step = tf.divide(global_step, double_step)
-    cycle = tf.floor(tf.add(1., global_div_double_step))
+    cycle = tf.cast(tf.floor(tf.add(1., global_div_double_step)), tf.int32)
 
     # computing: x = abs( global_step / step_size – 2 * cycle + 1 )
     double_cycle = tf.multiply(2., cycle)
@@ -112,7 +112,7 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
     x = tf.abs(tf.add(1., tmp))
 
     a1 = tf.maximum(0., tf.subtract(1., x))  # max(0, 1-x)
-    if one_cycle and cycle == 2:
+    if one_cycle and tf.equal(cycle, 2):
         # computing: clr = learning_rate - ( learning_rate – learning_rate * anneal_factor ) * max( 0, 1 - x )
         a2 = tf.subtract(lr, tf.multiply(lr, anneal_fact))
     else:  # for anything else than one cycle with LR (not momentum, exitted above)
@@ -125,7 +125,7 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
     if mode == 'exp_range' and not one_cycle:
         clr = tf.multiply(tf.pow(gamma, global_step), clr)
 
-    if one_cycle and cycle == 2:
+    if one_cycle and tf.equal(cycle, 2):
         return tf.subtract(lr, clr, name=op_name)
     else:
         return tf.add(lr, clr, name=op_name)
@@ -170,7 +170,7 @@ def _mom_cyclic(g_step_op, base_mom=None, max_mom=None, step_size=None, gamma=0.
     global_div_double_step = tf.divide(global_step, double_step)
     cycle = tf.floor(tf.add(1., global_div_double_step))
 
-    if one_cycle and cycle == 2:
+    if one_cycle and tf.equal(cycle, 2):
         return tf.identity(max_mom, name=op_name)
     else:
         # computing: x = abs( global_step / step_size – 2 * cycle + 1 )
