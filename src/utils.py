@@ -244,7 +244,7 @@ def average_endpoint_error(labels, predictions):
         return tf.reduce_sum(epe) / num_samples, epe  # reduced to one number, mean/average epe (sum/num_samples)
 
 
-def aepe_hfem(epe, lambda_w=0.01, perc_hfem=40):
+def aepe_hfem(epe, lambda_w=2., perc_hfem=50):
     """
     Given labels and predictions of size (N, H, W, 2), calculates average endpoint error:
     sqrt[sum_across_channels{(X - Y)^2}] but only for the p percentage of pixels with largest error
@@ -254,7 +254,10 @@ def aepe_hfem(epe, lambda_w=0.01, perc_hfem=40):
     :param epe:  average endpoint error (still in matrix form!) based on which we define the hard examples as those with
      larger error
     :param lambda_w: weight of this Hard Flow Example Mining error (relative to AEPE)
-    :param perc_hfem: percentage of pixels to consider as Hard Examples (i.e.: top 40%)
+    :param perc_hfem: percentage of pixels to consider as Hard Examples (i.e.: top 50%)
+    According to the config: https://github.com/nbei/Deep-Flow-Guided-Video-Inpainting/tree/master/tools
+    Lambda_w = 2 in training from scratch, 1 in later fine-tuning
+
     Commented: numpy logic, above it's TF equivalent (luckily TF 2.0 will default to eager mode...)
     """
     # Convert all variables that are not tensors into tensors

@@ -631,7 +631,7 @@ class Net(object):
               valid_iters=VAL_INTERVAL, val_input_a=None, val_gt_flow=None, val_input_b=None, val_matches_a=None,
               val_sparse_flow=None, checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True,
               lr_range_test=False, train_params_dict=None, log_smoothed_loss=True, reset_global_step=False,
-              summarise_grads=False, add_hfem=False, lambda_w=0.01, hfem_perc=40):
+              summarise_grads=False, add_hfem=False, lambda_w=2, hfem_perc=50):
 
         """
         runs training on the network from which this method is called.
