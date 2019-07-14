@@ -842,15 +842,16 @@ class Net(object):
                     if log_verbosity > 1:
                         print("Momentum optimizer used together with CLR/1cycle, will be using cyclical momentum")
                         if training_schedule['learning_rates'].lower() == 'one_cycle':
-                            one_cycle = True
+                            is_one_cycle = True
+                            train_params_dict['gamma'] = 1  # effectively disables (avoids duplicate code)
                         else:
-                            one_cycle = False
+                            is_one_cycle = False
                     momentum = _mom_cyclic(g_step_op=checkpoint_global_step_tensor,
                                            base_mom=train_params_dict['min_momentum'],
                                            max_mom=train_params_dict['max_momentum'],
-                                           gamma=train_params_dict['clr_gamma'],
+                                           gamma=train_params_dict['gamma'],
                                            step_size=train_params_dict['clr_stepsize'], mode='triangular',
-                                           one_cycle=one_cycle)
+                                           one_cycle=is_one_cycle)
 
                 else:  # Use fixed momentum
                     if train_params_dict['momentum'] is None:
