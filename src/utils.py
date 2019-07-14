@@ -98,6 +98,7 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
     lr = tf.convert_to_tensor(base_lr)
     global_step = tf.cast(g_step_op, lr.dtype)
     step_size = tf.cast(step_size, lr.dtype)
+    anneal_fact = tf.cast(annealing_factor, lr.dtype)
 
     # computing: cycle = floor( 1 + global_step / ( 2 * step_size ) )
     double_step = tf.multiply(2., step_size)
@@ -110,11 +111,12 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
     tmp = tf.subtract(global_div_step, double_cycle)
     x = tf.abs(tf.add(1., tmp))
 
-    # computing: clr = learning_rate + ( max_lr – learning_rate ) * max( 0, 1 - x )
-    a1 = tf.maximum(0., tf.subtract(1., x))
+    a1 = tf.maximum(0., tf.subtract(1., x))  # max(0, 1-x)
     if one_cycle and cycle == 2:
-        a2 = tf.subtract(lr, lr * annealing_factor)
+        # computing: clr = learning_rate - ( learning_rate – learning_rate * anneal_factor ) * max( 0, 1 - x )
+        a2 = tf.subtract(lr, tf.multiply(lr, anneal_fact))
     else:  # for anything else than one cycle with LR (not momentum, exitted above)
+        # computing: clr = learning_rate + ( max_lr – learning_rate ) * max( 0, 1 - x )
         a2 = tf.subtract(max_lr, lr)
     clr = tf.multiply(a1, a2)
 
