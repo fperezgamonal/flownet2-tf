@@ -101,6 +101,7 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
     step_size = tf.cast(step_size, lr.dtype)
     anneal_fact = tf.cast(annealing_factor, lr.dtype)
     one_cycle_tar = tf.cast(one_cycle_target, lr.dtype)
+    one_cycle_value = tf.convert_to_tensor(one_cycle)
 
     # computing: cycle = floor( 1 + global_step / ( 2 * step_size ) )
     double_step = tf.multiply(2., step_size)
@@ -114,14 +115,18 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
     x = tf.abs(tf.add(1., tmp))
 
     a1 = tf.maximum(0., tf.subtract(1., x))  # max(0, 1-x)
-    if one_cycle and tf.equal(cycle, one_cycle_tar):
-        tf.print(cycle)
-        tf.print(cycle.dtype)
-        # computing: clr = learning_rate - ( learning_rate – learning_rate * anneal_factor ) * max( 0, 1 - x )
-        a2 = tf.subtract(lr, tf.multiply(lr, anneal_fact))
-    else:  # for anything else than one cycle with LR (not momentum, exitted above)
-        # computing: clr = learning_rate + ( max_lr – learning_rate ) * max( 0, 1 - x )
-        a2 = tf.subtract(max_lr, lr)
+
+    # if one_cycle and tf.equal(cycle, one_cycle_tar):
+    #     tf.print(cycle)
+    #     tf.print(cycle.dtype)
+    #     # computing: clr = learning_rate - ( learning_rate – learning_rate * anneal_factor ) * max( 0, 1 - x )
+    #     a2 = tf.subtract(lr, tf.multiply(lr, anneal_fact))
+    # else:  # for anything else than one cycle with LR (not momentum, exitted above)
+    #     # computing: clr = learning_rate + ( max_lr – learning_rate ) * max( 0, 1 - x )
+    #     a2 = tf.subtract(max_lr, lr)
+    a2 = tf.cond(tf.logical_and(tf.equal(one_cycle_value, tf.constant(True)), tf.equal(cycle, one_cycle_tar)),
+                 lambda: tf.subtract(lr, tf.multiply(lr, anneal_fact)), lambda: tf.subtract(max_lr, lr))
+
     clr = tf.multiply(a1, a2)
 
     if mode == 'triangular2' and not one_cycle:
@@ -129,10 +134,14 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
     if mode == 'exp_range' and not one_cycle:
         clr = tf.multiply(tf.pow(gamma, global_step), clr)
 
-    if one_cycle and tf.equal(cycle, one_cycle_tar):
-        return tf.subtract(lr, clr, name=op_name)
-    else:
-        return tf.add(lr, clr, name=op_name)
+    new_lr = tf.cond(tf.logical_and(tf.equal(one_cycle_value, tf.constant(True)), tf.equal(cycle, one_cycle_tar)),
+                     lambda: tf.add(lr, clr), lambda: tf.add(lr, clr))
+
+    return new_lr
+    # if one_cycle and tf.equal(cycle, one_cycle_tar):
+    #     return tf.subtract(lr, clr, name=op_name)
+    # else:
+    #     return tf.add(lr, clr, name=op_name)
 
 
 def _mom_cyclic(g_step_op, base_mom=None, max_mom=None, step_size=None, gamma=0.99994, mode='triangular',
@@ -170,17 +179,14 @@ def _mom_cyclic(g_step_op, base_mom=None, max_mom=None, step_size=None, gamma=0.
     global_step = tf.cast(g_step_op, mom.dtype)
     step_size = tf.cast(step_size, mom.dtype)
     one_cycle_tar = tf.cast(one_cycle_target, mom.dtype)
+    one_cycle_value = tf.convert_to_tensor(one_cycle)
 
     # computing: cycle = floor( 1 + global_step / ( 2 * step_size ) )
     double_step = tf.multiply(2., step_size)
     global_div_double_step = tf.divide(global_step, double_step)
     cycle = tf.floor(tf.add(1., global_div_double_step))
 
-    if one_cycle and tf.equal(cycle, one_cycle_tar):
-        tf.print(cycle)
-        tf.print(cycle.dtype)
-        return tf.identity(max_mom, name=op_name)
-    else:
+    def momentum_clr():
         # computing: x = abs( global_step / step_size – 2 * cycle + 1 )
         double_cycle = tf.multiply(2., cycle)
         global_div_step = tf.divide(global_step, step_size)
@@ -199,6 +205,16 @@ def _mom_cyclic(g_step_op, base_mom=None, max_mom=None, step_size=None, gamma=0.
             cmom = tf.multiply(tf.pow(gamma, global_step), cmom)
 
         return tf.subtract(max_mom, cmom, name=op_name)
+
+    return_mom = tf.cond(tf.logical_and(tf.equal(one_cycle_value, tf.constant(True)), tf.equal(cycle, one_cycle_tar)),
+                         lambda: tf.identity(max_mom, name=op_name), lambda: momentum_clr())
+
+    return return_mom
+    # if one_cycle and tf.equal(cycle, one_cycle_tar):
+    #     tf.print(cycle)
+    #     tf.print(cycle.dtype)
+    #     return tf.identity(max_mom, name=op_name)
+    # else:
 
 
 # Thanks, https://github.com/tensorflow/tensorflow/issues/4079
