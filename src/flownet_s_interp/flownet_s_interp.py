@@ -200,7 +200,7 @@ class FlowNetS_interp(Net):
 
         # Add both losses (if it applies)
         if add_hard_flow_mining:
-            total_multiscale_loss = aepe_losses + hfem_losses
+            total_multiscale_loss = list(map(sum, zip(aepe_losses, hfem_losses)))  # adds corresponding elems tgether
         else:
             total_multiscale_loss = aepe_losses
 
