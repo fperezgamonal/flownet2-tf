@@ -174,6 +174,6 @@ class FlowNetS_interp(Net):
         loss = tf.losses.compute_weighted_loss(losses, [0.32, 0.08, 0.02, 0.01, 0.005])
         # Make sure loss is present in the final collection:
         # Default collection is tf.GraphKeys.LOSSES (used for training, another one for validation)
-        tf.losses.add_loss(loss)  # without this, it worked despite TF strongly recommends using this for custom losses
+        # tf.losses.add_loss(loss)  # without this it worked despite TF strongly recommending this for custom losses
         # Return the 'total' loss: loss fns + regularization terms defined in the model
         return tf.losses.get_total_loss()
