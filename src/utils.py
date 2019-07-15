@@ -295,8 +295,8 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem=False, lambda_w=2.
         epe_top_k, epe_top_k_idxs = tf.nn.top_k(epe_flatten, k=top_k)  # get top_k largest elements in one go!
 
         # 2.2. Create mask to only take into account pixels in step 2
-        HM_mask = tf.Variable(tf.zeros(tf.shape(epe_flatten)))
-        ones = tf.Variable(tf.ones(tf.shape(epe_top_k_idxs)))
+        HM_mask = tf.Variable(tf.zeros(tf.shape(epe_flatten)), trainable=False)
+        ones = tf.Variable(tf.ones(tf.shape(epe_top_k_idxs)), trainable=False)
         HM_mask = tf.scatter_update(HM_mask, epe_top_k_idxs, ones)
 
         # 2.3. Compute AEPE for "hard" pixels (we only miss the tf.reduce_sum(loss)/ num_hard_examples
