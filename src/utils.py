@@ -226,6 +226,7 @@ def LeakyReLU(x, leak=0.1, name="lrelu"):
         return f1 * x + f2 * abs(x)
 
 
+# TODO: if the code below works and there is no warning on "has no gradient", remove THIS!
 def average_endpoint_error(labels, predictions):
     """
     Given labels and predictions of size (N, H, W, 2), calculates average endpoint error:
@@ -244,58 +245,76 @@ def average_endpoint_error(labels, predictions):
         return tf.reduce_sum(epe) / num_samples, epe  # reduced to one number, mean/average epe (sum/num_samples)
 
 
-def aepe_hfem(epe, lambda_w=2., perc_hfem=50):
+# TODO: add HFEM to AEPE function (since it seems that adding losses later produces a "var X has no gradient")
+def average_endpoint_error_hfem(labels, predictions, add_hfem=False, lambda_w=2., perc_hfem=50):
     """
     Given labels and predictions of size (N, H, W, 2), calculates average endpoint error:
-    sqrt[sum_across_channels{(X - Y)^2}] but only for the p percentage of pixels with largest error
+    sqrt[sum_across_channels{(X - Y)^2}].
+    Optionally adds Hard Flow Example Mining for the p percentage of pixels with largest error
     This resembles the approach in the paper "Deep Flow-Guided Video Inpainting" by Rui Xu et. al where they increase
     the contribution to the loss for what they consider hard flow examples (which happen to be mostly on edges).
     Originally they use the L1 norm.
     :param epe:  average endpoint error (still in matrix form!) based on which we define the hard examples as those with
      larger error
+    :param labels: ground truth flow predictions at a particular scale
+    :param predictions: network outputted flow at a given scale
+    :param add_hfem: whether to add HFEM loss or not
     :param lambda_w: weight of this Hard Flow Example Mining error (relative to AEPE)
     :param perc_hfem: percentage of pixels to consider as Hard Examples (i.e.: top 50%)
     According to the config: https://github.com/nbei/Deep-Flow-Guided-Video-Inpainting/tree/master/tools
     Lambda_w = 2 in training from scratch, 1 in later fine-tuning
-
-    Commented: numpy logic, above it's TF equivalent (luckily TF 2.0 will default to eager mode...)
     """
-    # Convert all variables that are not tensors into tensors
+    # 0. Convert all variables that are not tensors into tensors
     lambda_w = tf.convert_to_tensor(lambda_w, name='lambda')
     perc_hfem = tf.convert_to_tensor(perc_hfem, name='perc_hardflows')
+    num_samples = predictions.shape.as_list()[0]
 
-    # 1. Sort pixels in decreasing order based on their EPE (decreasing)
-    # epe_flatten = np.reshape(epe, np.product(epe.shape))  # flatten matrix for easier sorting
-    epe_flatten = tf.reshape(epe, [-1])  # [1, tf.reduce_prod(tf.shape(epe))])
-    # epe_f_top_err = np.argsort(epe_flatten)[::-1]  # sort in decreasing value
-    # epe_f_top_err = tf.argsort(epe_flatten, direction='DESCENDING') ==> not available in TF 1.12 but top_k is better!
-    # 2. Pick first p percentage (w. corresponding indices)
-    # top_k = int(np.round((perc_hm / 100) * np.prod(epe.shape)))  # compute the number of samples considered hard
-    a1 = tf.divide(perc_hfem, 100)
-    a2 = tf.cast(tf.reduce_prod(tf.shape(epe)), tf.float32)
-    a1_times_a2 = tf.multiply(a1, a2)
-    top_k = tf.cast(tf.round(a1_times_a2), tf.int32)
-    epe_top_k, epe_top_k_idxs = tf.nn.top_k(epe_flatten, k=top_k)  # get top_k elements from epe_flatten (in one go!)
-    # 3. Create mask to only take into account pixels in step 2
-    # HM_mask = np.zeros(epe_flatten.shape)
-    HM_mask = tf.Variable(tf.zeros(tf.shape(epe_flatten)))
-    # list_top_k = tf.range(0, top_k, dtype=tf.int32)  # [0, 1, ..., top_k-1]
-    # epe_top_k = tf.gather(epe_f_top_err, list_top_k)
-    ones = tf.Variable(tf.ones(tf.shape(epe_top_k_idxs)))
-    # HM_mask[epe_f_top_err[:top_k]] = 1
-    HM_mask = tf.scatter_update(HM_mask, epe_top_k_idxs, ones)
-    # Additional reshaping back to img space (not needed)
-    # HM_mask = np.reshape(HM_mask, epe.shape)
-    # HM_mask = tf.reshape(HM_mask, tf.reduce_prod(tf.shape(epe)))
-    # 4. Compute AEPE for pixels in 2 (we only miss the tf.reduce_sum(loss)/ num_hard_examples
-    # epe_flatten_filtered = epe_flatten[HM_mask == 1]
-    epe_flatten_filtered = tf.cast(tf.boolean_mask(epe_flatten, HM_mask), dtype=tf.float32)
-    tf.print(epe_flatten_filtered)
-    # lambda * sum(EPE[hard_flows]) / len(hard_flows)
-    sum_epe_flatten_filtered = tf.reduce_sum(epe_flatten_filtered)
-    b1 = tf.multiply(lambda_w, sum_epe_flatten_filtered)
-    b2 = tf.cast(tf.size(epe_flatten_filtered), tf.float32)
-    return tf.divide(b1, b2)
+    # 1. Compute "standard AEPE"
+    predictions = tf.to_float(predictions)
+    labels = tf.to_float(labels)
+    predictions.get_shape().assert_is_compatible_with(labels.get_shape())
+
+    squared_difference = tf.square(tf.subtract(predictions, labels))
+    # sum across channels: sum[(X - Y)^2] -> N, H, W, 1
+    epe = tf.reduce_sum(squared_difference, 3, keepdims=True)  # sum across channels (u,v)
+    epe = tf.sqrt(epe)
+
+    aepe = tf.reduce_sum(epe) / num_samples
+
+    # 2. Compute HFEM loss
+    if add_hfem:
+        # 2.0. Flatten EPE matrix to make finding idxs etc. easier
+        epe_flatten = tf.reshape(epe, [-1])   # Reshape (flatten) EPE (decreasing)
+
+        # 2.1. Pick first p percentage (w. corresponding indices)
+        # top_k = int(np.round((perc_hm / 100) * np.prod(epe.shape)))
+        a1 = tf.divide(perc_hfem, 100)
+        a2 = tf.cast(tf.reduce_prod(tf.shape(epe)), tf.float32)
+        a1_times_a2 = tf.multiply(a1, a2)
+        top_k = tf.cast(tf.round(a1_times_a2), tf.int32)  # compute the number of samples considered hard
+        epe_top_k, epe_top_k_idxs = tf.nn.top_k(epe_flatten, k=top_k)  # get top_k largest elements in one go!
+
+        # 2.2. Create mask to only take into account pixels in step 2
+        HM_mask = tf.Variable(tf.zeros(tf.shape(epe_flatten)))
+        ones = tf.Variable(tf.ones(tf.shape(epe_top_k_idxs)))
+        HM_mask = tf.scatter_update(HM_mask, epe_top_k_idxs, ones)
+
+        # 2.3. Compute AEPE for "hard" pixels (we only miss the tf.reduce_sum(loss)/ num_hard_examples
+        # epe_flatten_filtered = epe_flatten[HM_mask == 1]
+        epe_flatten_filtered = tf.cast(tf.boolean_mask(epe_flatten, HM_mask), dtype=tf.float32)
+        # aepe_hfem = lambda * sum(EPE[hard_flows]) / len(hard_flows)
+        sum_epe_flatten_filtered = tf.reduce_sum(epe_flatten_filtered)
+        b1 = tf.multiply(lambda_w, sum_epe_flatten_filtered)
+        b2 = tf.cast(tf.size(epe_flatten_filtered), tf.float32)
+        aepe_hfem = tf.divide(b1, b2)
+
+        # Add both losses together
+        # aepe + aepe_fem
+        aepe_with_hfem = tf.add(aepe, aepe_hfem)
+        return aepe_with_hfem
+    else:
+        # Return Average EPE
+        return aepe
 
 
 def pad(tensor, num=1):
