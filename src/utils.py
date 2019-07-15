@@ -272,7 +272,7 @@ def aepe_hfem(epe, lambda_w=2., perc_hfem=50):
     # 2. Pick first p percentage (w. corresponding indices)
     # top_k = int(np.round((perc_hm / 100) * np.prod(epe.shape)))  # compute the number of samples considered hard
     a1 = tf.divide(perc_hfem, 100)
-    a2 = tf.cast(tf.reduce_prod(tf.shape(epe)), tf.float64)
+    a2 = tf.cast(tf.reduce_prod(tf.shape(epe)), tf.float32)
     a1_times_a2 = tf.multiply(a1, a2)
     top_k = tf.cast(tf.round(a1_times_a2), tf.int32)
     epe_top_k, epe_top_k_idxs = tf.nn.top_k(epe_flatten, k=top_k)  # get top_k elements from epe_flatten (in one go!)
