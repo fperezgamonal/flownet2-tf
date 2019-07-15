@@ -268,22 +268,22 @@ def aepe_hfem(epe, lambda_w=2., perc_hfem=50):
     # epe_flatten = np.reshape(epe, np.product(epe.shape))  # flatten matrix for easier sorting
     epe_flatten = tf.reshape(epe, [-1])  # [1, tf.reduce_prod(tf.shape(epe))])
     # epe_f_top_err = np.argsort(epe_flatten)[::-1]  # sort in decreasing value
-    epe_f_top_err = tf.argsort(epe_flatten, direction='DESCENDING')
+    # epe_f_top_err = tf.argsort(epe_flatten, direction='DESCENDING') ==> not available in TF 1.12 but top_k is better!
     # 2. Pick first p percentage (w. corresponding indices)
     # top_k = int(np.round((perc_hm / 100) * np.prod(epe.shape)))  # compute the number of samples considered hard
     a1 = tf.divide(perc_hfem, 100)
     a2 = tf.cast(tf.reduce_prod(tf.shape(epe)), tf.float64)
     a1_times_a2 = tf.multiply(a1, a2)
     top_k = tf.cast(tf.round(a1_times_a2), tf.int32)
+    epe_top_k, epe_top_k_idxs = tf.nn.top_k(epe_flatten, k=top_k)  # get top_k elements from epe_flatten (in one go!)
     # 3. Create mask to only take into account pixels in step 2
     # HM_mask = np.zeros(epe_flatten.shape)
     HM_mask = tf.Variable(tf.zeros(tf.shape(epe_flatten)))
-    list_top_k = tf.range(0, top_k, dtype=tf.int32)  # [0, 1, ..., top_k-1]
-
-    epe_top_k = tf.gather(epe_f_top_err, list_top_k)
-    ones = tf.Variable(tf.ones(tf.shape(epe_top_k)))
+    # list_top_k = tf.range(0, top_k, dtype=tf.int32)  # [0, 1, ..., top_k-1]
+    # epe_top_k = tf.gather(epe_f_top_err, list_top_k)
+    ones = tf.Variable(tf.ones(tf.shape(epe_top_k_idxs)))
     # HM_mask[epe_f_top_err[:top_k]] = 1
-    HM_mask = tf.scatter_update(HM_mask, epe_top_k, ones)
+    HM_mask = tf.scatter_update(HM_mask, epe_top_k_idxs, ones)
     # Additional reshaping back to img space (not needed)
     # HM_mask = np.reshape(HM_mask, epe.shape)
     # HM_mask = tf.reshape(HM_mask, tf.reduce_prod(tf.shape(epe)))

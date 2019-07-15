@@ -438,14 +438,14 @@ if __name__ == '__main__':
         type=float,
         required=False,
         help='If we use HFEM, relative weight of the added loss (i.e.: AEPE + lambda * HFEM_AEPE)',
-        default=0.01
+        default=2
     )
     parser.add_argument(
         '--hfem_perc_hard',
         type=float,
         required=False,
         help='If we use HFEM, percentage of pixels to be considered hard (i.e.: top 40%)',
-        default=40.0,
+        default=50.0,
     )
     # ==== Capacity of queues ====
     parser.add_argument(
