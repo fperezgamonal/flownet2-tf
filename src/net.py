@@ -926,7 +926,8 @@ class Net(object):
                                            one_cycle=is_one_cycle)
 
                 else:  # Use fixed momentum
-                    if train_params_dict['momentum'] is None:
+                    if train_params_dict['momentum'] is None and (training_schedule_str.lower() == 'one_cycle' or
+                                                                  training_schedule_str.lower() == 'clr'):
                         if train_params_dict['max_momentum'] is not None and \
                                 train_params_dict['min_momentum'] is not None and lr_range_test:
                             if log_verbosity > 1:
