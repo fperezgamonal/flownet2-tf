@@ -159,7 +159,6 @@ class Net(object):
             training_schedule = LR_RANGE_TEST
         else:  # long schedule as default
             training_schedule = LONG_SCHEDULE  # Normally applied from scratch on FlyingChairs
-            training_schedule = LONG_SCHEDULE  # Normally applied from scratch on FlyingChairs
 
         return training_schedule
 
@@ -172,7 +171,7 @@ class Net(object):
             training_schedule_fld = "CLR"
         elif 'one_cycle' in training_schedule_str.lower():
             training_schedule_fld = '1cycle'
-        elif 'exp_decreasing' in training_schedule_str.lower():
+        elif 'exp_decr' in training_schedule_str.lower():
             training_schedule_fld = "exp_decr"
         elif 'long' in training_schedule_str.lower():
             training_schedule_fld = "Slong_FC".format(training_schedule_str)  # FC for FlyingChairs
@@ -180,6 +179,78 @@ class Net(object):
             training_schedule_fld = training_schedule_str  # leave it as is
 
         return training_schedule_fld
+
+    def get_clean_set_name(self, dataset_config_str):
+        if dataset_config_str.lower() == 'flying_things3d':
+            dataset_name = 'FT3D'
+        elif dataset_config_str.lower() == 'sintel_final':
+            dataset_name = 'SintelFinal'
+        elif dataset_config_str.lower() == 'sintel_all':  # clean + final
+            dataset_name = 'Sintel'
+        elif dataset_config_str.lower() == 'fc_sintel':  # FC (train) + Sintel (validation)
+            dataset_name = 'FC_Sintel'
+        elif dataset_config_str.lower() == 'ft3d_sintel':  # FT3D (train) + Sintel (validation)
+            dataset_name = 'FT3D_Sintel'
+        else:  # flying_chairs
+            dataset_name = 'FC'
+        return dataset_name
+
+    # TODO: complete formatting for all methods
+    def get_training_event_name(self, dataset_name, train_params_dict, training_schedule_str, date_string, ckpt_path,
+                                add_hfem, maximum_iters):
+        """
+            Define a unique event name for the logging file (but also adding actual parameter information)
+            This helps to avoid mixing up experiments when running several in parallel!
+            The string format is the following:
+            ${DATASETSTR}_${SCRACTH/CKPT}_it=${CKPT_ITER}_${TRAIN_SCHEDULE}_${TSCHEDparams}_${date_string}
+
+        """
+        # Check for values
+        if ckpt_path is not None:
+            ckpt_str = 'ckpt'
+            step_number = int(ckpt_path.split('-')[-1])
+        else:
+            ckpt_str = 'scratch'
+            step_number = 0
+
+        if 'sintel' in training_schedule_str.lower():  # put all Sintel fine-tuning under the same log folder
+            event_string = '{0}'.format(date_string)
+        elif 'kitti' in training_schedule_str.lower():
+            event_string = '{0}'.format(date_string)
+        elif 'fine' in training_schedule_str.lower():  # format it a little better, FT3D for FlyingThings3D
+            event_string = '{0}'.format(date_string)
+
+        elif 'clr' in training_schedule_str.lower():  # make it all caps for readability
+            event_string = '{0}_from_{1}_it={2}_trainSch_CLR_opt_{3}_wd_{4}_minlr_{5}_maxlr_{6}_stepsize_{7}_{8}' \
+                           'cycles_HFEM={9}_{10}'.format(
+                dataset_name, ckpt_str, step_number, train_params_dict['optimizer'], train_params_dict['weight_decay'],
+                train_params_dict['clr_min_lr'], train_params_dict['clr_max_lr'],
+                train_params_dict['clr_stepsize'], train_params_dict['clr_num_cycles'], add_hfem, date_string)
+
+        elif 'one_cycle' in training_schedule_str.lower():
+            if train_params_dict['optimizer'].lower() == 'momentum':
+                event_string = '{0}_from_{1}_it={2}_trainSch_1cycle_opt_{3}_CM_{4}-{5}_wd_{6}_minlr_{7}_maxlr_{8}_' \
+                               'stepsize_{7}_{8}iters_HFEM={9}_{10}'.format(
+                    dataset_name, ckpt_str, step_number, train_params_dict['optimizer'],
+                    train_params_dict['min_momentum'], train_params_dict['max_momentum'],
+                    train_params_dict['weight_decay'], train_params_dict['clr_min_lr'],
+                    train_params_dict['clr_max_lr'], train_params_dict['clr_stepsize'], maximum_iters, add_hfem,
+                    date_string)
+            else:
+                event_string = '{0}_from_{1}_it={2}_trainSch_1cycle_opt_{3}_wd_{4}_minlr_{5}_maxlr_{6}_stepsize_{7}' \
+                               '_{8}iters_HFEM={9}_{10}'.format(
+                    dataset_name, ckpt_str, step_number, train_params_dict['optimizer'],
+                    train_params_dict['weight_decay'], train_params_dict['clr_min_lr'], train_params_dict['clr_max_lr'],
+                    train_params_dict['clr_stepsize'], maximum_iters, add_hfem, date_string)
+
+        elif 'exp_decr' in training_schedule_str.lower():
+            event_string = '{0}'.format(date_string)
+        elif 'long' in training_schedule_str.lower():
+            event_string = '{0}'.format(date_string)
+        else:
+            event_string = '{0}'.format(date_string)
+
+        return event_string
 
     # based on github.com/philferriere/tfoptflow/blob/33e8a701e34c8ce061f17297d40619afbd459ade/tfoptflow/model_pwcnet.py
     # functions: adapt_x, adapt_y, postproc_y_hat (crop)
@@ -631,7 +702,7 @@ class Net(object):
               valid_iters=VAL_INTERVAL, val_input_a=None, val_gt_flow=None, val_input_b=None, val_matches_a=None,
               val_sparse_flow=None, checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True,
               lr_range_test=False, train_params_dict=None, log_smoothed_loss=True, reset_global_step=False,
-              summarise_grads=False, add_hfem=False, lambda_w=2, hfem_perc=50):
+              summarise_grads=False, add_hfem=False, lambda_w=2, hfem_perc=50, dataset_config_str='flying_chairs'):
 
         """
         runs training on the network from which this method is called.
@@ -663,6 +734,7 @@ class Net(object):
 
         :return:
         """
+
         if log_verbosity <= 1:  # print loss and tfinfo to stdout
             tf.logging.set_verbosity(tf.logging.INFO)
         else:  # debug info (more verbose)
@@ -1111,9 +1183,12 @@ class Net(object):
         # Create unique logging dir to avoid overwritting of old data (e.g.: when comparing different runs)
         now = datetime.datetime.now()
         date_now = now.strftime('%d-%m-%y_%H-%M-%S')
+        training_schedule_event_name = self.get_training_event_name(dataset_config_str, train_params_dict,
+                                                                    training_schedule_str, date_now, checkpoints,
+                                                                    add_hfem, training_schedule['max_iters'])
         training_schedule_fld = self.get_training_schedule_folder_string(training_schedule_str)
 
-        log_dir = os.path.join(log_dir, training_schedule_fld, date_now)
+        log_dir = os.path.join(log_dir, training_schedule_fld, training_schedule_event_name)
 
         # Flush all prints (get stuck for some reason)
         sys.stdout.flush()
@@ -1139,7 +1214,7 @@ class Net(object):
                 save_interval_secs = 10000  # effectively deactivates saving checkpoints when doing LR range tests
             else:
                 save_summaries_secs = 60
-                save_interval_secs = 120  # Save one checkpoint once every 3 minutes
+                save_interval_secs = 180  # Save one checkpoint once every 3 minutes
 
             if checkpoints is not None:
                 if valid_iters > 0:

@@ -127,6 +127,7 @@ def main():
             add_hfem=FLAGS.add_hard_flow_example_mining,
             lambda_w=FLAGS.hfem_lambda_w,
             hfem_perc=FLAGS.hfem_perc_hard,
+            dataset_config_str=FLAGS.dataset_config,
         )
     else:
         print("Input_type: 'image_pairs'")
@@ -177,6 +178,7 @@ def main():
             add_hfem=FLAGS.add_hard_flow_example_mining,
             lambda_w=FLAGS.hfem_lambda_w,
             hfem_perc=FLAGS.hfem_perc_hard,
+            dataset_config_str=FLAGS.dataset_config,
         )
 
 
