@@ -252,6 +252,13 @@ class Net(object):
 
         return event_string
 
+    # auxiliar function to compute the new image size (for test only) for input images which are not divisble by divisor
+    def get_padded_image_size(self, og_height, og_width, divisor=64):
+        if og_height % divisor != 0 or og_width % divisor != 0:
+            new_height = int(ceil(og_height / divisor) * divisor)
+            new_width = int(ceil(og_width / divisor) * divisor)
+        return new_height, new_width
+
     # based on github.com/philferriere/tfoptflow/blob/33e8a701e34c8ce061f17297d40619afbd459ade/tfoptflow/model_pwcnet.py
     # functions: adapt_x, adapt_y, postproc_y_hat (crop)
     def adapt_x(self, input_a, input_b=None, matches_a=None, sparse_flow=None, divisor=64):
@@ -266,13 +273,13 @@ class Net(object):
         """
         # Convert from RGB -> BGR
         # First + second image
-        input_a = input_a[..., [2, 1, 0]]
+        # input_a = input_a[..., [2, 1, 0]] ==> remove as this makes no sense
         if sparse_flow is not None and matches_a is not None:
             matches_a = matches_a[..., np.newaxis]  # from (height, width) to (height, width, 1)
             print("New scheme: first + matchtrain_losses (1st=> 2nd frame) given")
-        else:
-            print("Normal scheme: first + second frame given")  # only for debugging, remove afterwards
-            input_b = input_b[..., [2, 1, 0]]
+        # else:
+        #     print("Normal scheme: first + second frame given")  # only for debugging, remove afterwards
+        #     input_b = input_b[..., [2, 1, 0]] ==> remove as this makes no sense
 
         # Scale from [0, 255] -> [0.0, 1.0] if needed
         if input_a.max() > 1.0:
@@ -528,20 +535,23 @@ class Net(object):
         :param log_metrics2file: whether to log the metrics to a file instead of printing them to stdout
         :return:
         """
+        # Compute padded size (must be done before running self.model() contrarily to that suggested here:
+        # https://github.com/sampepose/flownet2-tf/issues/82#issuecomment-466896116
         # Build Graph
+        new_height, new_width = self.get_padded_image_size(height, width)
         # TODO: Using fixed width and height does not enable one to pass batches with images that have different sizes
-        input_a = tf.placeholder(dtype=tf.float32, shape=[1, height, width, 3])
+        input_a = tf.placeholder(dtype=tf.float32, shape=[1, new_height, new_width, 3])
 
         if input_type == 'image_matches':
-            matches_a = tf.placeholder(dtype=tf.float32, shape=[1, height, width, 1])
-            sparse_flow = tf.placeholder(dtype=tf.float32, shape=[1, height, width, 2])
+            matches_a = tf.placeholder(dtype=tf.float32, shape=[1, new_height, new_width, 1])
+            sparse_flow = tf.placeholder(dtype=tf.float32, shape=[1, new_height, new_width, 2])
             inputs = {
                 'input_a': input_a,
                 'matches_a': matches_a,
                 'sparse_flow': sparse_flow,
             }
         else:
-            input_b = tf.placeholder(dtype=tf.float32, shape=[1, height, width, 3])
+            input_b = tf.placeholder(dtype=tf.float32, shape=[1, new_height, new_width, 3])
             inputs = {
                 'input_a': input_a,
                 'input_b': input_b,
@@ -647,7 +657,7 @@ class Net(object):
                     occ_mask_0 = imread(path_inputs[5])
                     inv_mask_0 = imread(path_inputs[6])
 
-                # Normalise and pad if the image is not divisible by 64
+                # Normalise + pad if the image is not divisible by 64 ('padded' placeholders, but needed to match them?)
                 frame_0, frame_1, matches_0, sparse_flow_0, x_adapt_info = self.adapt_x(frame_0, frame_1, matches_0,
                                                                                         sparse_flow_0)
                 if sparse_flow is not None and matches_0 is not None and input_type == 'image_matches':
