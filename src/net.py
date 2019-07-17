@@ -515,7 +515,7 @@ class Net(object):
     # TODO: double-check the number of columns of the txt file to ensure it is properly formatted
     # Each line will define a set of inputs. By doing so, we reduce complexity and avoid errors due to "forced" sorting
     def test_batch(self, checkpoint, image_paths, out_path, input_type='image_pairs', save_image=True, save_flo=True,
-                   compute_metrics=True, log_metrics2file=False):
+                   compute_metrics=True, log_metrics2file=False, width=1024, height=436):
         """
         Run inference on a set of images defined in .txt files
         :param checkpoint: the path to the pre-trained model weights
@@ -529,18 +529,19 @@ class Net(object):
         :return:
         """
         # Build Graph
-        input_a = tf.placeholder(dtype=tf.float32, shape=[1, None, None, 3])
+        # TODO: Using fixed width and height does not enable one to pass batches with images that have different sizes
+        input_a = tf.placeholder(dtype=tf.float32, shape=[1, height, width, 3])
 
         if input_type == 'image_matches':
-            matches_a = tf.placeholder(dtype=tf.float32, shape=[1, None, None, 1])
-            sparse_flow = tf.placeholder(dtype=tf.float32, shape=[1, None, None, 2])
+            matches_a = tf.placeholder(dtype=tf.float32, shape=[1, height, width, 1])
+            sparse_flow = tf.placeholder(dtype=tf.float32, shape=[1, height, width, 2])
             inputs = {
                 'input_a': input_a,
                 'matches_a': matches_a,
                 'sparse_flow': sparse_flow,
             }
         else:
-            input_b = tf.placeholder(dtype=tf.float32, shape=[1, None, None, 3])
+            input_b = tf.placeholder(dtype=tf.float32, shape=[1, height, width, 3])
             inputs = {
                 'input_a': input_a,
                 'input_b': input_b,
@@ -646,6 +647,7 @@ class Net(object):
                     occ_mask_0 = imread(path_inputs[5])
                     inv_mask_0 = imread(path_inputs[6])
 
+                # Normalise and pad if the image is not divisible by 64
                 frame_0, frame_1, matches_0, sparse_flow_0, x_adapt_info = self.adapt_x(frame_0, frame_1, matches_0,
                                                                                         sparse_flow_0)
                 if sparse_flow is not None and matches_0 is not None and input_type == 'image_matches':
@@ -662,6 +664,7 @@ class Net(object):
                     y_adapt_info = (x_adapt_info[-3], x_adapt_info[-2], 2)
                 else:
                     y_adapt_info = None
+                # Crop flow to image original size (before padding)
                 pred_flow = self.postproc_y_hat_test(flow, adapt_info=y_adapt_info)
 
                 # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
