@@ -16,6 +16,14 @@ VAL = 2
 # Any other value means that some image is not used for a reason (e.g.: in FlyingThings3D, complicated examples)
 DEBUG = False  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
 
+# DM sparsness (in % of not 0 pixels in sparse mask) computed in FC, FT3D and Sintel (training parts)
+fc_sparse_perc = 0.267129
+ft3d_sparse_perc = 0.249715
+sintel_sparse_perc = 0.222320
+
+
+# TODO: this is very, very slow for big datasets, try using shards instead to divide work among all threads
+# See: https://gist.github.com/psycharo/58717872a3a00284fbbcd9575d265785
 
 # https://stackoverflow.com/questions/28013200/reading-middlebury-flow-files-with-python-bytes-array-numpy
 def open_flo_file(filename):
@@ -247,14 +255,32 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
 
             if sparse_from_gt is not None:  # provide sparse flow + mask by sampling random points from gt_flow
                 # Randomly select a 'sparse_from_gt' percentage (from 1 to sparse_from_gt with 0.5 step)
-                random_percentage = np.random.choice(np.arange(1, sparse_from_gt+0.5, 0.5))
+                # random_percentage = np.random.choice(np.arange(1, sparse_from_gt+0.5, 0.5))
+                if dataset == 'ft3d_sintel' or dataset == 'flying_things3D':
+                    step = ft3d_sparse_perc / 2
+                    lower_bound = ft3d_sparse_perc - step
+                    upper_bound = ft3d_sparse_perc + step
+                elif dataset == 'fc_sintel' or dataset == 'flying_chairs':
+                    step = fc_sparse_perc / 2
+                    lower_bound = fc_sparse_perc - step
+                    upper_bound = fc_sparse_perc + step
+                elif dataset == 'sintel_all' or dataset == 'sintel_clean' or dataset == 'sintel_final':
+                    step = ft3d_sparse_perc / 2
+                    lower_bound = sintel_sparse_perc - step
+                    upper_bound = sintel_sparse_perc + step
+                else:
+                    step = fc_sparse_perc / 2
+                    lower_bound = fc_sparse_perc - step
+                    upper_bound = fc_sparse_perc + step
+
+                random_percentage = np.random.choice(np.linspace(lower_bound, upper_bound, 50))
                 p_fill_in = random_percentage/100
                 matches_a = np.random.choice([0, 255], size=image_a.shape[:-1], p=[1 - p_fill_in, p_fill_in]).astype(
                     np.uint64)
                 if DEBUG:
                     print("Percentage of pixels to sample from gt_flow: {}".format(
                         100 * (np.sum(matches_a == 255) / np.product(image_a.shape[:-1]))))
-                    print("Should be in the range {}-{}".format(1, sparse_from_gt))
+                    print("Should be in the range {}-{}".format(lower_bound, upper_bound))
                 # Replicate matches_a to have a multi-channel mask to select sparse_flow
                 random_mask = matches_a == 255  # convert to boolean for masking
                 matches_a = matches_a[..., np.newaxis]  # add extra axis so it has the shape height x width x num_ch
