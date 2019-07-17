@@ -142,6 +142,20 @@ if __name__ == '__main__':
         help='Path to invalid mask with pixels that should not be considered when computing metrics = 1(invalid flow)',
         default='data/samples/sintel/frame_00186_inv_mask.png',
     )
+    parser.add_argument(
+        '--width',
+        type=int,
+        required=False,
+        help='Optionally specify the image(s) width',
+        default=1024
+    )
+    parser.add_argument(
+        '--height',
+        type=int,
+        required=False,
+        help='Optionally specify the image(s) height',
+        default=436
+    )
     FLAGS = parser.parse_args()
 
     # Verify arguments are valid

@@ -530,18 +530,18 @@ class Net(object):
         """
         # Build Graph
         # TODO: Using fixed width and height does not enable one to pass batches with images that have different sizes
-        input_a = tf.placeholder(dtype=tf.float32, shape=[1, height, width, 3])
+        input_a = tf.placeholder(dtype=tf.float32, shape=[1, None, None, 3])
 
         if input_type == 'image_matches':
-            matches_a = tf.placeholder(dtype=tf.float32, shape=[1, height, width, 1])
-            sparse_flow = tf.placeholder(dtype=tf.float32, shape=[1, height, width, 2])
+            matches_a = tf.placeholder(dtype=tf.float32, shape=[1, None, None, 1])
+            sparse_flow = tf.placeholder(dtype=tf.float32, shape=[1, None, None, 2])
             inputs = {
                 'input_a': input_a,
                 'matches_a': matches_a,
                 'sparse_flow': sparse_flow,
             }
         else:
-            input_b = tf.placeholder(dtype=tf.float32, shape=[1, height, width, 3])
+            input_b = tf.placeholder(dtype=tf.float32, shape=[1, None, None, 3])
             inputs = {
                 'input_a': input_a,
                 'input_b': input_b,
