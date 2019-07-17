@@ -6,7 +6,9 @@ slim = tf.contrib.slim
 from math import exp
 from .dataset_configs import FLYING_CHAIRS_ALL_DATASET_CONFIG, SINTEL_FINAL_ALL_DATASET_CONFIG,\
     SINTEL_ALL_DATASET_CONFIG, FLYING_THINGS_3D_ALL_DATASET_CONFIG, FC_TRAIN_SINTEL_VAL_DATASET_CONFIG,\
-    FT3D_TRAIN_SINTEL_VAL_DATASET_CONFIG
+    FT3D_TRAIN_SINTEL_VAL_DATASET_CONFIG, FLYING_CHAIRS_MINI_DATASET_CONFIG, FT3D_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG,\
+    FC_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG, FLYING_THINGS_3D_MINI_DATASET_CONFIG, SINTEL_MINI_DATASET_CONFIG, \
+    ALLEY_MINI_DATASET_CONFIG
 
 _preprocessing_ops = tf.load_op_library(
     tf.resource_loader.get_path_to_datafile("./ops/build/preprocessing.so"))
@@ -91,7 +93,9 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
         # Width and height accounting for needed padding to match network dimensions
         # Different origins for train and val
         if dataset_config == FC_TRAIN_SINTEL_VAL_DATASET_CONFIG or \
-                dataset_config == FT3D_TRAIN_SINTEL_VAL_DATASET_CONFIG:
+                dataset_config == FT3D_TRAIN_SINTEL_VAL_DATASET_CONFIG or \
+                dataset_config == FC_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG or \
+                dataset_config == FT3D_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG:
             print("Dataset selected uses two different origins for train and validation images(make sure it is OK!)")
             if split_name == 'train':
                 image_height, image_width = dataset_config['PADDED_IMAGE_HEIGHT'][0], \
@@ -272,8 +276,8 @@ def _generate_coeff(param, discount_coeff=tf.constant(1.0), default_value=tf.con
 
 
 # TODO: fix bug with data augmentation
-def load_batch(dataset_config_str, split_name, global_step=None, input_type='image_pairs', common_queue_capacity=128,
-               common_queue_min=64, capacity_in_batches_train=4, capacity_in_batches_val=1, num_threads=8,
+def load_batch(dataset_config_str, split_name, global_step=None, input_type='image_pairs', common_queue_capacity=64,
+               common_queue_min=32, capacity_in_batches_train=4, capacity_in_batches_val=1, num_threads=8,
                batch_size=None):
 
     if dataset_config_str.lower() == 'flying_things3d':
@@ -286,6 +290,16 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
         dataset_config = FC_TRAIN_SINTEL_VAL_DATASET_CONFIG
     elif dataset_config_str.lower() == 'ft3d_sintel':  # FT3D (train) + Sintel (validation)
         dataset_config = FT3D_TRAIN_SINTEL_VAL_DATASET_CONFIG
+    elif dataset_config_str.lower() == 'fc_mini':
+        dataset_config = FLYING_CHAIRS_MINI_DATASET_CONFIG
+    elif dataset_config_str.lower() == 'ft3d_mini':
+        dataset_config = FLYING_THINGS_3D_MINI_DATASET_CONFIG
+    elif dataset_config_str.lower() == 'sintel_mini':
+        dataset_config = SINTEL_MINI_DATASET_CONFIG
+    elif dataset_config_str.lower() == 'fc_sintel_mini':
+        dataset_config = FC_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG
+    elif dataset_config_str.lower() == 'ft3d_sintel_mini':
+        dataset_config = FT3D_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG
     else:  # flying_chairs
         dataset_config = FLYING_CHAIRS_ALL_DATASET_CONFIG
 
