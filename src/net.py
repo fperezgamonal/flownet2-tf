@@ -491,18 +491,18 @@ class Net(object):
 
         if sparse_flow_path is None:
             inputs = {
-                'input_a': tf.expand_dims(tf.constant(input_a, dtype=tf.float32), 0),
+                'input_a': tf.constant(input_a, dtype=tf.float32),
                 # uint8 may cause mismatch format when concatenating (after normalisation we
                 # probably have a float anyway (due to the .0 in 255.0))
-                'input_b': tf.expand_dims(tf.constant(input_b, dtype=tf.float32), 0),
+                'input_b': tf.constant(input_b, dtype=tf.float32),
             }
         else:
             inputs = {
-                'input_a': tf.expand_dims(tf.constant(input_a, dtype=tf.float32), 0),
+                'input_a': tf.constant(input_a, dtype=tf.float32),
                 # uint8 may cause mismatch format when concatenating (after normalisation we
                 # probably have a float anyway (due to the .0 in 255.0))
-                'matches_a': tf.expand_dims(tf.constant(matches_a, dtype=tf.float32), 0),
-                'sparse_flow': tf.expand_dims(tf.constant(sparse_flow, dtype=tf.float32), 0),
+                'matches_a': tf.constant(matches_a, dtype=tf.float32),
+                'sparse_flow': tf.constant(sparse_flow, dtype=tf.float32),
             }
         predictions = self.model(inputs, training_schedule, trainable=False)
         pred_flow = predictions['flow']
