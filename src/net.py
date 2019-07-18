@@ -336,7 +336,14 @@ class Net(object):
             x_adapt_info = None
 
         # Reshape as batch-like arrays with shape (batch, height, width, n_ch)
-        input_a, input_b, matches_a, sparse_flow = map(lambda x: tf.expand_dims(x, 0), [input_a, input_b, matches_a])
+        if sparse_flow is not None and matches_a is not None:
+            input_a, matches_a, sparse_flow = map(lambda x: tf.expand_dims(x, 0), [input_a, matches_a, sparse_flow])
+            input_b = None
+        else:
+            input_a, input_b = map(lambda x: tf.expand_dims(x, 0), [input_a, input_b])
+            matches_a = None
+            sparse_flow = None
+
         return input_a, input_b, matches_a, sparse_flow, x_adapt_info
 
     # This is not used in training since we load already padded flows. If it applies, use in test for 'sparse_flow'
