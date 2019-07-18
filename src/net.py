@@ -569,6 +569,7 @@ class Net(object):
         # Compute padded size (must be done before running self.model() contrarily to that suggested here:
         # https://github.com/sampepose/flownet2-tf/issues/82#issuecomment-466896116
         # Build Graph
+
         # TODO: Using fixed width and height does not enable one to pass batches with images that have different sizes
         new_height, new_width = self.get_padded_image_size(height, width)
         input_a = tf.placeholder(dtype=tf.float32, shape=[1, new_height, new_width, 3])
@@ -600,6 +601,13 @@ class Net(object):
             with open(image_paths, 'r') as input_file:
                 path_list = input_file.readlines()
 
+            # Initialise some auxiliar variables to track metrics
+            metrics = np.array([])
+            # Auxiliar counters for metrics
+            not_occluded_count = 0
+            not_disp_S0_10_count = 0
+            not_disp_S10_40_count = 0
+            not_disp_S40plus_count = 0
             # TODO: save logfile with metrics on the same folder as the experiment
             # Easiest way to only open it once is to define it as out_path if no custom folder has been inputted
             # Or out_path/custom_folder if it has
@@ -773,11 +781,21 @@ class Net(object):
                 # Useful to compute metrics on huge datasets like Sintel, Kitti, etc. instead of tens of images
                 if compute_metrics and gt_flow_0 is not None:
                     # Compute all metrics
-                    metrics = compute_all_metrics(predicted_flow_cropped, gt_flow_0, occ_mask=occ_mask_0,
-                                                  inv_mask=inv_mask_0)
+                    metrics, not_occluded, not_disp_s010, not_disp_s1040, not_disp_s40plus = compute_all_metrics(
+                        predicted_flow_cropped, gt_flow_0, occ_mask=occ_mask_0, inv_mask=inv_mask_0)
                     final_str_formated = get_metrics(metrics)
                     if accumulate_metrics:
-                        print("")
+                        not_occluded_count + = not_occluded
+                        not_disp_S0_10_count += not_disp_s010
+                        not_disp_S10_40_count += not_disp_s1040
+                        not_disp_S40plus_count += not_disp_s40plus
+                        # Update metrics array
+                        current_metrics = np.hstack((metrics['mangall'], metrics['stdangall'], metrics['EPEall'],
+                                                     metrics['mangmat'], metrics['stdangmat'], metrics['EPEmat'],
+                                                     metrics['mangumat'], metrics['stdangumat'], metrics['EPEumat'],
+                                                     metrics['S0-10'], metrics['S10-40'], metrics['S40plus']))
+                        # Concatenate in one new row (if empty just initialises to current_metrics)
+                        metrics = np.vstack([metrics, current_metrics]) if metrics.size else current_metrics
 
                     if log_metrics2file:
                         logfile.write(final_str_formated)
@@ -789,7 +807,50 @@ class Net(object):
             # * this code is available in a zipped file attached to a publication in the IPOL journal (evaluation_code):
             # http://www.ipol.im/pub/art/2019/238/#Non-Reviewed-Supplementary-Materials
             if accumulate_metrics:
-                print()
+                # Compute the final (average) mang, stdang and mepe
+                num_metrics = metrics.shape[-1]
+                average_metrics = np.array((num_metrics, 1)) * np.inf
+                values_not_inf = np.zeros((num_metrics, 1))
+                not_valid_values = np.zeros((num_metrics, 1))
+                for i in range(num_metrics):  # indices 0 to 11
+                    not_inf = np.sum(metrics[:, i] != np.inf)
+                    are_NaN = np.sum(np.isnan(metrics[:, i]))
+                    not_valid_values[i] = not_inf + are_NaN
+                    values_not_inf[i] = np.sum(metrics[metrics[:, i] != np.inf and not np.isnan(metrics[:, i]), i])
+                    average_metrics[i] = values_not_inf[i] / not_valid_values[i]
+
+                # Re-scale umat metrics if some tested image had 0 pixels occluded
+                if not_occluded_count > 0:
+                    for i in range(6, 9):  # indices of 6 to 8
+                        average_metrics[i] = average_metrics[i] * (not_valid_values[i] /
+                                                                   (not_valid_values[i]) - not_occluded_count)
+                # Re-scale metrics for S0-10, S10-40 and S40+ if some frames had 0 pixels within a specific
+                # displacement range.
+                if not_disp_S0_10_count > 0:
+                    average_metrics[9] = average_metrics[9] * (not_valid_values[9] /
+                                                               (not_valid_values[9] - not_disp_S0_10_count))
+                if not not_disp_S10_40_count > 0:
+                    average_metrics[10] = average_metrics[10] * (not_valid_values[10] /
+                                                               (not_valid_values[10] - not_disp_S10_40_count))
+                if not not_disp_S40plus_count > 0:
+                    average_metrics[11] = average_metrics[11] * (not_valid_values[11] /
+                                                               (not_valid_values[11] - not_disp_S40plus_count))
+
+                if log_metrics2file:
+                    # Make dictionary
+                    avg_metrics_dict = {'mangall': average_metrics[0], 'stdangall': average_metrics[1],
+                                        'EPEall': average_metrics[2], 'mangmat': average_metrics[3],
+                                        'stdangmat': average_metrics[4], 'EPEmat': average_metrics[5],
+                                        'mangumat': average_metrics[6], 'stdangumat': average_metrics[7],
+                                        'EPEumat': average_metrics[8], 'S0-10': average_metrics[9],
+                                        'S10-40': average_metrics[10], 'S40plus': average_metrics[11]}
+                    final_str_formated_avg = get_metrics(avg_metrics_dict, average=True)
+                    now = datetime.datetime.now()
+                    date_now = now.strftime('%d-%m-%y_%H-%M-%S')
+                    notice_str = '\n\nNow logging final averaged metrics (today is : {})...\n\n'.format(date_now))
+                    logfile.write(notice_str)
+                    logfile.write(final_str_formated_avg)
+
 
             if log_metrics2file:
                 logfile.close()

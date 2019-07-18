@@ -181,10 +181,13 @@ def segment_flow(flow):
     return seg
 
 
-def get_metrics(metrics):
+def get_metrics(metrics, average=False):
     dash = "-" * 50
     line = '_' * 50
-    title_str = "{:^50}".format('MPI-Sintel Flow Error Metrics')
+    if average:
+        title_str = "{:^50}".format('MPI-Sintel Flow Error Metrics (AVERAGE)')
+    else:
+        title_str = "{:^50}".format('MPI-Sintel Flow Error Metrics')
     headers = '{:<5s}{:^15s}{:^15s}{:^15s}'.format('Mask', 'MANG', 'STDANG', 'MEPE')
     all_string = '{:<5s}{:^15.4f}{:^15.4f}{:^15.4f}'.format('(all)', metrics['mangall'], metrics['stdangall'],
                                                             metrics['EPEall'])
@@ -259,6 +262,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         un_occ_msk = occ_mask & ~inv_mask  # 1's are valid and occluded
         umat_mang, umat_stdang, umat_mepe = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, un_occ_msk, False,
                                                             bord)
+        not_occluded = 0
     else:
         # No occluded pixels (umat = 0, mat = all)
         mat_mepe = mepe
@@ -267,6 +271,9 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         umat_mang = 0
         mat_stdang = stdang
         umat_stdang= 0
+
+        # We need to count the number of occluded instances to properly compute averages of several images
+        not_occluded = 1
 
     metrics['EPEmat'] = mat_mepe
     metrics['mangmat'] = mat_mang
@@ -308,8 +315,11 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         # % We want to take into account only the valid and values = 1 in msk_s010
         msk_s010 = (msk_s010) & (~inv_mask)
         _, _, s0_10 = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s010, False, bord)
+        s0_10_is_zero = 0
     else:
         s0_10 = 0
+        # Count instances with no pixels in this range of movement to average over all images
+        s0_10_is_zero = 1
 
     metrics['S0-10'] = s0_10
 
@@ -328,8 +338,11 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         msk_s1040 = (msk_s1040) & (~inv_mask)
         # The desired pixels have already value 1, we are done.
         _, _, s10_40 = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s1040, False, bord)
+        s10_40_is_zero = 0
     else:
         s10_40 = 0
+        # Count instances with no pixels in this range of movement to average over all images
+        s10_40_is_zero = 1
 
     metrics['S10-40'] = s10_40
 
@@ -347,12 +360,15 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
         # Same reasoning as s0 - 10 and s10 - 40 masks
         msk_s40plus = (msk_s40plus) & (~inv_mask)
         _, _, s40plus = flow_error_mask(of_gt_x, of_gt_y, of_est_x, of_est_y, msk_s40plus, False, bord)
+        s40plus_is_zero = 0
     else:
         s40plus = 0
+        # Count instances with no pixels in this range of movement to average over all images
+        s40plus_is_zero = 1
 
     metrics['S40plus'] = s40plus
 
-    return metrics
+    return metrics, not_occluded, s0_10_is_zero, s10_40_is_zero, s40plus_is_zero
 
 
 # TODO: should index with tuple not directly with a list of indices/logical values
