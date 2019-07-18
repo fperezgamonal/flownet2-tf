@@ -602,7 +602,7 @@ class Net(object):
                 path_list = input_file.readlines()
 
             # Initialise some auxiliar variables to track metrics
-            metrics = np.array([])
+            add_metrics = np.array([])
             # Auxiliar counters for metrics
             not_occluded_count = 0
             not_disp_S0_10_count = 0
@@ -795,7 +795,7 @@ class Net(object):
                                                      metrics['mangumat'], metrics['stdangumat'], metrics['EPEumat'],
                                                      metrics['S0-10'], metrics['S10-40'], metrics['S40plus']))
                         # Concatenate in one new row (if empty just initialises to current_metrics)
-                        metrics = np.vstack([metrics, current_metrics]) if metrics.size else current_metrics
+                        add_metrics = np.vstack([add_metrics, current_metrics]) if add_metrics.size else current_metrics
 
                     if log_metrics2file:
                         logfile.write(final_str_formated)
@@ -850,7 +850,6 @@ class Net(object):
                     notice_str = '\n\nNow logging final averaged metrics (today is : {})...\n\n'.format(date_now)
                     logfile.write(notice_str)
                     logfile.write(final_str_formated_avg)
-
 
             if log_metrics2file:
                 logfile.close()
