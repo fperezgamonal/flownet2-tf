@@ -548,7 +548,7 @@ class Net(object):
     # TODO: double-check the number of columns of the txt file to ensure it is properly formatted
     # Each line will define a set of inputs. By doing so, we reduce complexity and avoid errors due to "forced" sorting
     def test_batch(self, checkpoint, image_paths, out_path, input_type='image_pairs', save_image=True, save_flo=True,
-                   compute_metrics=True, log_metrics2file=False, width=1024, height=436):
+                   compute_metrics=True, log_metrics2file=False, width=1024, height=436, new_par_folder=None):
         """
         Run inference on a set of images defined in .txt files
         :param checkpoint: the path to the pre-trained model weights
@@ -561,6 +561,7 @@ class Net(object):
         :param log_metrics2file: whether to log the metrics to a file instead of printing them to stdout
         :param width
         :param height
+        :param custom_child_folder
         :return:
         """
         # Compute padded size (must be done before running self.model() contrarily to that suggested here:
@@ -597,10 +598,15 @@ class Net(object):
             with open(image_paths, 'r') as input_file:
                 path_list = input_file.readlines()
 
+            # TODO: save logfile with metrics on the same folder as the experiment
+            # Easiest way to only open it once is to define it as out_path if no custom folder has been inputted
+            # Or out_path/custom_folder if it has
             if log_metrics2file:
                 basefile = image_paths.split()[-1]
                 logfile = basefile.replace('.txt', '_metrics.log')
-                logfile = open(logfile, 'w+')
+                logfile_full = os.path.join(out_path, logfile) if new_par_folder is None else os.path.join(
+                    out_path, new_par_folder, logfile)
+                logfile = open(logfile_full, 'w+')
 
             for img_idx in range(len(path_list)):
                 # Read + pre-process files
@@ -741,12 +747,11 @@ class Net(object):
                 # TODO: modify to keep the folder structure (at least parent folder of the image) ==> test!
                 # Assumption: take as reference the parent folder of the first image (common to all input types)
                 # Same for the name of the output flow (take the first image name)
-                parent_folder_name = path_inputs[0].split('/')[-2]
+                # Useful inside the loop if we feed images with different parent folders (for instance Sintel)
+                parent_folder_name = path_inputs[0].split('/')[-2] if new_par_folder is None else new_par_folder
                 unique_name = path_inputs[0].split('/')[-1][:-4]
                 out_path_complete = os.path.join(out_path, parent_folder_name)
-                print("There is a bug in the folder creation (we recursively add folders under previous one)")
-                print("parent_folder_name: '{}'\nunique_name: '{}\nout_path_complete: '{}'\nout_path: '{}'".format(
-                    parent_folder_name, unique_name, out_path_complete, out_path))
+
                 if save_image or save_flo:
                     if not os.path.isdir(out_path_complete):
                         os.makedirs(out_path_complete)

@@ -46,6 +46,7 @@ def main():
             log_metrics2file=FLAGS.log_metrics2file,
             width=FLAGS.width,
             height=FLAGS.height,
+            new_par_folder=FLAGS.new_par_folder,
         )
     else:
         raise ValueError("'input_a' is not valid, should be a path to a folder or a single image")
@@ -117,6 +118,13 @@ if __name__ == '__main__':
         required=False,
         help='whether to save the raw predicted flow in .flo format (see Middlebury specification for more details)',
         default=True,
+    )
+    parser.add_argument(
+        '--new_par_folder',
+        type=str,
+        required=False,
+        help='for batch inference, instead of creating a subfolder with the first file parent name, we assign a custom',
+        default=None
     )
     parser.add_argument(
         '--compute_metrics',
