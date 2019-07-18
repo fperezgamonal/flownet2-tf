@@ -548,7 +548,8 @@ class Net(object):
     # TODO: double-check the number of columns of the txt file to ensure it is properly formatted
     # Each line will define a set of inputs. By doing so, we reduce complexity and avoid errors due to "forced" sorting
     def test_batch(self, checkpoint, image_paths, out_path, input_type='image_pairs', save_image=True, save_flo=True,
-                   compute_metrics=True, log_metrics2file=False, width=1024, height=436, new_par_folder=None):
+                   compute_metrics=True, accumulate_metrics=False, log_metrics2file=False, width=1024, height=436,
+                   new_par_folder=None):
         """
         Run inference on a set of images defined in .txt files
         :param checkpoint: the path to the pre-trained model weights
@@ -558,6 +559,7 @@ class Net(object):
         :param save_image: whether to save a png visualization (Middlebury colour code) of the flow
         :param save_flo: whether to save the 'raw' .flo file (useful to compute errors and such)
         :param compute_metrics: whether to compute error metrics or not
+        :param accumulate_metrics: whether to record the average of the metrics for all images in the file or not
         :param log_metrics2file: whether to log the metrics to a file instead of printing them to stdout
         :param width
         :param height
@@ -767,17 +769,27 @@ class Net(object):
                 if save_flo:
                     full_out_path = os.path.join(out_path_complete, unique_name + '_flow.flo')
                     write_flow(predicted_flow_cropped, full_out_path)
-
+                # TODO: add logic to show the average metrics in the input batch (with a flag)
+                # Useful to compute metrics on huge datasets like Sintel, Kitti, etc. instead of tens of images
                 if compute_metrics and gt_flow_0 is not None:
                     # Compute all metrics
                     metrics = compute_all_metrics(predicted_flow_cropped, gt_flow_0, occ_mask=occ_mask_0,
                                                   inv_mask=inv_mask_0)
                     final_str_formated = get_metrics(metrics)
+                    if accumulate_metrics:
+                        print("")
 
                     if log_metrics2file:
                         logfile.write(final_str_formated)
                     else:  # print to stdout
                         print(final_str_formated)
+
+            # Actually compute the average metrics (careful: need to discar NaNs and take into consideration when ave-
+            # raging (i.e.: we need a counter for each loss element, similar to the Matlab source code*)
+            # * this code is available in a zipped file attached to a publication in the IPOL journal (evaluation_code):
+            # http://www.ipol.im/pub/art/2019/238/#Non-Reviewed-Supplementary-Materials
+            if accumulate_metrics:
+                print()
 
             if log_metrics2file:
                 logfile.close()
@@ -786,8 +798,7 @@ class Net(object):
               valid_iters=VAL_INTERVAL, val_input_a=None, val_gt_flow=None, val_input_b=None, val_matches_a=None,
               val_sparse_flow=None, checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True,
               lr_range_test=False, train_params_dict=None, log_smoothed_loss=True, reset_global_step=False,
-              summarise_grads=False, add_hfem=False, lambda_w=2, hfem_perc=50, dataset_config_str='flying_chairs',
-              no_deconv_layers=False):
+              summarise_grads=False, add_hfem=False, lambda_w=2, hfem_perc=50, dataset_config_str='flying_chairs'):
 
         """
         runs training on the network from which this method is called.
@@ -817,7 +828,6 @@ class Net(object):
         :param lambda_w
         :param hfem_perc
         :param dataset_config_str:
-        :param no_deconv_layers:
 
         :return:
         """
