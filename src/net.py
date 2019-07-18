@@ -785,7 +785,7 @@ class Net(object):
                         predicted_flow_cropped, gt_flow_0, occ_mask=occ_mask_0, inv_mask=inv_mask_0)
                     final_str_formated = get_metrics(metrics)
                     if accumulate_metrics:
-                        not_occluded_count + = not_occluded
+                        not_occluded_count += not_occluded
                         not_disp_S0_10_count += not_disp_s010
                         not_disp_S10_40_count += not_disp_s1040
                         not_disp_S40plus_count += not_disp_s40plus

@@ -43,6 +43,7 @@ def main():
             save_flo=FLAGS.save_flo,
             save_image=FLAGS.save_image,
             compute_metrics=FLAGS.compute_metrics,
+            accumulate_metrics=FLAGS.accumulate_metrics,
             log_metrics2file=FLAGS.log_metrics2file,
             width=FLAGS.width,
             height=FLAGS.height,
@@ -131,6 +132,13 @@ if __name__ == '__main__':
         type=str2bool,
         required=False,
         help='whether to compute error metrics or not (if True all available metrics are computed, check flowlib.py)',
+        default=True,
+    )
+    parser.add_argument(
+        '--accumulate_metrics',
+        type=str2bool,
+        required=False,
+        help='for batch: whether to accumulate metrics to compute averages (excluding outliers: Inf, Nan) or not)',
         default=True,
     )
     parser.add_argument(
