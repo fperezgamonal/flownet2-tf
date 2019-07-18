@@ -570,7 +570,7 @@ class Net(object):
             saver.restore(sess, checkpoint)
             # Read and process the resulting list, one element at a time
             with open(image_paths, 'r') as input_file:
-                path_list = input_file.read()
+                path_list = input_file.readlines()
             i = 0
             for path in path_list:
                 i += 1
