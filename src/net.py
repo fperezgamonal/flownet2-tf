@@ -847,7 +847,7 @@ class Net(object):
                     final_str_formated_avg = get_metrics(avg_metrics_dict, average=True)
                     now = datetime.datetime.now()
                     date_now = now.strftime('%d-%m-%y_%H-%M-%S')
-                    notice_str = '\n\nNow logging final averaged metrics (today is : {})...\n\n'.format(date_now))
+                    notice_str = '\n\nNow logging final averaged metrics (today is : {})...\n\n'.format(date_now)
                     logfile.write(notice_str)
                     logfile.write(final_str_formated_avg)
 
