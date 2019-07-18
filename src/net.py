@@ -634,7 +634,7 @@ class Net(object):
 
                 # img1 + matches + sparse + gt flow
                 elif len(path_inputs) == 4 and input_type == 'image_matches':
-                    frame_0 = imread(path_inputs[0])
+                    frame_0 = np.array(imread(path_inputs[0]))
                     frame_1 = None
                     matches_0 = imread(path_inputs[1])
                     sparse_flow_0 = read_flow(path_inputs[2])
