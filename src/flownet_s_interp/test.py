@@ -44,6 +44,8 @@ def main():
             save_image=FLAGS.save_image,
             compute_metrics=FLAGS.compute_metrics,
             log_metrics2file=FLAGS.log_metrics2file,
+            width=FLAGS.width,
+            height=FLAGS.height,
         )
     else:
         raise ValueError("'input_a' is not valid, should be a path to a folder or a single image")

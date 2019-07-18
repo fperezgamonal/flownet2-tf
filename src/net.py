@@ -571,10 +571,6 @@ class Net(object):
             # Read and process the resulting list, one element at a time
             with open(image_paths, 'r') as input_file:
                 path_list = input_file.readlines()
-            i = 0
-            for path in path_list:
-                i += 1
-                print("Path num. {}: '{}'".format(i, path))
 
             if log_metrics2file:
                 basefile = image_paths.split()[-1]
