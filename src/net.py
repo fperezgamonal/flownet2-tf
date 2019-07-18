@@ -617,6 +617,10 @@ class Net(object):
                     matches_0 = None
                     sparse_flow_0 = None
                     gt_flow_0 = read_flow(path_inputs[2])
+                    if compute_metrics:
+                        # Must define optional masks as None
+                        occ_mask_0 = None
+                        inv_mask_0 = None
 
                 # img1 + matches + sparse + gt flow
                 elif len(path_inputs) == 4 and input_type == 'image_matches':
@@ -625,6 +629,10 @@ class Net(object):
                     matches_0 = imread(path_inputs[1])
                     sparse_flow_0 = read_flow(path_inputs[2])
                     gt_flow_0 = read_flow(path_inputs[3])
+                    if compute_metrics:
+                        # Must define optional masks as None
+                        occ_mask_0 = None
+                        inv_mask_0 = None
 
                 # img1 + img2 + gtflow + occ_mask
                 elif len(path_inputs) == 4 and input_type == 'image_pairs' and compute_metrics:
@@ -714,7 +722,7 @@ class Net(object):
                     full_out_path = os.path.join(out_path, unique_name + '_flow.flo')
                     write_flow(pred_flow, full_out_path)
 
-                if compute_metrics:
+                if compute_metrics and gt_flow_0 is not None:
                     # Compute all metrics
                     metrics = compute_all_metrics(pred_flow, gt_flow_0, occ_mask=occ_mask_0, inv_mask=inv_mask_0)
                     final_str_formated = get_metrics(metrics)
