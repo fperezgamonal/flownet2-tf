@@ -7,7 +7,7 @@ from ..utils import str2bool
 # TODO: update traning scripts for all other architectures with latest changes
 def main():
     # Create a new network
-    net = FlowNetS_interp()
+    net = FlowNetS_interp(no_deconv_biases=FLAGS.no_deconv_biases)
     if FLAGS.checkpoint is not None and FLAGS.checkpoint:  # the second checks if the string is NOT empty
         checkpoints = FLAGS.checkpoint  # we want to define it as a string (only one checkpoint to load)
     else:
@@ -199,6 +199,15 @@ if __name__ == '__main__':
         required=False,
         help='Path to checkpoint to load and continue training',
         default=None
+    )
+    parser.add_argument(
+        '--no_deconv_biases',
+        type=str2bool,
+        nargs='?',
+        required=False,
+        help="Whether or not to 'remove' the biases from the deconv. layers (OG code did it). By default ALL layers "
+             "have biases",
+        default=False,
     )
     parser.add_argument(
         '--dataset_config',

@@ -9,8 +9,9 @@ slim = tf.contrib.slim
 # Modified FlowNetS: same architecture BUT different input: first image + matches location + sparse flow
 class FlowNetS_interp(Net):
 
-    def __init__(self, mode=Mode.TRAIN, debug=False):
+    def __init__(self, mode=Mode.TRAIN, debug=False, no_deconv_biases=False):
         super(FlowNetS_interp, self).__init__(mode=mode, debug=debug)
+        self.no_deconv_biases = no_deconv_biases
 
     # TODO: see where we can output the OF confidence map (based off last conv layer => heat map like?)
     # TODO: "modernise" architecture (remove 7x7 and 5x5 filters by 3x3 and proper stride!)
@@ -60,7 +61,14 @@ class FlowNetS_interp(Net):
                     conv6_1 = slim.conv2d(pad(conv6), 1024, 3, scope='conv6_1')
 
                     """ START: Refinement Network """
-                    with slim.arg_scope([slim.conv2d_transpose], biases_initializer=tf.zeros_initializer()):
+                    if self.no_deconv_biases:
+                        # Do not define biases for deconvolutional layers (like in the og code)
+                        biases_initializer = None
+                    else:
+                        # Add biases to deconv layers (zero initialised)
+                        biases_initializer = tf.zeros_initializer()
+
+                    with slim.arg_scope([slim.conv2d_transpose], biases_initializer=biases_initializer):
                         predict_flow6 = slim.conv2d(pad(conv6_1), 2, 3,
                                                     scope='predict_flow6',
                                                     activation_fn=None)

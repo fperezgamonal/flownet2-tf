@@ -10,7 +10,7 @@ DEBUG = False
 # TODO: update other architectures test.py and train.py scripts according to FlownetS + interp
 def main():
     # Create a new network
-    net = FlowNetS_interp(mode=Mode.TEST)
+    net = FlowNetS_interp(mode=Mode.TEST, no_deconv_biases=FLAGS.no_deconv_biases)
 
     if DEBUG:
         print("Input file extension (input_a) is: '{}'".format(FLAGS.input_a[-4:]))

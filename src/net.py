@@ -425,7 +425,7 @@ class Net(object):
 
     def test(self, checkpoint, input_a_path, input_b_path=None, matches_a_path=None, sparse_flow_path=None,
              out_path='./', input_type='image_pairs', save_image=True, save_flo=True, compute_metrics=True,
-             gt_flow=None, occ_mask=None, inv_mask=None):
+             gt_flow=None, occ_mask=None, inv_mask=None, no_deconv_biases=False):
         """
 
         :param checkpoint:
@@ -441,6 +441,7 @@ class Net(object):
         :param gt_flow:
         :param occ_mask:
         :param inv_mask:
+        :param no_deconv_biases: flag to be able to older models that did not define biases for deconv layers
         :return:
         """
         input_a = imread(input_a_path)
@@ -477,7 +478,7 @@ class Net(object):
                 'matches_a': tf.expand_dims(tf.constant(matches_a, dtype=tf.float32), 0),
                 'sparse_flow': tf.expand_dims(tf.constant(sparse_flow, dtype=tf.float32), 0),
             }
-        predictions = self.model(inputs, training_schedule)
+        predictions = self.model(inputs, training_schedule, trainable=False)
         pred_flow = predictions['flow']
 
         saver = tf.train.Saver()
@@ -715,7 +716,8 @@ class Net(object):
               valid_iters=VAL_INTERVAL, val_input_a=None, val_gt_flow=None, val_input_b=None, val_matches_a=None,
               val_sparse_flow=None, checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True,
               lr_range_test=False, train_params_dict=None, log_smoothed_loss=True, reset_global_step=False,
-              summarise_grads=False, add_hfem=False, lambda_w=2, hfem_perc=50, dataset_config_str='flying_chairs'):
+              summarise_grads=False, add_hfem=False, lambda_w=2, hfem_perc=50, dataset_config_str='flying_chairs',
+              no_deconv_layers=False):
 
         """
         runs training on the network from which this method is called.
@@ -744,6 +746,8 @@ class Net(object):
         :param add_hfem
         :param lambda_w
         :param hfem_perc
+        :param dataset_config_str:
+        :param no_deconv_layers:
 
         :return:
         """
@@ -1019,10 +1023,10 @@ class Net(object):
         # Define model operations (graph) to compute loss (TRAIN)
         if log_verbosity > 1:
             print("l2 regularization: {}".format(training_schedule['l2_regularization']))
-        predictions = self.model(inputs, training_schedule)
+        predictions = self.model(inputs, training_schedule)  # define it for all nets
         if valid_iters > 0:
             # Define model operations (graph) to compute loss (VALIDATION)
-            val_predictions = self.model(val_inputs, training_schedule, trainable=False)  # test does not specify this
+            val_predictions = self.model(val_inputs, training_schedule, trainable=False)
 
         # Compute losses (optionally add hard flow mining)
         train_loss = self.loss(gt_flow, predictions, add_hard_flow_mining=add_hfem, lambda_weight=lambda_w,
