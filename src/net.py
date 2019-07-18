@@ -534,13 +534,15 @@ class Net(object):
         :param save_flo: whether to save the 'raw' .flo file (useful to compute errors and such)
         :param compute_metrics: whether to compute error metrics or not
         :param log_metrics2file: whether to log the metrics to a file instead of printing them to stdout
+        :param width
+        :param height
         :return:
         """
         # Compute padded size (must be done before running self.model() contrarily to that suggested here:
         # https://github.com/sampepose/flownet2-tf/issues/82#issuecomment-466896116
         # Build Graph
-        new_height, new_width = self.get_padded_image_size(height, width)
         # TODO: Using fixed width and height does not enable one to pass batches with images that have different sizes
+        new_height, new_width = self.get_padded_image_size(height, width)
         input_a = tf.placeholder(dtype=tf.float32, shape=[1, new_height, new_width, 3])
 
         if input_type == 'image_matches':
@@ -569,6 +571,10 @@ class Net(object):
             # Read and process the resulting list, one element at a time
             with open(image_paths, 'r') as input_file:
                 path_list = input_file.read()
+            i = 0
+            for path in path_list:
+                i += 1
+                print("Path num. {}: '{}'".format(i, path))
 
             if log_metrics2file:
                 basefile = image_paths.split()[-1]
