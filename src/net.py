@@ -670,8 +670,7 @@ class Net(object):
                                                                                         sparse_flow_0)
                 if sparse_flow is not None and matches_0 is not None and input_type == 'image_matches':
                     flow = sess.run(pred_flow, feed_dict={
-                        input_a: frame_0, input_b: frame_1,
-                        matches_a: matches_0, sparse_flow: sparse_flow_0,
+                        input_a: frame_0, matches_a: matches_0, sparse_flow: sparse_flow_0,
                     })[0, :, :, :]
                 else:
                     flow = sess.run(pred_flow, feed_dict={
