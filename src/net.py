@@ -257,6 +257,10 @@ class Net(object):
         if og_height % divisor != 0 or og_width % divisor != 0:
             new_height = int(ceil(og_height / divisor) * divisor)
             new_width = int(ceil(og_width / divisor) * divisor)
+        else:
+            # New image size is equal to original one
+            new_height = og_height
+            new_width = og_width
         return new_height, new_width
 
     # based on github.com/philferriere/tfoptflow/blob/33e8a701e34c8ce061f17297d40619afbd459ade/tfoptflow/model_pwcnet.py
