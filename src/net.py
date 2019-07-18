@@ -337,10 +337,10 @@ class Net(object):
 
         # Reshape as batch-like arrays with shape (batch, height, width, n_ch)
         if sparse_flow is not None and matches_a is not None:
-            input_a, matches_a, sparse_flow = map(lambda x: tf.expand_dims(x, 0), [input_a, matches_a, sparse_flow])
+            input_a, matches_a, sparse_flow = map(lambda x: np.expand_dims(x, 0), [input_a, matches_a, sparse_flow])
             input_b = None
         else:
-            input_a, input_b = map(lambda x: tf.expand_dims(x, 0), [input_a, input_b])
+            input_a, input_b = map(lambda x: np.expand_dims(x, 0), [input_a, input_b])
             matches_a = None
             sparse_flow = None
 
