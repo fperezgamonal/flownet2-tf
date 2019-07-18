@@ -335,6 +335,7 @@ class Net(object):
                 padding = [(0, pad_height), (0, pad_width), (0, 0)]
 
             x_adapt_info = input_a.shape  # Save original shape
+            print("OG size: {}".format(x_adapt_info))
             input_a = np.pad(input_a, padding, mode='constant', constant_values=0.)
 
             if sparse_flow is not None and matches_a is not None:
@@ -344,6 +345,7 @@ class Net(object):
                 input_b = np.pad(input_b, padding, mode='constant', constant_values=0.)
         else:
             x_adapt_info = None
+        print("Size after padding: {}".format(input_a.shape))
 
         # Reshape as batch-like arrays with shape (batch, height, width, n_ch)
         if len(input_a.shape) < 4:
@@ -355,6 +357,7 @@ class Net(object):
                 matches_a = None
                 sparse_flow = None
 
+        print("Size after final reshape (should only be applied to test): {}".format(input_a.shape))
         return input_a, input_b, matches_a, sparse_flow, x_adapt_info
 
     # This is not used in training since we load already padded flows. If it applies, use in test for 'sparse_flow'
