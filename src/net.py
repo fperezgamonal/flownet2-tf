@@ -809,9 +809,9 @@ class Net(object):
             if accumulate_metrics:
                 # Compute the final (average) mang, stdang and mepe
                 num_metrics = add_metrics.shape[-1]
-                average_metrics = np.array((add_metrics, 1)) * np.inf
-                values_not_inf = np.zeros((add_metrics, 1))
-                not_valid_values = np.zeros((add_metrics, 1))
+                average_metrics = np.array((num_metrics, 1)) * np.inf
+                values_not_inf = np.zeros((num_metrics, 1))
+                not_valid_values = np.zeros((num_metrics, 1))
                 for i in range(num_metrics):  # indices 0 to 11
                     not_inf = np.sum(add_metrics[:, i] != np.inf)
                     are_NaN = np.sum(np.isnan(add_metrics[:, i]))
