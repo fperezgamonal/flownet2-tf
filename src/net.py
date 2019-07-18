@@ -584,7 +584,7 @@ class Net(object):
             for img_idx in range(len(path_list)):
                 # Read + pre-process files
                 # Each line is split into a list with N elements (separator: blank space (" "))
-                path_inputs = path_list[img_idx].split(' ')
+                path_inputs = path_list[img_idx][:-1].split(' ')  # remove \n at the end of the line!
                 print("User gave {} paths".format(len(path_inputs)))
                 assert 2 <= len(path_inputs) <= 6, (
                     'More paths than expected. Expected: I1+I2 (2), I1+MM+SF(3), I1+MM+SF+GTF(4),'
