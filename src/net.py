@@ -636,9 +636,9 @@ class Net(object):
                 elif len(path_inputs) == 4 and input_type == 'image_matches':
                     frame_0 = np.array(imread(path_inputs[0]))
                     frame_1 = None
-                    matches_0 = imread(path_inputs[1])
-                    sparse_flow_0 = read_flow(path_inputs[2])
-                    gt_flow_0 = read_flow(path_inputs[3])
+                    matches_0 = np.array(imread(path_inputs[1]))
+                    sparse_flow_0 = np.array(read_flow(path_inputs[2]))
+                    gt_flow_0 = np.array(read_flow(path_inputs[3]))
                     if compute_metrics:
                         # Must define optional masks as None
                         occ_mask_0 = None
