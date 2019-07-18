@@ -699,6 +699,9 @@ class Net(object):
                     occ_mask_0 = imread(path_inputs[5])
                     inv_mask_0 = imread(path_inputs[6])
 
+                # Convert all inputs to numpy arrays
+                frame_0, frame_1, matches_0, sparse_flow_0 = map(lambda x: np.array(x), [frame_0, frame_1, matches_0,
+                                                                                         sparse_flow_0])
                 # Normalise + pad if the image is not divisible by 64 ('padded' placeholders, but needed to match them?)
                 frame_0, frame_1, matches_0, sparse_flow_0, x_adapt_info = self.adapt_x(frame_0, frame_1, matches_0,
                                                                                         sparse_flow_0)
