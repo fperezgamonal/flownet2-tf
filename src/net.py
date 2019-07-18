@@ -808,15 +808,16 @@ class Net(object):
             # http://www.ipol.im/pub/art/2019/238/#Non-Reviewed-Supplementary-Materials
             if accumulate_metrics:
                 # Compute the final (average) mang, stdang and mepe
-                num_metrics = metrics.shape[-1]
-                average_metrics = np.array((num_metrics, 1)) * np.inf
-                values_not_inf = np.zeros((num_metrics, 1))
-                not_valid_values = np.zeros((num_metrics, 1))
+                num_metrics = add_metrics.shape[-1]
+                average_metrics = np.array((add_metrics, 1)) * np.inf
+                values_not_inf = np.zeros((add_metrics, 1))
+                not_valid_values = np.zeros((add_metrics, 1))
                 for i in range(num_metrics):  # indices 0 to 11
-                    not_inf = np.sum(metrics[:, i] != np.inf)
-                    are_NaN = np.sum(np.isnan(metrics[:, i]))
+                    not_inf = np.sum(add_metrics[:, i] != np.inf)
+                    are_NaN = np.sum(np.isnan(add_metrics[:, i]))
                     not_valid_values[i] = not_inf + are_NaN
-                    values_not_inf[i] = np.sum(metrics[metrics[:, i] != np.inf and not np.isnan(metrics[:, i]), i])
+                    values_not_inf[i] = np.sum(add_metrics[add_metrics[:, i] != np.inf and not
+                    np.isnan(add_metrics[:, i]), i])
                     average_metrics[i] = values_not_inf[i] / not_valid_values[i]
 
                 # Re-scale umat metrics if some tested image had 0 pixels occluded
