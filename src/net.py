@@ -320,22 +320,33 @@ class Net(object):
                 )
             )
 
+        # Reshape as batch-like arrays with shape (batch, height, width, n_ch)
+        if len(input_a.shape) < 4:
+            if sparse_flow is not None and matches_a is not None:
+                input_a, matches_a, sparse_flow = map(lambda x: np.expand_dims(x, 0),
+                                                      [input_a, matches_a, sparse_flow])
+                input_b = None
+            else:
+                input_a, input_b = map(lambda x: np.expand_dims(x, 0), [input_a, input_b])
+                matches_a = None
+                sparse_flow = None
+
         if height_a % divisor != 0 or width_a % divisor != 0:
             new_height = int(ceil(height_a / divisor) * divisor)
             new_width = int(ceil(width_a / divisor) * divisor)
             pad_height = new_height - height_a
             pad_width = new_width - width_a
 
-            if self.mode == Mode.TRAIN:  # working with batches, adapt to match dimensions (batch, height, width, ch)
-                padding = [(0, 0), (0, pad_height), (0, pad_width), (0, 0)]
-            elif self.mode == Mode.TEST:  # working with pair of images (for now there is no inference on whole batches)
-                # TODO: modify test.py so we can predict batches (much quicker for whole datasets) and simplify this!
-                padding = [(0, pad_height), (0, pad_width), (0, 0)]
-            else:
-                padding = [(0, pad_height), (0, pad_width), (0, 0)]
+            padding = [(0, 0), (0, pad_height), (0, pad_width), (0, 0)]
+            # if self.mode == Mode.TRAIN:  # working with batches, adapt to match dimensions (batch, height, width, ch)
+            #     padding = [(0, 0), (0, pad_height), (0, pad_width), (0, 0)]
+            # elif self.mode == Mode.TEST:  # working with pair of images (for now there is no inference on whole batches)
+            #     # TODO: modify test.py so we can predict batches (much quicker for whole datasets) and simplify this!
+            #     padding = [(0, pad_height), (0, pad_width), (0, 0)]
+            # else:
+            #     padding = [(0, pad_height), (0, pad_width), (0, 0)]
 
             x_adapt_info = input_a.shape  # Save original shape
-            print("OG size: {}".format(x_adapt_info))
             input_a = np.pad(input_a, padding, mode='constant', constant_values=0.)
 
             if sparse_flow is not None and matches_a is not None:
@@ -345,19 +356,7 @@ class Net(object):
                 input_b = np.pad(input_b, padding, mode='constant', constant_values=0.)
         else:
             x_adapt_info = None
-        print("Size after padding: {}".format(input_a.shape))
 
-        # Reshape as batch-like arrays with shape (batch, height, width, n_ch)
-        if len(input_a.shape) < 4:
-            if sparse_flow is not None and matches_a is not None:
-                input_a, matches_a, sparse_flow = map(lambda x: np.expand_dims(x, 0), [input_a, matches_a, sparse_flow])
-                input_b = None
-            else:
-                input_a, input_b = map(lambda x: np.expand_dims(x, 0), [input_a, input_b])
-                matches_a = None
-                sparse_flow = None
-
-        print("Size after final reshape (should only be applied to test): {}".format(input_a.shape))
         return input_a, input_b, matches_a, sparse_flow, x_adapt_info
 
     # This is not used in training since we load already padded flows. If it applies, use in test for 'sparse_flow'
@@ -637,11 +636,16 @@ class Net(object):
 
                 # img1 + matches + sparse + gt flow
                 elif len(path_inputs) == 4 and input_type == 'image_matches':
-                    frame_0 = np.array(imread(path_inputs[0])).astype(np.float32)
+                    # frame_0 = np.array(imread(path_inputs[0])).astype(np.float32)
+                    # frame_1 = None
+                    # matches_0 = np.array(imread(path_inputs[1])).astype(np.float32)
+                    # sparse_flow_0 = np.array(read_flow(path_inputs[2])).astype(np.float32)
+                    # gt_flow_0 = np.array(read_flow(path_inputs[3])).astype(np.float32)
+                    frame_0 = imread(path_inputs[0]).astype(np.float32)
                     frame_1 = None
-                    matches_0 = np.array(imread(path_inputs[1])).astype(np.float32)
-                    sparse_flow_0 = np.array(read_flow(path_inputs[2])).astype(np.float32)
-                    gt_flow_0 = np.array(read_flow(path_inputs[3])).astype(np.float32)
+                    matches_0 = imread(path_inputs[1]).astype(np.float32)
+                    sparse_flow_0 = read_flow(path_inputs[2]).astype(np.float32)
+                    gt_flow_0 = read_flow(path_inputs[3]).astype(np.float32)
                     if compute_metrics:
                         # Must define optional masks as None
                         occ_mask_0 = None
@@ -707,13 +711,13 @@ class Net(object):
                 # print("After numpy2tensor, type(frame_0) : {}".format(type(frame_0)))
 
                 if sparse_flow_0 is not None and matches_0 is not None and input_type == 'image_matches':
-                    init = tf.global_variables_initializer()
-                    sess.run(init)
-                    frame_0s, matches_0s, sparse_flow_0s = sess.run([frame_0, matches_0, sparse_flow_0])
-                    print("After sess.run(), type(frame_0s) : {}".format(type(frame_0s)))
+                    # init = tf.global_variables_initializer()
+                    # sess.run(init)
+                    # frame_0s, matches_0s, sparse_flow_0s = sess.run([frame_0, matches_0, sparse_flow_0])
+                    # print("After sess.run(), type(frame_0s) : {}".format(type(frame_0s)))
 
                     flow = sess.run(pred_flow, feed_dict={
-                        input_a: frame_0s, matches_a: matches_0s, sparse_flow: sparse_flow_0s
+                        input_a: frame_0, matches_a: matches_0, sparse_flow: sparse_flow_0
                     })[0, :, :, :]
                 else:
                     init = tf.global_variables_initializer()
