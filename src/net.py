@@ -706,8 +706,8 @@ class Net(object):
                 if sparse_flow_0 is not None and matches_0 is not None and input_type == 'image_matches':
                     init = tf.global_variables_initializer()
                     sess.run(init)
-                    frame_0s, frame_1s, matches_0s, sparse_flow_0s = sess.run(frame_0, frame_1, matches_0,
-                                                                              sparse_flow_0)
+                    frame_0s, frame_1s, matches_0s, sparse_flow_0s = sess.run([frame_0, frame_1, matches_0,
+                                                                              sparse_flow_0])
                     print("After sess.run(), type(frame_0s) : {}".format(type(frame_0s)))
 
                     flow = sess.run(pred_flow, feed_dict={
