@@ -743,26 +743,27 @@ class Net(object):
                 # Same for the name of the output flow (take the first image name)
                 parent_folder_name = path_inputs[0].split('/')[-2]
                 unique_name = path_inputs[0].split('/')[-1][:-4]
-                out_path = os.path.join(out_path, parent_folder_name)
+                out_path_complete = os.path.join(out_path, parent_folder_name)
                 print("There is a bug in the folder creation (we recursively add folders under previous one)")
-                print("parent_folder_name: '{}'\nunique_name: '{}\nout_path: '{}'".format(parent_folder_name,
-                                                                                          unique_name, out_path))
+                print("parent_folder_name: '{}'\nunique_name: '{}\nout_path_complete: '{}'\nout_path: '{}'".format(
+                    parent_folder_name, unique_name, out_path_complete, out_path))
                 if save_image or save_flo:
-                    if not os.path.isdir(out_path):
-                        os.makedirs(out_path)
+                    if not os.path.isdir(out_path_complete):
+                        os.makedirs(out_path_complete)
 
                 if save_image:
                     flow_img = flow_to_image(predicted_flow_cropped)
-                    full_out_path = os.path.join(out_path, unique_name + '_viz.png')
-                    imsave(full_out_path, flow_img)
+                    full_out_path = os.path.join(out_path_complete, unique_name + '_viz.png')
+                    imsave(out_path_complete, flow_img)
 
                 if save_flo:
-                    full_out_path = os.path.join(out_path, unique_name + '_flow.flo')
-                    write_flow(predicted_flow_cropped, full_out_path)
+                    full_out_path = os.path.join(out_path_complete, unique_name + '_flow.flo')
+                    write_flow(predicted_flow_cropped, out_path_complete)
 
                 if compute_metrics and gt_flow_0 is not None:
                     # Compute all metrics
-                    metrics = compute_all_metrics(predicted_flow_cropped, gt_flow_0, occ_mask=occ_mask_0, inv_mask=inv_mask_0)
+                    metrics = compute_all_metrics(predicted_flow_cropped, gt_flow_0, occ_mask=occ_mask_0,
+                                                  inv_mask=inv_mask_0)
                     final_str_formated = get_metrics(metrics)
 
                     if log_metrics2file:
