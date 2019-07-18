@@ -699,8 +699,8 @@ class Net(object):
                 print("After adapt_x, type(sparse_flow_0) : {}".format(type(sparse_flow_0)))
                 print("After adapt_x, frame_0.dtype: {}".format(frame_0.dtype))
                 # Convert numpy arrays to tensors
-                frame_0, frame_1, matches_0, sparse_flow_0 = self.numpy2tensor(frame_0, frame_1, matches_0,
-                                                                               sparse_flow_0, input_type=input_type)
+                # frame_0, frame_1, matches_0, sparse_flow_0 = self.numpy2tensor(frame_0, frame_1, matches_0,
+                #                                                                sparse_flow_0, input_type=input_type)
                 # print("After numpy2tensor, type(frame_0) : {}".format(type(frame_0)))
 
                 if sparse_flow_0.eval() is not None and matches_0.eval() is not None and input_type == 'image_matches':
