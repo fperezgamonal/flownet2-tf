@@ -707,11 +707,14 @@ class Net(object):
                     # frame_0s, frame_1s, matches_0s, sparse_flow_0s = sess.run(frame_0, frame_1, matches_0,
                     #                                                           sparse_flow_0)
                     # print("After sess.run(), type(frame_0s) : {}".format(type(frame_0s)))
-
+                    init = tf.global_variables_initializer()
+                    sess.run(init)
                     flow = sess.run(pred_flow, feed_dict={
                         input_a: frame_0, matches_a: matches_0, sparse_flow: sparse_flow_0
                     })[0, :, :, :]
                 else:
+                    init = tf.global_variables_initializer()
+                    sess.run(init)
                     flow = sess.run(pred_flow, feed_dict={
                         input_a: frame_0, input_b: frame_1
                     })[0, :, :, :]
