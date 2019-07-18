@@ -754,11 +754,11 @@ class Net(object):
                 if save_image:
                     flow_img = flow_to_image(predicted_flow_cropped)
                     full_out_path = os.path.join(out_path_complete, unique_name + '_viz.png')
-                    imsave(out_path_complete, flow_img)
+                    imsave(full_out_path, flow_img)
 
                 if save_flo:
                     full_out_path = os.path.join(out_path_complete, unique_name + '_flow.flo')
-                    write_flow(predicted_flow_cropped, out_path_complete)
+                    write_flow(predicted_flow_cropped, full_out_path)
 
                 if compute_metrics and gt_flow_0 is not None:
                     # Compute all metrics
