@@ -705,9 +705,18 @@ class Net(object):
                 # Normalise + pad if the image is not divisible by 64 ('padded' placeholders, but needed to match them?)
                 frame_0, frame_1, matches_0, sparse_flow_0, x_adapt_info = self.adapt_x(frame_0, frame_1, matches_0,
                                                                                         sparse_flow_0)
-                print("After adapt_x, type(frame_0) : {}".format(type(frame_0)))
-                print("After adapt_x, type(sparse_flow_0) : {}".format(type(sparse_flow_0)))
-                print("After adapt_x, frame_0.dtype: {}".format(frame_0.dtype))
+                frame_0_type, frame_1_type, matches_0_type, sparse_flow_0_type = map(
+                    lambda x: type(x), [frame_0, frame_1, matches_0, sparse_flow_0])
+                frame_0_dtype, frame_1_dtype, matches_0_dtype, sparse_flow_0_dtype = map(
+                    lambda x: x.dtype, [frame_0, frame_1, matches_0, sparse_flow_0])
+                print("After adapt_x, type(frame_0) : {}".format(frame_0_type))
+                print("After adapt_x, frame_0.dtype: {}".format(frame_0_dtype))
+                print("After adapt_x, type(frame_1) : {}".format(frame_1_type))
+                print("After adapt_x, frame_1.dtype: {}".format(frame_1_dtype))
+                print("After adapt_x, type(matches_0) : {}".format(matches_0_type))
+                print("After adapt_x, matches_0.dtype: {}".format(matches_0_dtype))
+                print("After adapt_x, type(sparse_flow_0) : {}".format(sparse_flow_0_type))
+                print("After adapt_x, sparse_flow_0.dtype: {}".format(sparse_flow_0_dtype))
                 # Convert numpy arrays to tensors
                 # frame_0, frame_1, matches_0, sparse_flow_0 = self.numpy2tensor(frame_0, frame_1, matches_0,
                 #                                                                sparse_flow_0, input_type=input_type)
@@ -719,13 +728,13 @@ class Net(object):
                     # frame_0s, matches_0s, sparse_flow_0s = sess.run([frame_0, matches_0, sparse_flow_0])
                     # print("After sess.run(), type(frame_0s) : {}".format(type(frame_0s)))
 
-                    flow = sess.run(pred_flow, feed_dict={
+                    predicted_flow = sess.run(pred_flow, feed_dict={
                         input_a: frame_0, matches_a: matches_0, sparse_flow: sparse_flow_0
                     })[0, :, :, :]
                 else:
                     init = tf.global_variables_initializer()
                     sess.run(init)
-                    flow = sess.run(pred_flow, feed_dict={
+                    predicted_flow = sess.run(pred_flow, feed_dict={
                         input_a: frame_0, input_b: frame_1
                     })[0, :, :, :]
 
@@ -734,7 +743,7 @@ class Net(object):
                 else:
                     y_adapt_info = None
                 # Crop flow to image original size (before padding)
-                pred_flow = self.postproc_y_hat_test(flow, adapt_info=y_adapt_info)
+                predicted_flow_cropped = self.postproc_y_hat_test(predicted_flow, adapt_info=y_adapt_info)
 
                 # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
                 # TODO: modify to keep the folder structure (at least parent folder of the image) ==> test!
@@ -749,17 +758,17 @@ class Net(object):
                         os.makedirs(out_path)
 
                 if save_image:
-                    flow_img = flow_to_image(pred_flow)
+                    flow_img = flow_to_image(predicted_flow_cropped)
                     full_out_path = os.path.join(out_path, unique_name + '_viz.png')
                     imsave(full_out_path, flow_img)
 
                 if save_flo:
                     full_out_path = os.path.join(out_path, unique_name + '_flow.flo')
-                    write_flow(pred_flow, full_out_path)
+                    write_flow(predicted_flow_cropped, full_out_path)
 
                 if compute_metrics and gt_flow_0 is not None:
                     # Compute all metrics
-                    metrics = compute_all_metrics(pred_flow, gt_flow_0, occ_mask=occ_mask_0, inv_mask=inv_mask_0)
+                    metrics = compute_all_metrics(predicted_flow_cropped, gt_flow_0, occ_mask=occ_mask_0, inv_mask=inv_mask_0)
                     final_str_formated = get_metrics(metrics)
 
                     if log_metrics2file:
