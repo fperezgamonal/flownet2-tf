@@ -263,6 +263,16 @@ class Net(object):
             new_width = og_width
         return new_height, new_width
 
+    def numpy2tensor(self, input_a, input_b, matches_a, sparse_flow, input_type='image_pairs'):
+        if input_type == 'image_matches':
+            input_a, matches_a, sparse_flow = map(lambda x: tf.convert_to_tensor(x), [input_a, matches_a, sparse_flow])
+            input_b = None
+        else:
+            input_a, input_b = map(lambda x: tf.convert_to_tensor(x), [input_a, input_b])
+            matches_a = None
+            sparse_flow = None
+        return input_a, input_b, matches_a, sparse_flow
+
     # based on github.com/philferriere/tfoptflow/blob/33e8a701e34c8ce061f17297d40619afbd459ade/tfoptflow/model_pwcnet.py
     # functions: adapt_x, adapt_y, postproc_y_hat (crop)
     def adapt_x(self, input_a, input_b=None, matches_a=None, sparse_flow=None, divisor=64):
@@ -685,6 +695,10 @@ class Net(object):
                 # Normalise + pad if the image is not divisible by 64 ('padded' placeholders, but needed to match them?)
                 frame_0, frame_1, matches_0, sparse_flow_0, x_adapt_info = self.adapt_x(frame_0, frame_1, matches_0,
                                                                                         sparse_flow_0)
+                # Convert numpy arrays to tensors
+                frame_0, frame_1, matches_0, sparse_flow_0 = self.numpy2tensor(frame_0, frame_1, matches_0,
+                                                                               sparse_flow_0, input_type=input_type)
+
                 if sparse_flow is not None and matches_0 is not None and input_type == 'image_matches':
                     flow = sess.run(pred_flow, feed_dict={
                         input_a: frame_0, matches_a: matches_0, sparse_flow: sparse_flow_0,
