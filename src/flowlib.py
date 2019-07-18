@@ -245,7 +245,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     metrics['stdangall'] = stdang
 
     # Check if there are any occluded pixels
-    if occ_mask.size:  # array is not empty
+    if occ_mask.size and len(np.unique(occ_mask).shape) > 1:  # array is not empty and contains at least 2 diff. values
         # EPE-matched (pixels that are not occluded)
         # Always mask out invalid pixels (inv_mask == 1)
         # For matched we want to avoid the 1's
@@ -454,10 +454,10 @@ def flow_error_mask(tu, tv, u, v, mask=None, gt_value=False, bord=0):
     tun = index_stu * tn
     tvn = index_stv * tn
 
-    # angle = un * tun + vn * tvn + (an * tn)
-    # index = [angle == 1.0]
-    # angle[index] = 0.999
-    ang = np.arccos(un * tun + vn * tvn + (an * tn))
+    angle = un * tun + vn * tvn + (an * tn)
+    index = [angle == 1.0]
+    angle[index] = 0.999
+    ang = np.arccos(angle)  # un * tun + vn * tvn + (an * tn))
     mang = np.mean(ang)
     mang = mang * 180 / np.pi
     stdang = np.std(ang * 180 / np.pi)
