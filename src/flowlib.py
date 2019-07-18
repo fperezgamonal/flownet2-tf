@@ -456,7 +456,7 @@ def flow_error_mask(tu, tv, u, v, mask=None, gt_value=False, bord=0):
     tvn = index_stv * tn
 
     angle = un * tun + vn * tvn + (an * tn)
-    print("Index to arcos is: {} (should be in [-1, 1])".format(angle))
+    print("Range to arcos is: ({}, {}) should be in [-1, 1])".format(np.min(angle), np.max(angle)))
     index = [angle == 1.0]
     angle[index] = 0.999
     ang = np.arccos(angle)  # un * tun + vn * tvn + (an * tn))
