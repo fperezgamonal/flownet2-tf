@@ -696,8 +696,8 @@ class Net(object):
                 frame_0, frame_1, matches_0, sparse_flow_0, x_adapt_info = self.adapt_x(frame_0, frame_1, matches_0,
                                                                                         sparse_flow_0)
                 # Convert numpy arrays to tensors
-                frame_0, frame_1, matches_0, sparse_flow_0 = self.numpy2tensor(frame_0, frame_1, matches_0,
-                                                                               sparse_flow_0, input_type=input_type)
+                # frame_0, frame_1, matches_0, sparse_flow_0 = self.numpy2tensor(frame_0, frame_1, matches_0,
+                #                                                                sparse_flow_0, input_type=input_type)
 
                 if sparse_flow is not None and matches_0 is not None and input_type == 'image_matches':
                     flow = sess.run(pred_flow, feed_dict={
