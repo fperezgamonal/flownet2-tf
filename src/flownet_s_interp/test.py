@@ -80,6 +80,15 @@ if __name__ == '__main__':
         default='./checkpoints/FlowNetS/flownet-S.ckpt-0'
     )
     parser.add_argument(
+        '--no_deconv_biases',
+        type=str2bool,
+        nargs='?',
+        required=False,
+        help="Whether or not to 'remove' the biases from the deconv. layers (OG code did it). By default ALL layers "
+             "have biases",
+        default=False,
+    )
+    parser.add_argument(
         '--out',
         type=str,
         required=False,
