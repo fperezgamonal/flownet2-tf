@@ -704,13 +704,14 @@ class Net(object):
                 # print("After numpy2tensor, type(frame_0) : {}".format(type(frame_0)))
 
                 if sparse_flow_0 is not None and matches_0 is not None and input_type == 'image_matches':
-                    # frame_0s, frame_1s, matches_0s, sparse_flow_0s = sess.run(frame_0, frame_1, matches_0,
-                    #                                                           sparse_flow_0)
-                    # print("After sess.run(), type(frame_0s) : {}".format(type(frame_0s)))
                     init = tf.global_variables_initializer()
                     sess.run(init)
+                    frame_0s, frame_1s, matches_0s, sparse_flow_0s = sess.run(frame_0, frame_1, matches_0,
+                                                                              sparse_flow_0)
+                    print("After sess.run(), type(frame_0s) : {}".format(type(frame_0s)))
+
                     flow = sess.run(pred_flow, feed_dict={
-                        input_a: frame_0, matches_a: matches_0, sparse_flow: sparse_flow_0
+                        input_a: frame_0s, matches_a: matches_0s, sparse_flow: sparse_flow_0s
                     })[0, :, :, :]
                 else:
                     init = tf.global_variables_initializer()
