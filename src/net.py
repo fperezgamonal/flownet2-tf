@@ -561,7 +561,7 @@ class Net(object):
         :param log_metrics2file: whether to log the metrics to a file instead of printing them to stdout
         :param width
         :param height
-        :param custom_child_folder
+        :param new_par_folder
         :return:
         """
         # Compute padded size (must be done before running self.model() contrarily to that suggested here:
@@ -602,11 +602,14 @@ class Net(object):
             # Easiest way to only open it once is to define it as out_path if no custom folder has been inputted
             # Or out_path/custom_folder if it has
             if log_metrics2file:
-                basefile = image_paths.split()[-1]
+                basefile = os.path.basename(image_paths)
                 logfile = basefile.replace('.txt', '_metrics.log')
                 logfile_full = os.path.join(out_path, logfile) if new_par_folder is None else os.path.join(
                     out_path, new_par_folder, logfile)
-                logfile = open(logfile_full, 'w+')
+                if not os.path.isdir(os.path.dirname(logfile_full)):
+                    os.makedirs(os.path.dirname(logfile_full))
+                # Open file (once)
+                logfile = open(logfile_full, 'w')
 
             for img_idx in range(len(path_list)):
                 # Read + pre-process files
