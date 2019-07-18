@@ -346,13 +346,14 @@ class Net(object):
             x_adapt_info = None
 
         # Reshape as batch-like arrays with shape (batch, height, width, n_ch)
-        if sparse_flow is not None and matches_a is not None:
-            input_a, matches_a, sparse_flow = map(lambda x: np.expand_dims(x, 0), [input_a, matches_a, sparse_flow])
-            input_b = None
-        else:
-            input_a, input_b = map(lambda x: np.expand_dims(x, 0), [input_a, input_b])
-            matches_a = None
-            sparse_flow = None
+        if len(input_a.shape) < 4:
+            if sparse_flow is not None and matches_a is not None:
+                input_a, matches_a, sparse_flow = map(lambda x: np.expand_dims(x, 0), [input_a, matches_a, sparse_flow])
+                input_b = None
+            else:
+                input_a, input_b = map(lambda x: np.expand_dims(x, 0), [input_a, input_b])
+                matches_a = None
+                sparse_flow = None
 
         return input_a, input_b, matches_a, sparse_flow, x_adapt_info
 
@@ -448,7 +449,7 @@ class Net(object):
 
     def test(self, checkpoint, input_a_path, input_b_path=None, matches_a_path=None, sparse_flow_path=None,
              out_path='./', input_type='image_pairs', save_image=True, save_flo=True, compute_metrics=True,
-             gt_flow=None, occ_mask=None, inv_mask=None, no_deconv_biases=False):
+             gt_flow=None, occ_mask=None, inv_mask=None):
         """
 
         :param checkpoint:
@@ -464,7 +465,6 @@ class Net(object):
         :param gt_flow:
         :param occ_mask:
         :param inv_mask:
-        :param no_deconv_biases: flag to be able to older models that did not define biases for deconv layers
         :return:
         """
         input_a = imread(input_a_path)
