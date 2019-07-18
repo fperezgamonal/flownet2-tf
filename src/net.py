@@ -700,19 +700,20 @@ class Net(object):
                     inv_mask_0 = imread(path_inputs[6])
 
                 # Convert all inputs to numpy arrays
-                frame_0, frame_1, matches_0, sparse_flow_0 = map(lambda x: np.array(x), [frame_0, frame_1, matches_0,
-                                                                                         sparse_flow_0])
+                if sparse_flow_0 is not None and matches_0 is not None and input_type == 'image_matches':
+                    frame_0, matches_0, sparse_flow_0 = map(lambda x: np.array(x), [frame_0, matches_0, sparse_flow_0])
+                else:
+                    frame_0, frame_1 = map(lambda x: np.array(x), [frame_0, frame_1])
+
                 # Normalise + pad if the image is not divisible by 64 ('padded' placeholders, but needed to match them?)
                 frame_0, frame_1, matches_0, sparse_flow_0, x_adapt_info = self.adapt_x(frame_0, frame_1, matches_0,
                                                                                         sparse_flow_0)
-                frame_0_type, frame_1_type, matches_0_type, sparse_flow_0_type = map(
-                    lambda x: type(x), [frame_0, frame_1, matches_0, sparse_flow_0])
-                frame_0_dtype, frame_1_dtype, matches_0_dtype, sparse_flow_0_dtype = map(
-                    lambda x: x.dtype, [frame_0, frame_1, matches_0, sparse_flow_0])
+                frame_0_type, matches_0_type, sparse_flow_0_type = map(lambda x: type(x), [frame_0, matches_0,
+                                                                                           sparse_flow_0])
+                frame_0_dtype, matches_0_dtype, sparse_flow_0_dtype = map(lambda x: x.dtype, [frame_0, matches_0,
+                                                                                              sparse_flow_0])
                 print("After adapt_x, type(frame_0) : {}".format(frame_0_type))
                 print("After adapt_x, frame_0.dtype: {}".format(frame_0_dtype))
-                print("After adapt_x, type(frame_1) : {}".format(frame_1_type))
-                print("After adapt_x, frame_1.dtype: {}".format(frame_1_dtype))
                 print("After adapt_x, type(matches_0) : {}".format(matches_0_type))
                 print("After adapt_x, matches_0.dtype: {}".format(matches_0_dtype))
                 print("After adapt_x, type(sparse_flow_0) : {}".format(sparse_flow_0_type))
