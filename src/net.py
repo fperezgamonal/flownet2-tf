@@ -695,19 +695,23 @@ class Net(object):
                 # Normalise + pad if the image is not divisible by 64 ('padded' placeholders, but needed to match them?)
                 frame_0, frame_1, matches_0, sparse_flow_0, x_adapt_info = self.adapt_x(frame_0, frame_1, matches_0,
                                                                                         sparse_flow_0)
+                print("After adapt_x, type(frame_0) : {}".format(type(frame_0)))
                 # Convert numpy arrays to tensors
-                frame_0, frame_1, matches_0, sparse_flow_0 = self.numpy2tensor(frame_0, frame_1, matches_0,
-                                                                               sparse_flow_0, input_type=input_type)
+                # frame_0, frame_1, matches_0, sparse_flow_0 = self.numpy2tensor(frame_0, frame_1, matches_0,
+                #                                                                sparse_flow_0, input_type=input_type)
+                # print("After numpy2tensor, type(frame_0) : {}".format(type(frame_0)))
 
-                if sparse_flow is not None and matches_0 is not None and input_type == 'image_matches':
-                    frame_0s, frame_1s, matches_0s, sparse_flow_0s = sess.run(frame_0, frame_1, matches_0,
-                                                                              sparse_flow_0)
+                if sparse_flow_0 is not None and matches_0 is not None and input_type == 'image_matches':
+                    # frame_0s, frame_1s, matches_0s, sparse_flow_0s = sess.run(frame_0, frame_1, matches_0,
+                    #                                                           sparse_flow_0)
+                    # print("After sess.run(), type(frame_0s) : {}".format(type(frame_0s)))
+
                     flow = sess.run(pred_flow, feed_dict={
-                        input_a: frame_0s, matches_a: matches_0s, sparse_flow: sparse_flow_0s
+                        input_a: frame_0, matches_a: matches_0, sparse_flow: sparse_flow_0
                     })[0, :, :, :]
                 else:
                     flow = sess.run(pred_flow, feed_dict={
-                        input_a: frame_0s, input_b: frame_1s
+                        input_a: frame_0, input_b: frame_1
                     })[0, :, :, :]
 
                 if x_adapt_info is not None:
