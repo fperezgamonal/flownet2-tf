@@ -285,16 +285,9 @@ class Net(object):
         :param divisor: (optional) number by which all image sizes should be divisible by. divisor=2^n_pyram, here 6
         :return: padded and normalised input_a, input_b and sparse_flow (if needed)
         """
-        # Convert from RGB -> BGR
-        # First + second image
-        # input_a = input_a[..., [2, 1, 0]] ==> remove as this makes no sense
         if sparse_flow is not None and matches_a is not None:
             matches_a = matches_a[..., np.newaxis]  # from (height, width) to (height, width, 1)
-            print("New scheme: first + matchtrain_losses (1st=> 2nd frame) given")
-        # else:
-        #     print("Normal scheme: first + second frame given")  # only for debugging, remove afterwards
-        #     input_b = input_b[..., [2, 1, 0]] ==> remove as this makes no sense
-
+            
         # Scale from [0, 255] -> [0.0, 1.0] if needed
         if input_a.max() > 1.0:
             input_a = input_a / 255.0
@@ -632,7 +625,6 @@ class Net(object):
                 # Read + pre-process files
                 # Each line is split into a list with N elements (separator: blank space (" "))
                 path_inputs = path_list[img_idx][:-1].split(' ')  # remove \n at the end of the line!
-                print("User gave {} paths".format(len(path_inputs)))
                 assert 2 <= len(path_inputs) <= 6, (
                     'More paths than expected. Expected: I1+I2 (2), I1+MM+SF(3), I1+MM+SF+GTF(4),'
                     '  I1+MM+SF+GT+OCC_MSK+INVMASK(5 to 6)')
