@@ -620,6 +620,13 @@ class Net(object):
                     os.makedirs(os.path.dirname(logfile_full))
                 # Open file (once)
                 logfile = open(logfile_full, 'w')
+                if new_par_folder is not None:
+                    now = datetime.datetime.now()
+                    date_now = now.strftime('%d-%m-%y_%H-%M-%S')
+                    # Record header for the file detailing 'experiment' string (new_par_folder)
+                    header_str = "Today is {}\nOpening and logging experiment '{}'\n Written to file: '{}'\n".format(
+                        date_now, new_par_folder, logfile_full)
+                    logfile.write(header_str)
 
             for img_idx in range(len(path_list)):
                 # Read + pre-process files
@@ -848,7 +855,7 @@ class Net(object):
                     final_str_formated_avg = get_metrics(avg_metrics_dict, average=True)
                     now = datetime.datetime.now()
                     date_now = now.strftime('%d-%m-%y_%H-%M-%S')
-                    notice_str = '\n\nNow logging final averaged metrics (today is : {})...\n\n'.format(date_now)
+                    notice_str = '\n\n==== Now logging final averaged metrics (today is : {}) ====\n\n'.format(date_now)
                     logfile.write(notice_str)
                     logfile.write(final_str_formated_avg)
 
