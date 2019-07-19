@@ -200,7 +200,7 @@ def get_metrics(metrics, average=False):
     dis_string = '{:<5s}{:^15.4f}{:^15.4f}{:^15.4f}'.format('(dis)', metrics['S0-10'], metrics['S10-40'],
                                                             metrics['S40plus'])
 
-    final_string_formatted = "{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10}\n{11}".format(
+    final_string_formatted = "{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10}\n{11}\n".format(
         line, title_str, line, headers, dash, all_string, mat_string, umat_string, line, dis_headers, dash, dis_string)
 
     return final_string_formatted
