@@ -287,7 +287,7 @@ class Net(object):
         """
         if sparse_flow is not None and matches_a is not None:
             matches_a = matches_a[..., np.newaxis]  # from (height, width) to (height, width, 1)
-            
+
         # Scale from [0, 255] -> [0.0, 1.0] if needed
         if input_a.max() > 1.0:
             input_a = input_a / 255.0
@@ -847,7 +847,7 @@ class Net(object):
                     final_str_formated_avg = get_metrics(avg_metrics_dict, average=True)
                     now = datetime.datetime.now()
                     date_now = now.strftime('%d-%m-%y_%H-%M-%S')
-                    notice_str = '\n\n==== Now logging final averaged metrics (today is : {}) ====\n\n'.format(date_now)
+                    notice_str = '\n\nToday is: {}\nNow logging final averaged metrics \n\n'.format(date_now)
                     logfile.write(notice_str)
                     logfile.write(final_str_formated_avg)
 
