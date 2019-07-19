@@ -809,15 +809,15 @@ class Net(object):
             if accumulate_metrics:
                 # Compute the final (average) mang, stdang and mepe
                 num_metrics = add_metrics.shape[-1]
-                average_metrics = np.array((num_metrics, 1)) * np.inf
-                values_not_inf = np.zeros((num_metrics, 1))
-                not_valid_values = np.zeros((num_metrics, 1))
+                average_metrics = np.ones(num_metrics) * np.inf
+                values_not_inf = np.zeros(num_metrics)
+                not_valid_values = np.zeros(num_metrics)
                 for i in range(num_metrics):  # indices 0 to 11
                     not_inf = np.sum(add_metrics[:, i] != np.inf)
-                    are_NaN = np.sum(np.isnan(add_metrics[:, i]))
-                    not_valid_values[i] = not_inf + are_NaN
-                    values_not_inf[i] = np.sum(add_metrics[add_metrics[:, i] != np.inf and not
-                    np.isnan(add_metrics[:, i]), i])
+                    are_nan = np.sum(np.isnan(add_metrics[:, i]))
+                    not_valid_values[i] = not_inf + are_nan
+                    log_index = np.logical_and(~np.isinf(add_metrics[:, i]), ~np.isnan(add_metrics[:, i]))
+                    values_not_inf[i] = np.sum(add_metrics[log_index, i])
                     average_metrics[i] = values_not_inf[i] / not_valid_values[i]
 
                 # Re-scale umat metrics if some tested image had 0 pixels occluded
@@ -832,10 +832,10 @@ class Net(object):
                                                                (not_valid_values[9] - not_disp_S0_10_count))
                 if not not_disp_S10_40_count > 0:
                     average_metrics[10] = average_metrics[10] * (not_valid_values[10] /
-                                                               (not_valid_values[10] - not_disp_S10_40_count))
+                                                                 (not_valid_values[10] - not_disp_S10_40_count))
                 if not not_disp_S40plus_count > 0:
                     average_metrics[11] = average_metrics[11] * (not_valid_values[11] /
-                                                               (not_valid_values[11] - not_disp_S40plus_count))
+                                                                 (not_valid_values[11] - not_disp_S40plus_count))
 
                 if log_metrics2file:
                     # Make dictionary
