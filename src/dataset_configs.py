@@ -524,6 +524,10 @@ FLYING_THINGS_3D_MINI_DATASET_CONFIG = {
         }
     }
 }
+
+# Add here configs for other datasets. For instance, sintel/clean, sintel/final, slowflow, etc.
+# MPI-Sintel (Final + clean pass) with perturbations (removing, adding or moving initial matches)
+SINTEL_ALL_DATASET_CONFIG = {
     'IMAGE_HEIGHT': 436,
     'IMAGE_WIDTH': 1024,
     'PADDED_IMAGE_HEIGHT': 448,
@@ -653,6 +657,7 @@ FLYING_THINGS_3D_MINI_DATASET_CONFIG = {
         }
     }
 }
+
 
 SINTEL_MINI_DATASET_CONFIG = {
     'IMAGE_HEIGHT': 436,
@@ -785,10 +790,7 @@ SINTEL_MINI_DATASET_CONFIG = {
     }
 }
 
-# Add here configs for other datasets. For instance, sintel/clean, sintel/final, slowflow, etc.
-# MPI-Sintel (Final + clean pass) with perturbations (removing, adding or moving initial matches)
-
-SINTEL_FINAL_ALL_DATASET_CONFIG = {
+ALLEY_MINI_DATASET_CONFIG = {
     'IMAGE_HEIGHT': 436,
     'IMAGE_WIDTH': 1024,
     'PADDED_IMAGE_HEIGHT': 448,
@@ -801,17 +803,17 @@ SINTEL_FINAL_ALL_DATASET_CONFIG = {
         'flow': 'A 2-channel optical flow field.',
     },
     'SIZES': {
-        'train': 1816,
-        'valid': 133,
+        'train': 36,
+        'valid': 13,
     },
     'BATCH_SIZE': 4,
     'PATHS': {
-        'train': './data/tfrecords/interp/sintel_train_all.tfrecords',
-        'valid': './data/tfrecords/interp/sintel_val_all.tfrecords',
+        'train': './data/tfrecords/interp/regen/alley1_only/sintel_train_all.tfrecords',
+        'valid': './data/tfrecords/interp/regen/alley1_only/sintel_val_all.tfrecords',
     },
     'PREPROCESS': {
         'scale': False,
-        'crop_height': 384,
+        'crop_height': 320,
         'crop_width': 768,
         'image_a': {
             'translate': {
@@ -919,7 +921,7 @@ SINTEL_FINAL_ALL_DATASET_CONFIG = {
     }
 }
 
-SINTEL_MINI_DATASET_CONFIG = {
+SINTEL_FINAL_ALL_DATASET_CONFIG = {
     'IMAGE_HEIGHT': 436,
     'IMAGE_WIDTH': 1024,
     'PADDED_IMAGE_HEIGHT': 448,
@@ -932,17 +934,17 @@ SINTEL_MINI_DATASET_CONFIG = {
         'flow': 'A 2-channel optical flow field.',
     },
     'SIZES': {
-        'train': 300,
-        'valid': 100,
+        'train': 1816,
+        'valid': 133,
     },
     'BATCH_SIZE': 4,
     'PATHS': {
-        'train': './data/tfrecords/interp/regen/sintel_train_all.tfrecords',
-        'valid': './data/tfrecords/interp/regen/sintel_val_all.tfrecords',
+        'train': './data/tfrecords/interp/sintel_final_train_all.tfrecords',
+        'valid': './data/tfrecords/interp/sintel_final_val_all.tfrecords',
     },
     'PREPROCESS': {
         'scale': False,
-        'crop_height': 320,
+        'crop_height': 384,
         'crop_width': 768,
         'image_a': {
             'translate': {
@@ -1071,8 +1073,8 @@ FC_TRAIN_SINTEL_VAL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 8,
     'PATHS': {
-        'train': '/datasets/GPI/optical_flow/TFrecords/interp/fc_sintel_train.tfrecords',
-        'valid': '/datasets/GPI/optical_flow/TFrecords/interp/fc_sintel_val.tfrecords',
+        'train': './data/tfrecords/interp/fc_sintel_train.tfrecords',
+        'valid': './data/tfrecords/interp/fc_sintel_val.tfrecords',
     },
     'PREPROCESS': {
         'scale': False,
@@ -1174,6 +1176,7 @@ FC_TRAIN_SINTEL_VAL_DATASET_CONFIG = {
         }
     }
 }
+
 
 FC_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG = {
     'IMAGE_HEIGHT': [384, 436],
@@ -1296,7 +1299,6 @@ FC_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG = {
         }
     }
 }
-
 
 # Flying Things 3D (train) + Sintel (validation)
 # Careful, change dataloader to account for different image sizes in training and validation
