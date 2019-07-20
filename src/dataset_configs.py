@@ -658,7 +658,6 @@ SINTEL_ALL_DATASET_CONFIG = {
     }
 }
 
-
 SINTEL_MINI_DATASET_CONFIG = {
     'IMAGE_HEIGHT': 436,
     'IMAGE_WIDTH': 1024,
@@ -677,139 +676,8 @@ SINTEL_MINI_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 4,
     'PATHS': {
-        'train': './data/tfrecords/interp/regen/mixed/sintel_train_all.tfrecords',
-        'valid': './data/tfrecords/interp/regen/mixed/sintel_val_all.tfrecords',
-    },
-    'PREPROCESS': {
-        'scale': False,
-        'crop_height': 320,
-        'crop_width': 768,
-        'image_a': {
-            'translate': {
-                'rand_type': "uniform_bernoulli",
-                'exp': False,
-                'mean': 0,
-                'spread': 0.4,
-                'prob': 1.0,
-            },
-            'rotate': {
-                'rand_type': "uniform_bernoulli",
-                'exp': False,
-                'mean': 0,
-                'spread': 0.4,
-                'prob': 1.0,
-            },
-            'zoom': {
-                'rand_type': "uniform_bernoulli",
-                'exp': True,
-                'mean': 0.2,
-                'spread': 0.4,
-                'prob': 1.0,
-            },
-            'squeeze': {
-                'rand_type': "uniform_bernoulli",
-                'exp': True,
-                'mean': 0,
-                'spread': 0.3,
-                'prob': 1.0,
-            },
-            # 'noise': {
-            #     'rand_type': "uniform_bernoulli",
-            #     'exp': False,
-            #     'mean': 0.03,
-            #     'spread': 0.03,
-            #     'prob': 1.0,
-            # },
-            # missing transformations:
-            # * Luminance: 'lmult_pow', 'lmult_mult', 'lmult_add' (first multiply then add? across channels?
-            # * Saturation: 'sat_pow', 'sat_mult', 'sat_add'
-            # * Colour: 'col_pow', 'col_mult', 'col_add'
-            # * Luminance again but changing order of operations (x/+): 'ladd_pow', 'ladd_mult', 'ladd_add'
-            # * Interchange colour channels: 'col_rotate'
-            # More or less compensated by the luminance, colour, gamma and contrast augmentations provided for image_b
-        },
-        # All preprocessing to image A will be applied to image B in addition to the following.
-        'image_b': {
-            'translate': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': False,
-                'mean': 0,
-                'spread': 0.03,
-                'prob': 1.0,
-            },
-            'rotate': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': False,
-                'mean': 0,
-                'spread': 0.03,
-                'prob': 1.0,
-            },
-            'zoom': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': True,
-                'mean': 0,
-                'spread': 0.03,
-                'prob': 1.0,
-            },
-            'gamma': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': True,
-                'mean': 0,
-                'spread': 0.02,
-                'prob': 1.0,
-            },
-            'brightness': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': False,
-                'mean': 0,
-                'spread': 0.02,
-                'prob': 1.0,
-            },
-            'contrast': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': True,
-                'mean': 0,
-                'spread': 0.02,
-                'prob': 1.0,
-            },
-            'color': {
-                'rand_type': "gaussian_bernoulli",
-                'exp': True,
-                'mean': 0,
-                'spread': 0.02,
-                'prob': 1.0,
-            },
-            # I think this is not used? It tries to define training-related learning parameters but those are defined in
-            # 'training_schedules.py'
-            'coeff_schedule_param': {
-                'half_life': 50000,
-                'initial_coeff': 0.5,
-                'final_coeff': 1,
-            },
-        }
-    }
-}
-
-ALLEY_MINI_DATASET_CONFIG = {
-    'IMAGE_HEIGHT': 436,
-    'IMAGE_WIDTH': 1024,
-    'PADDED_IMAGE_HEIGHT': 448,
-    'PADDED_IMAGE_WIDTH': 1024,
-    'ITEMS_TO_DESCRIPTIONS': {
-        'image_a': 'A 3-channel image.',
-        'image_b': 'A 3-channel image.',
-        'matches_a': 'A 1-channel matching mask (1s pixels matched, 0s not matched).',
-        'sparse_flow': 'A sparse flow initialised from a set of sparse matches.',
-        'flow': 'A 2-channel optical flow field.',
-    },
-    'SIZES': {
-        'train': 36,
-        'valid': 13,
-    },
-    'BATCH_SIZE': 4,
-    'PATHS': {
-        'train': './data/tfrecords/interp/regen/alley1_only/sintel_train_all.tfrecords',
-        'valid': './data/tfrecords/interp/regen/alley1_only/sintel_val_all.tfrecords',
+        'train': './data/tfrecords/interp/regen/sintel_train_all.tfrecords',
+        'valid': './data/tfrecords/interp/regen/sintel_val_all.tfrecords',
     },
     'PREPROCESS': {
         'scale': False,
