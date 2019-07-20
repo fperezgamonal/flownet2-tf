@@ -782,7 +782,7 @@ class Net(object):
                     # Compute all metrics
                     metrics, not_occluded, not_disp_s010, not_disp_s1040, not_disp_s40plus = compute_all_metrics(
                         predicted_flow_cropped, gt_flow_0, occ_mask=occ_mask_0, inv_mask=inv_mask_0)
-                    final_str_formated = get_metrics(metrics)
+                    final_str_formated = get_metrics(metrics, flow_fname=unique_name)
                     if accumulate_metrics:
                         not_occluded_count += not_occluded
                         not_disp_S0_10_count += not_disp_s010

@@ -181,13 +181,19 @@ def segment_flow(flow):
     return seg
 
 
-def get_metrics(metrics, average=False):
+def get_metrics(metrics, average=False, flow_fname=None):
     dash = "-" * 50
     line = '_' * 50
     if average:
         title_str = "{:^50}".format('MPI-Sintel Flow Error Metrics (AVERAGE)')
+        flow_fname_str = "{:^50}".format('For all files above')
     else:
         title_str = "{:^50}".format('MPI-Sintel Flow Error Metrics')
+        if flow_fname is not None:
+            flow_fname_str = "{:^50}".format(flow_fname)
+        else:
+            flow_fname_str = "{:^50}".format('Unknown filename')
+
     headers = '{:<5s}{:^15s}{:^15s}{:^15s}'.format('Mask', 'MANG', 'STDANG', 'MEPE')
     all_string = '{:<5s}{:^15.4f}{:^15.4f}{:^15.4f}'.format('(all)', metrics['mangall'], metrics['stdangall'],
                                                             metrics['EPEall'])
@@ -200,8 +206,9 @@ def get_metrics(metrics, average=False):
     dis_string = '{:<5s}{:^15.4f}{:^15.4f}{:^15.4f}'.format('(dis)', metrics['S0-10'], metrics['S10-40'],
                                                             metrics['S40plus'])
 
-    final_string_formatted = "{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10}\n{11}\n".format(
-        line, title_str, line, headers, dash, all_string, mat_string, umat_string, line, dis_headers, dash, dis_string)
+    final_string_formatted = "{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10}\n{11}\n{12}\n".format(
+        line, title_str, flow_fname_str, line, headers, dash, all_string, mat_string, umat_string, line, dis_headers,
+        dash, dis_string)
 
     return final_string_formatted
 
@@ -371,7 +378,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     return metrics, not_occluded, s0_10_is_zero, s10_40_is_zero, s40plus_is_zero
 
 
-# TODO: should index with tuple not directly with a list of indices/logical values
+# TODO: should index with tuple not directly with a list of indices/logical values (A[tuple(ind)] not A[ind])
 # A[idx] ==> A[tuple(idx)] : maybe due to idx being multi-dimensional and not a column/row vector?
 def flow_error(tu, tv, u, v):
     """
