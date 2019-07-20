@@ -798,10 +798,7 @@ class Net(object):
                     else:  # print to stdout
                         print(final_str_formated)
 
-            # Actually compute the average metrics (careful: need to discard NaNs and take into consideration when ave-
-            # raging (i.e.: we need a counter for each loss element, similar to the Matlab source code*)
-            # * this code is available in a zipped file attached to a publication in the IPOL journal (evaluation_code):
-            # http://www.ipol.im/pub/art/2019/238/#Non-Reviewed-Supplementary-Materials
+            # Actually compute the average metrics (careful: need to discard NaNs and Inf)
             if accumulate_metrics:
                 # Compute the final (average) mang, stdang and mepe
                 num_metrics = add_metrics.shape[-1]

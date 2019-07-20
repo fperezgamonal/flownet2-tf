@@ -238,6 +238,7 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     of_est_x = est_flow[:, :, 0]
     of_est_y = est_flow[:, :, 1]
 
+    print("np.unique(occ_mask): {}\nnp.unique(inv_mask): {}".format(np.unique(occ_mask), np.unique(inv_mask)))
     if occ_mask is not None:
         occ_mask = occ_mask == 255  # check that once read the value is 255
     else:
@@ -253,7 +254,8 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     metrics['EPEall'] = mepe
     metrics['mangall'] = mang
     metrics['stdangall'] = stdang
-
+    print("np.unique(occ_mask): {}\nnp.unique(inv_mask): {}".format(np.unique(occ_mask), np.unique(inv_mask)))
+    print("occ_mask.size: {}, len(np.unique(occ_mask).shape): {}".format(occ_mask.size, len(np.unique(occ_mask).shape)))
     # Check if there are any occluded pixels
     if occ_mask.size and len(np.unique(occ_mask).shape) > 1:  # array is not empty and contains at least 2 diff. values
         print("Occlusion mask is not empty, computing MAT/UMAT (occluded/non-occluded) metrics")
