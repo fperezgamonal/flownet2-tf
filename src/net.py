@@ -630,11 +630,13 @@ class Net(object):
                     '  I1+MM+SF+GT+OCC_MSK+INVMASK(5 to 6)')
 
                 if len(path_inputs) == 2 and input_type == 'image_pairs':  # Only image1 + image2 have been provided
+                    print("Only image1 + image2 have been provided")
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
                     matches_0 = None
                     sparse_flow_0 = None
                 elif len(path_inputs) == 3 and input_type == 'image_matches':  # image1 + matches mask + sparse_flow
+                    print("image1 + matches mask + sparse_flow")
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
                     matches_0 = imread(path_inputs[1])
@@ -642,6 +644,7 @@ class Net(object):
 
                 # image1 + image2 + ground truth flow
                 elif len(path_inputs) == 3 and input_type == 'image_pairs':
+                    print("image1 + image2 + ground truth flow")
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
                     matches_0 = None
@@ -654,16 +657,12 @@ class Net(object):
 
                 # img1 + matches + sparse + gt flow
                 elif len(path_inputs) == 4 and input_type == 'image_matches':
-                    # frame_0 = np.array(imread(path_inputs[0])).astype(np.float32)
-                    # frame_1 = None
-                    # matches_0 = np.array(imread(path_inputs[1])).astype(np.float32)
-                    # sparse_flow_0 = np.array(read_flow(path_inputs[2])).astype(np.float32)
-                    # gt_flow_0 = np.array(read_flow(path_inputs[3])).astype(np.float32)
-                    frame_0 = imread(path_inputs[0]).astype(np.float32)
+                    print("img1 + matches + sparse + gt flow")
+                    frame_0 = imread(path_inputs[0])
                     frame_1 = None
-                    matches_0 = imread(path_inputs[1]).astype(np.float32)
-                    sparse_flow_0 = read_flow(path_inputs[2]).astype(np.float32)
-                    gt_flow_0 = read_flow(path_inputs[3]).astype(np.float32)
+                    matches_0 = imread(path_inputs[1])
+                    sparse_flow_0 = read_flow(path_inputs[2])
+                    gt_flow_0 = read_flow(path_inputs[3])
                     if compute_metrics:
                         # Must define optional masks as None
                         occ_mask_0 = None
@@ -671,6 +670,7 @@ class Net(object):
 
                 # img1 + img2 + gtflow + occ_mask
                 elif len(path_inputs) == 4 and input_type == 'image_pairs' and compute_metrics:
+                    print("img1 + img2 + gtflow + occ_mask")
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
                     matches_0 = None
@@ -680,6 +680,7 @@ class Net(object):
 
                 # img1 + img2 + gtflow + occ_mask + inv_mask
                 elif len(path_inputs) == 5 and input_type == 'image_pairs' and compute_metrics:
+                    print("img1 + img2 + gtflow + occ_mask + inv_mask")
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
                     matches_0 = None
@@ -690,6 +691,7 @@ class Net(object):
 
                 # img1 + mtch + spflow + gt_flow + occ_mask
                 elif len(path_inputs) == 5 and input_type == 'image_matches' and compute_metrics:
+                    print("img1 + mtch + spflow + gt_flow + occ_mask")
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
                     matches_0 = imread(path_inputs[1])
@@ -699,6 +701,7 @@ class Net(object):
 
                 # img1 + mtch + spflow + gt_flow + occ_mask + inv_mask
                 elif len(path_inputs) == 6 and input_type == 'image_matches' and compute_metrics:
+                    print("img1 + mtch + spflow + gt_flow + occ_mask + inv_mask")
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
                     matches_0 = imread(path_inputs[1])
@@ -726,11 +729,6 @@ class Net(object):
                 # Normalise + pad if the image is not divisible by 64 ('padded' placeholders, but needed to match them?)
                 frame_0, frame_1, matches_0, sparse_flow_0, x_adapt_info = self.adapt_x(frame_0, frame_1, matches_0,
                                                                                         sparse_flow_0)
-
-                # Convert numpy arrays to tensors
-                # frame_0, frame_1, matches_0, sparse_flow_0 = self.numpy2tensor(frame_0, frame_1, matches_0,
-                #                                                                sparse_flow_0, input_type=input_type)
-                # print("After numpy2tensor, type(frame_0) : {}".format(type(frame_0)))
 
                 if sparse_flow_0 is not None and matches_0 is not None and input_type == 'image_matches':
                     # init = tf.global_variables_initializer()
@@ -776,8 +774,7 @@ class Net(object):
                 if save_flo:
                     full_out_path = os.path.join(out_path_complete, unique_name + '_flow.flo')
                     write_flow(predicted_flow_cropped, full_out_path)
-                # TODO: add logic to show the average metrics in the input batch (with a flag)
-                # Useful to compute metrics on huge datasets like Sintel, Kitti, etc. instead of tens of images
+
                 if compute_metrics and gt_flow_0 is not None:
                     # Compute all metrics
                     metrics, not_occluded, not_disp_s010, not_disp_s1040, not_disp_s40plus = compute_all_metrics(
@@ -801,7 +798,7 @@ class Net(object):
                     else:  # print to stdout
                         print(final_str_formated)
 
-            # Actually compute the average metrics (careful: need to discar NaNs and take into consideration when ave-
+            # Actually compute the average metrics (careful: need to discard NaNs and take into consideration when ave-
             # raging (i.e.: we need a counter for each loss element, similar to the Matlab source code*)
             # * this code is available in a zipped file attached to a publication in the IPOL journal (evaluation_code):
             # http://www.ipol.im/pub/art/2019/238/#Non-Reviewed-Supplementary-Materials
