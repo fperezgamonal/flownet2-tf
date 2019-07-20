@@ -524,6 +524,10 @@ FLYING_THINGS_3D_MINI_DATASET_CONFIG = {
         }
     }
 }
+
+# Add here configs for other datasets. For instance, sintel/clean, sintel/final, slowflow, etc.
+# MPI-Sintel (Final + clean pass) with perturbations (removing, adding or moving initial matches)
+SINTEL_ALL_DATASET_CONFIG = {
     'IMAGE_HEIGHT': 436,
     'IMAGE_WIDTH': 1024,
     'PADDED_IMAGE_HEIGHT': 448,
@@ -1069,8 +1073,8 @@ FC_TRAIN_SINTEL_VAL_DATASET_CONFIG = {
     },
     'BATCH_SIZE': 8,
     'PATHS': {
-        'train': './data/tfrecords/interp/regen/mixed/fc_sintel_train.tfrecords',
-        'valid': './data/tfrecords/interp/regen/mixed/fc_sintel_val.tfrecords',
+        'train': './data/tfrecords/interp/fc_sintel_train.tfrecords',
+        'valid': './data/tfrecords/interp/fc_sintel_val.tfrecords',
     },
     'PREPROCESS': {
         'scale': False,
