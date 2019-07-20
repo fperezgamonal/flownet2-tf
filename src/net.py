@@ -630,13 +630,11 @@ class Net(object):
                     '  I1+MM+SF+GT+OCC_MSK+INVMASK(5 to 6)')
 
                 if len(path_inputs) == 2 and input_type == 'image_pairs':  # Only image1 + image2 have been provided
-                    print("Only image1 + image2 have been provided")
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
                     matches_0 = None
                     sparse_flow_0 = None
                 elif len(path_inputs) == 3 and input_type == 'image_matches':  # image1 + matches mask + sparse_flow
-                    print("image1 + matches mask + sparse_flow")
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
                     matches_0 = imread(path_inputs[1])
@@ -644,7 +642,6 @@ class Net(object):
 
                 # image1 + image2 + ground truth flow
                 elif len(path_inputs) == 3 and input_type == 'image_pairs':
-                    print("image1 + image2 + ground truth flow")
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
                     matches_0 = None
@@ -657,7 +654,6 @@ class Net(object):
 
                 # img1 + matches + sparse + gt flow
                 elif len(path_inputs) == 4 and input_type == 'image_matches':
-                    print("img1 + matches + sparse + gt flow")
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
                     matches_0 = imread(path_inputs[1])
@@ -670,7 +666,6 @@ class Net(object):
 
                 # img1 + img2 + gtflow + occ_mask
                 elif len(path_inputs) == 4 and input_type == 'image_pairs' and compute_metrics:
-                    print("img1 + img2 + gtflow + occ_mask")
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
                     matches_0 = None
@@ -691,7 +686,6 @@ class Net(object):
 
                 # img1 + mtch + spflow + gt_flow + occ_mask
                 elif len(path_inputs) == 5 and input_type == 'image_matches' and compute_metrics:
-                    print("img1 + mtch + spflow + gt_flow + occ_mask")
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
                     matches_0 = imread(path_inputs[1])
@@ -701,7 +695,6 @@ class Net(object):
 
                 # img1 + mtch + spflow + gt_flow + occ_mask + inv_mask
                 elif len(path_inputs) == 6 and input_type == 'image_matches' and compute_metrics:
-                    print("img1 + mtch + spflow + gt_flow + occ_mask + inv_mask")
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
                     matches_0 = imread(path_inputs[1])
