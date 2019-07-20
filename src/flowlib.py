@@ -238,7 +238,6 @@ def compute_all_metrics(est_flow, gt_flow, occ_mask=None, inv_mask=None):
     of_est_x = est_flow[:, :, 0]
     of_est_y = est_flow[:, :, 1]
 
-    print("np.unique(occ_mask): {}\nnp.unique(inv_mask): {}".format(np.unique(occ_mask), np.unique(inv_mask)))
     if occ_mask is not None:
         occ_mask = occ_mask == 255  # check that once read the value is 255
     else:
