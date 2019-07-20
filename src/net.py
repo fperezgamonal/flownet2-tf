@@ -1071,9 +1071,10 @@ class Net(object):
 
                 else:  # Use fixed momentum
                     if train_params_dict['momentum'] is None and (training_schedule_str.lower() == 'one_cycle' or
-                                                                  training_schedule_str.lower() == 'clr'):
+                                                                  training_schedule_str.lower() == 'clr' or
+                                                                  lr_range_test):
                         if train_params_dict['max_momentum'] is not None and \
-                                train_params_dict['min_momentum'] is not None and lr_range_test:
+                                train_params_dict['min_momentum'] is not None:
                             if log_verbosity > 1:
                                 print("Using cyclical momentum (only decreasing) for LR range test...")
                                 print("Cycle boundaries are: max={}, min={}".format(train_params_dict['max_momentum'],
