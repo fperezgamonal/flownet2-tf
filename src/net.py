@@ -1050,54 +1050,49 @@ class Net(object):
                 # Overides default in config
                 if train_params_dict['weight_decay'] is not None:
                     training_schedule['l2_regularization'] = train_params_dict['weight_decay']
+
                 # Use cyclic momentum if using CLR or 1 cycle (accelerates convergence)
-                if ((training_schedule['learning_rates'].lower() == 'clr' and training_schedule_str == 'clr') or
-                    (training_schedule['learning_rates'].lower() == 'one_cycle' and
-                     (training_schedule_str == 'one_cycle')) and train_params_dict['min_momentum'] is not None and
-                        train_params_dict['max_momentum'] is not None):
-                    if log_verbosity > 1:
-                        print("Momentum optimizer used together with CLR/1cycle, will be using cyclical momentum")
-                        if training_schedule['learning_rates'].lower() == 'one_cycle':
-                            is_one_cycle = True
-                            train_params_dict['gamma'] = 1  # effectively disables (avoids duplicate code)
-                        else:
-                            is_one_cycle = False
+                # if ((training_schedule['learning_rates'].lower() == 'clr' and training_schedule_str == 'clr') or
+                #     (training_schedule['learning_rates'].lower() == 'one_cycle' and
+                #      (training_schedule_str == 'one_cycle')) and train_params_dict['min_momentum'] is not None and
+                #         train_params_dict['max_momentum'] is not None):
+                if train_params_dict['momentum'] is None and train_params_dict['min_momentum'] is not None and \
+                        train_params_dict['max_momentum'] is not None:
+                    if lr_range_test:
+                        if log_verbosity > 1:
+                            print("Using cyclical momentum (only decreasing) for LR range test...")
+                            print("Cycle boundaries are: max={}, min={}".format(train_params_dict['max_momentum'],
+                                                                                train_params_dict['min_momentum']))
+                        # Use cyclical momentum (only decreasing half-cycle while LR increases)
+                        momentum = _lr_cyclic(g_step_op=checkpoint_global_step_tensor,
+                                              base_lr=train_params_dict['max_momentum'],
+                                              max_lr=train_params_dict['min_momentum'],
+                                              step_size=lr_range_niters,
+                                              mode='triangular')
+
+                    else:
+                        if log_verbosity > 1:
+                            print("Momentum optimizer used together with CLR/1cycle, will be using cyclical momentum")
+                            if training_schedule['learning_rates'].lower() == 'one_cycle':
+                                is_one_cycle = True
+                                train_params_dict['gamma'] = 1  # effectively disables (avoids duplicate code)
+                            else:
+                                is_one_cycle = False
                     momentum = _mom_cyclic(g_step_op=checkpoint_global_step_tensor,
                                            base_mom=train_params_dict['min_momentum'],
                                            max_mom=train_params_dict['max_momentum'],
                                            gamma=train_params_dict['gamma'],
                                            step_size=train_params_dict['clr_stepsize'], mode='triangular',
                                            one_cycle=is_one_cycle)
-
                 else:  # Use fixed momentum
-                    if train_params_dict['momentum'] is None and (training_schedule_str.lower() == 'one_cycle' or
-                                                                  training_schedule_str.lower() == 'clr' or
-                                                                  lr_range_test):
-                        if train_params_dict['max_momentum'] is not None and \
-                                train_params_dict['min_momentum'] is not None:
-                            if log_verbosity > 1:
-                                print("Using cyclical momentum (only decreasing) for LR range test...")
-                                print("Cycle boundaries are: max={}, min={}".format(train_params_dict['max_momentum'],
-                                                                                    train_params_dict['min_momentum']))
-                            # Use cyclical momentum (only decreasing half-cycle while LR increases)
-                            momentum = _lr_cyclic(g_step_op=checkpoint_global_step_tensor,
-                                                  base_lr=train_params_dict['max_momentum'],
-                                                  max_lr=train_params_dict['min_momentum'],
-                                                  step_size=lr_range_niters,
-                                                  mode='triangular')
-                        else:
-                            if log_verbosity > 1:
-                                print("Using fixed momentum = 0.9")
-                            momentum = 0.9
-                    else:
-                        if log_verbosity > 1:
-                            print("Using user-specified (fixed) momentum value")
-                        momentum = train_params_dict['momentum']
+                    if log_verbosity > 1:
+                        print("Using user-specified (fixed) momentum value")
+                    momentum = train_params_dict['momentum']
 
                 # Track momentum value (just for debugging initially)
                 if log_verbosity > 1 and log_tensorboard:
-                    print("Logging cyclic momentum to tensorboard...")
-                    tf.summary.scalar('cyclic_momentum', momentum)
+                    print("Logging momentum to tensorboard...")
+                    tf.summary.scalar('momentum', momentum)
 
                 optimizer = tf.train.MomentumOptimizer(learning_rate, momentum, use_nesterov=True)
             # AdamW (w. proper weight decay not L2 regularisation), as suggested in https://arxiv.org/abs/1711.05101
