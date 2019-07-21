@@ -208,7 +208,7 @@ class Net(object):
         # Check for values
         if ckpt_path is not None:
             ckpt_str = 'ckpt'
-            step_number = int(ckpt_path.split('-')[-1])
+            step_number = int(os.path.basename(ckpt_path).split('-')[-1])
         else:
             ckpt_str = 'scratch'
             step_number = 0
@@ -221,32 +221,32 @@ class Net(object):
             event_string = '{0}'.format(date_string)
 
         elif 'clr' in training_schedule_str.lower():  # make it all caps for readability
-            event_string = '{0}_from_{1}_it={2}_trainSch_CLR_opt_{3}_wd_{4}_minlr_{5}_maxlr_{6}_stepsize_{7}_{8}' \
-                           'cycles_HFEM={9}_{10}'.format(
+            event_string = '{0}_from_{1}_it_{2}_trainSch_CLR_opt_{3}_wd_{4}_minlr_{5}_maxlr_{6}_stepsize_{7}_{8}' \
+                           'cycles_HFEM_{9}_{10}'.format(
                 dataset_name, ckpt_str, step_number, train_params_dict['optimizer'], train_params_dict['weight_decay'],
                 train_params_dict['clr_min_lr'], train_params_dict['clr_max_lr'],
                 train_params_dict['clr_stepsize'], train_params_dict['clr_num_cycles'], add_hfem, date_string)
 
         elif 'one_cycle' in training_schedule_str.lower():
             if train_params_dict['optimizer'].lower() == 'momentum':
-                event_string = '{0}_from_{1}_it={2}_trainSch_1cycle_opt_{3}_CM_{4}-{5}_wd_{6}_minlr_{7}_maxlr_{8}_' \
-                               'stepsize_{7}_{8}iters_HFEM={9}_{10}'.format(
+                event_string = '{0}_from_{1}_it_{2}_trainSch_1cycle_opt_{3}_CM_{4}-{5}_wd_{6}_minlr_{7}_maxlr_{8}_' \
+                               'stepsize_{7}_{8}iters_HFEM_{9}_{10}'.format(
                     dataset_name, ckpt_str, step_number, train_params_dict['optimizer'],
                     train_params_dict['min_momentum'], train_params_dict['max_momentum'],
                     train_params_dict['weight_decay'], train_params_dict['clr_min_lr'],
                     train_params_dict['clr_max_lr'], train_params_dict['clr_stepsize'], maximum_iters, add_hfem,
                     date_string)
             else:
-                event_string = '{0}_from_{1}_it={2}_trainSch_1cycle_opt_{3}_wd_{4}_minlr_{5}_maxlr_{6}_stepsize_{7}' \
-                               '_{8}iters_HFEM={9}_{10}'.format(
+                event_string = '{0}_from_{1}_it_{2}_trainSch_1cycle_opt_{3}_wd_{4}_minlr_{5}_maxlr_{6}_stepsize_{7}' \
+                               '_{8}iters_HFEM_{9}_{10}'.format(
                     dataset_name, ckpt_str, step_number, train_params_dict['optimizer'],
                     train_params_dict['weight_decay'], train_params_dict['clr_min_lr'], train_params_dict['clr_max_lr'],
                     train_params_dict['clr_stepsize'], maximum_iters, add_hfem, date_string)
 
         elif 'exp_decr' in training_schedule_str.lower():
-            event_string = '{0}'.format(date_string)
+            event_string = 'exp_decr_{0}'.format(date_string)
         elif 'long' in training_schedule_str.lower():
-            event_string = '{0}'.format(date_string)
+            event_string = 'Slong_{0}'.format(date_string)
         else:
             event_string = '{0}'.format(date_string)
 
@@ -1283,7 +1283,7 @@ class Net(object):
 
                 init_assign_op, init_feed_dict = slim.assign_from_checkpoint(checkpoint_path, renamed_variables)
                 # Initialise checkpoint for stacked nets with the global step as the number of the outermost net
-                step_number = int(checkpoint_path.split('-')[-1])
+                step_number = int(os.path.basename(checkpoint_path).split('-')[-1])
                 checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
                                                             dtype='int64')
                 # TODO: adapt resuming from saver to stacked architectures
