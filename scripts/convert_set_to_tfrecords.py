@@ -271,7 +271,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
             image_a = imread(image_a_path)
             image_b = imread(image_b_path)
             flow = open_flo_file(flow_path)
-            edges_a = load_edges_file(edges_path, image_a.shape[0], image_a.shape[1])
+            edges_a = load_edges_file(edges_path, image_a.shape[1], image_a.shape[0])
 
             if sparse_from_gt is not None:  # provide sparse flow + mask by sampling random points from gt_flow
                 # Randomly select a 'sparse_from_gt' percentage (from 1 to sparse_from_gt with 0.5 step)
