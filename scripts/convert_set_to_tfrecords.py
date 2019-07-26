@@ -40,6 +40,13 @@ def open_flo_file(filename):
             return np.resize(data, (h, w, 2))
 
 
+def load_edges_file(edges_file_name, width, height):
+    edges_img = np.ndarray((height, width), dtype=np.float32)
+    with open(edges_file_name, 'rb') as f:
+        f.readinto(edges_img)
+    return edges_img
+
+
 # https://github.com/tensorflow/tensorflow/blob/r1.1/tensorflow/examples/how_tos/reading_data/convert_to_records.py
 def _int64_feature(value):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
@@ -49,7 +56,7 @@ def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 
-def image_example(image_a, image_b, matches_a, sparse_flow, flow):
+def image_example(image_a, image_b, matches_a, sparse_flow, flow, edges_a):
     """
     Creates a tf.Example message ready to be written to a file.
     """
@@ -61,6 +68,7 @@ def image_example(image_a, image_b, matches_a, sparse_flow, flow):
         'matches_a': _bytes_feature(matches_a),
         'sparse_flow': _bytes_feature(sparse_flow),
         'flow': _bytes_feature(flow),
+        'edges_a': _bytes_feature(edges_a),
     }
 
     # Create a Features message using tf.train.Example.
@@ -175,6 +183,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     image_a_path = os.path.join(data_dir, '{0:05d}_img1.png'.format(i + 1))
                     image_b_path = os.path.join(data_dir, '{0:05d}_img2.png'.format(i + 1))
                     flow_path = os.path.join(data_dir, '{0:05d}_flow.flo'.format(i + 1))
+                    edges_path = os.path.join(data_dir, '{0:05d}_img1_edges.dat'.format(i + 1))
                     if sparse_from_gt is not None:
                         if matcher == 'sift':
                             matches_a_path = os.path.join(data_dir, '{0:05d}_img1_sift_mask.png'.format(i + 1))
@@ -192,6 +201,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 1))
                     image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 2))
                     flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i + 1))
+                    edges_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}_edges.dat'.format(i + 1))
                     if sparse_from_gt is not None:
                         if matcher == 'sift':
                             matches_a_path = os.path.join(data_dir, pass_dir,
@@ -213,6 +223,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     image_a_path = os.path.join(data_dir, '{0:07d}.png'.format(i))
                     image_b_path = os.path.join(data_dir, '{0:07d}.png'.format(i + 1))
                     flow_path = os.path.join(data_dir, '{0:07d}.flo'.format(i))
+                    edges_path = os.path.join(data_dir, '{0:07d}_edges.dat'.format(i))
                     if sparse_from_gt is not None:
                         if matcher == 'sift':
                             matches_a_path = os.path.join(data_dir, '{0:07d}_sift_mask.png'.format(i))
@@ -229,6 +240,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 1))
                     image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 2))
                     flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i + 1))
+                    edges_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}_edges.dat'.format(i + 1))
                     if sparse_from_gt is not None:
                         if matcher == 'sift':
                             matches_a_path = os.path.join(data_dir, pass_dir,
@@ -252,13 +264,14 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
 
             if DEBUG:
                 print("Path to source images/flows are:")
-                print("img_a: {0}\nimg_b: {1}\nmch_a: {2}\nsp_flow: {3}\nflow: {4}\n".format(
-                    image_a_path, image_b_path, matches_a_path, sparse_flow_path, flow_path))
+                print("img_a: {0}\nimg_b: {1}\nmch_a: {2}\nsp_flow: {3}\nflow: {4}\nedges: {5}\n".format(
+                    image_a_path, image_b_path, matches_a_path, sparse_flow_path, flow_path, edges_path))
 
             # Read all inputs
             image_a = imread(image_a_path)
             image_b = imread(image_b_path)
             flow = open_flo_file(flow_path)
+            edges_a = load_edges_file(edges_path, image_a.shape[0], image_a.shape[1])
 
             if sparse_from_gt is not None:  # provide sparse flow + mask by sampling random points from gt_flow
                 # Randomly select a 'sparse_from_gt' percentage (from 1 to sparse_from_gt with 0.5 step)
@@ -305,16 +318,20 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 matches_a = matches_a[..., np.newaxis]
                 sparse_flow = open_flo_file(sparse_flow_path)
 
+            edges_a = edges_a[..., np.newaxis]
+
             # Scale from [0, 255] -> [0.0, 1.0]
             image_a = image_a / 255.0
             image_b = image_b / 255.0
             matches_a = matches_a / 255.0
+            # edges is already in [0, 1]
 
             # Deal with images not multiple of 64 (e.g.: Sintel, Middlebury, etc.)
             # Copied from the method from net.py: adapt_x()
             height_a, width_a, channels_a = image_a.shape
             height_b, width_b, channels_b = image_b.shape
             height_ma, width_ma, channels_ma = matches_a.shape
+            height_ed, width_ed, channels_ed = edges_a.shape
 
             # Assert matching image sizes
             assert height_a == height_b and width_a == width_b and channels_a == channels_b, (
@@ -325,6 +342,10 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
             assert height_a == height_ma and width_a == width_ma, ("FATAL: mask width, height do not match the images."
                                                                    "Images have shape: {0}, mask: {1}".format(
                 image_a.shape[:-1], matches_a.shape[:-1]))
+            # And that the edges also matches them
+            assert height_a == height_ed and width_a == width_ed, ("FATAL: edges width and/or height does not match"
+                                                                   " image's Images have shape: {0}, edges: {1}".format(
+                image_a.shape[:-1], edges_a.shape[:-1]))
             # Assert correct number of channels
             assert channels_ma == 1, ("FATAL: mask should be binary but the number of channels is not 1 but {0}".format(
                 channels_ma
@@ -332,7 +353,8 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
 
             if DEBUG:
                 print("OG shapes before padding (images-matches): ")
-                print("img_a: {0}\nimg_b: {1}\nmch_a: {2}".format(image_a.shape, image_b.shape, matches_a.shape))
+                print("img_a: {0}\nimg_b: {1}\nmch_a: {2}\nedges_a: {3}\n".format(image_a.shape, image_b.shape,
+                                                                                  matches_a.shape, edges_a.shape))
                 print("matches has unique values: {}".format(np.unique(matches_a)))
 
             if height_a % divisor != 0 or width_a % divisor != 0:
@@ -351,6 +373,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 image_a = np.pad(image_a, padding, mode='constant', constant_values=0.)
                 image_b = np.pad(image_b, padding, mode='constant', constant_values=0.)
                 matches_a = np.pad(matches_a, padding, mode='constant', constant_values=0.)
+                edges_a = np.pad(edges_a, padding, mode='constant', constant_values=0.)
 
             if DEBUG:
                 print("NEW shapes after padding (images-matches): ")
@@ -358,10 +381,12 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 print("img_a has range: ({}, {})".format(np.min(image_a), np.max(image_a)))
                 print("matches_a has range: ({}, {})".format(np.min(matches_a), np.max(matches_a)))
                 print("img_b has range: ({}, {})".format(np.min(image_b), np.max(image_b)))
+                print("edges_a has range: ({}, {})".format(np.min(edges_a), np.max(edges_a)))
 
             image_a_raw = image_a.tostring()
             image_b_raw = image_b.tostring()
             matches_a_raw = matches_a.tostring()
+            edges_a_raw = edges_a.tostring()
 
             # Pad flows as well for training (to compute the loss)
             # From net.py: apply_y()
@@ -403,7 +428,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
             flow_raw = flow.tostring()
             sparse_flow_raw = sparse_flow.tostring()
 
-            tf_example = image_example(image_a_raw, image_b_raw, matches_a_raw, sparse_flow_raw, flow_raw)
+            tf_example = image_example(image_a_raw, image_b_raw, matches_a_raw, sparse_flow_raw, flow_raw, edges_a_raw)
             writer.write(tf_example.SerializeToString())
             pbar.update(count + 1)
             count += 1

@@ -511,7 +511,7 @@ class Net(object):
             pred_flow = self.postproc_y_hat_test(pred_flow, adapt_info=y_adapt_info)
 
             # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
-            unique_name = input_a_path.split('/')[-1][:-4]
+            unique_name = os.path.basename(input_a_path)[:-4]
 
             if save_image or save_flo:
                 if not os.path.isdir(out_path):
@@ -752,7 +752,7 @@ class Net(object):
                 # Same for the name of the output flow (take the first image name)
                 # Useful inside the loop if we feed images with different parent folders (for instance Sintel)
                 parent_folder_name = path_inputs[0].split('/')[-2] if new_par_folder is None else new_par_folder
-                unique_name = path_inputs[0].split('/')[-1][:-4]
+                unique_name = os.path.basename(path_inputs[0])[:-4]
                 out_path_complete = os.path.join(out_path, parent_folder_name)
 
                 if save_image or save_flo:
@@ -791,6 +791,7 @@ class Net(object):
                     else:  # print to stdout
                         print(final_str_formated)
 
+            # TODO: add standard deviation of all the metrics (to see variance in the set)
             # Actually compute the average metrics (careful: need to discard NaNs and Inf)
             if accumulate_metrics:
                 # Compute the final (average) mang, stdang and mepe

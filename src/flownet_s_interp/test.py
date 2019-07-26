@@ -108,7 +108,7 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--save_image',
-        type=bool,
+        type=str2bool,
         required=False,
         help='whether to save an colour-coded image of the predicted flow or not',
         default=True,
