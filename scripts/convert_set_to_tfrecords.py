@@ -167,6 +167,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i+1))
                 image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i+2))
                 flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i+1))
+                edges_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}_edges.dat'.format(i + 1))
                 if sparse_from_gt is not None:
                     if matcher == 'sift':
                         matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}_sift_mask.png'.format(i+1))
