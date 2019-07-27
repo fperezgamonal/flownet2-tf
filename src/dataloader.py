@@ -114,6 +114,7 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
                 'image_a': tf.FixedLenFeature([], tf.string),
                 'matches_a': tf.FixedLenFeature([], tf.string),
                 'sparse_flow': tf.FixedLenFeature([], tf.string),
+                'edges_a': tf.FixedLenFeature([], tf.string),
                 'flow': tf.FixedLenFeature([], tf.string),
             }
             items_to_handlers = {
@@ -132,6 +133,11 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
                     dtype=tf.float32,
                     shape=[image_height, image_width, 2],
                     channels=2),
+                'edges_a': Image(
+                    image_key='edges_a',
+                    dtype=tf.float64,
+                    shape=[image_height, image_width, 1],
+                    channels=1),
                 'flow': Image(
                     image_key='flow',
                     dtype=tf.float32,
