@@ -846,7 +846,7 @@ class Net(object):
               edges_a=None, valid_iters=VAL_INTERVAL, val_input_a=None, val_gt_flow=None, val_input_b=None,
               val_matches_a=None, val_sparse_flow=None, val_edges_a=None, checkpoints=None, input_type='image_pairs',
               log_verbosity=1, log_tensorboard=True, lr_range_test=False, train_params_dict=None,
-              log_smoothed_loss=True, reset_global_step=False, summarise_grads=False, add_hfem='edges', lambda_w=2,
+              log_smoothed_loss=True, reset_global_step=False, summarise_grads=False, add_hfem='', lambda_w=2,
               hfem_perc=50, dataset_config_str='flying_chairs'):
 
         """
