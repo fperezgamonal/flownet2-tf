@@ -1160,7 +1160,7 @@ class Net(object):
             print("\n >>> train_loss=", train_loss)
         if valid_iters > 0:
             # Despite not using HFEM to backpropagate and update weights, it is key to compare losses at the same scale
-            val_loss = self.loss(val_gt_flow, val_predictions, dd_hard_flow_mining=add_hfem, lambda_weight=lambda_w,
+            val_loss = self.loss(val_gt_flow, val_predictions, add_hard_flow_mining=add_hfem, lambda_weight=lambda_w,
                                  hard_examples_perc=hfem_perc, edges=val_edges_a)
             # Add validation loss to a different collection to avoid adding it to the train one when calling get_loss()
             # By default, all losses are added to the same collection (tf.GraphKeys.LOSSES)
