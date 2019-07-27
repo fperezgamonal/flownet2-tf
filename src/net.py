@@ -843,10 +843,11 @@ class Net(object):
                 logfile.close()
 
     def train(self, log_dir, training_schedule_str, input_a, gt_flow, input_b=None, matches_a=None, sparse_flow=None,
-              valid_iters=VAL_INTERVAL, val_input_a=None, val_gt_flow=None, val_input_b=None, val_matches_a=None,
-              val_sparse_flow=None, checkpoints=None, input_type='image_pairs', log_verbosity=1, log_tensorboard=True,
-              lr_range_test=False, train_params_dict=None, log_smoothed_loss=True, reset_global_step=False,
-              summarise_grads=False, add_hfem=False, lambda_w=2, hfem_perc=50, dataset_config_str='flying_chairs'):
+              edges_a=None, valid_iters=VAL_INTERVAL, val_input_a=None, val_gt_flow=None, val_input_b=None,
+              val_matches_a=None, val_sparse_flow=None, val_edges_a=None, checkpoints=None, input_type='image_pairs',
+              log_verbosity=1, log_tensorboard=True, lr_range_test=False, train_params_dict=None,
+              log_smoothed_loss=True, reset_global_step=False, summarise_grads=False, add_hfem='edges', lambda_w=2,
+              hfem_perc=50, dataset_config_str='flying_chairs'):
 
         """
         runs training on the network from which this method is called.
@@ -857,12 +858,14 @@ class Net(object):
         :param input_b:
         :param matches_a:
         :param sparse_flow:
+        :param edges_a:
         :param valid_iters:
         :param val_input_a:
         :param val_gt_flow:
         :param val_input_b:
         :param val_matches_a:
         :param val_sparse_flow:
+        :param val_edges_a
         :param checkpoints:
         :param input_type:
         :param log_verbosity:
@@ -872,9 +875,9 @@ class Net(object):
         :param log_smoothed_loss:
         :param reset_global_step:
         :param summarise_grads:
-        :param add_hfem
-        :param lambda_w
-        :param hfem_perc
+        :param add_hfem:
+        :param lambda_w:
+        :param hfem_perc:
         :param dataset_config_str:
 
         :return:
@@ -894,6 +897,7 @@ class Net(object):
                 tf.summary.scalar('debug/image_a_mean', tf.reduce_mean(input_a))
                 tf.summary.scalar('debug/matches_a_mean', tf.reduce_mean(matches_a))
                 tf.summary.scalar('debug/sparse_a_mean', tf.reduce_mean(sparse_flow))
+                tf.summary.scalar('debug/edges_a_mean', tf.reduce_mean(edges_a))
                 tf.summary.scalar('debug/gtflow_a_mean', tf.reduce_mean(gt_flow))
             if valid_iters > 0:
                 tf.summary.image("valid/image_a", val_input_a, max_outputs=1)
@@ -902,6 +906,7 @@ class Net(object):
                     tf.summary.scalar('debug/val_image_a_mean', tf.reduce_mean(val_input_a))
                     tf.summary.scalar('debug/val_matches_a_mean', tf.reduce_mean(val_matches_a))
                     tf.summary.scalar('debug/val_sparse_a_mean', tf.reduce_mean(val_sparse_flow))
+                    tf.summary.scalar('debug/val_edges_a_mean', tf.reduce_mean(val_edges_a))
                     tf.summary.scalar('debug/val_gtflow_a_mean', tf.reduce_mean(val_gt_flow))
 
             if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
@@ -1053,10 +1058,6 @@ class Net(object):
                     training_schedule['l2_regularization'] = train_params_dict['weight_decay']
 
                 # Use cyclic momentum if using CLR or 1 cycle (accelerates convergence)
-                # if ((training_schedule['learning_rates'].lower() == 'clr' and training_schedule_str == 'clr') or
-                #     (training_schedule['learning_rates'].lower() == 'one_cycle' and
-                #      (training_schedule_str == 'one_cycle')) and train_params_dict['min_momentum'] is not None and
-                #         train_params_dict['max_momentum'] is not None):
                 if train_params_dict['momentum'] is None and train_params_dict['min_momentum'] is not None and \
                         train_params_dict['max_momentum'] is not None:
                     if lr_range_test:
@@ -1079,12 +1080,12 @@ class Net(object):
                                 train_params_dict['gamma'] = 1  # effectively disables (avoids duplicate code)
                             else:
                                 is_one_cycle = False
-                    momentum = _mom_cyclic(g_step_op=checkpoint_global_step_tensor,
-                                           base_mom=train_params_dict['min_momentum'],
-                                           max_mom=train_params_dict['max_momentum'],
-                                           gamma=train_params_dict['gamma'],
-                                           step_size=train_params_dict['clr_stepsize'], mode='triangular',
-                                           one_cycle=is_one_cycle)
+                        momentum = _mom_cyclic(g_step_op=checkpoint_global_step_tensor,
+                                               base_mom=train_params_dict['min_momentum'],
+                                               max_mom=train_params_dict['max_momentum'],
+                                               gamma=train_params_dict['gamma'],
+                                               step_size=train_params_dict['clr_stepsize'], mode='triangular',
+                                               one_cycle=is_one_cycle)
                 else:  # Use fixed momentum
                     if log_verbosity > 1:
                         print("Using user-specified (fixed) momentum value")
@@ -1154,11 +1155,13 @@ class Net(object):
 
         # Compute losses (optionally add hard flow mining)
         train_loss = self.loss(gt_flow, predictions, add_hard_flow_mining=add_hfem, lambda_weight=lambda_w,
-                               hard_examples_perc=hfem_perc)
+                               hard_examples_perc=hfem_perc, edges=edges_a)
         if log_verbosity > 1:
             print("\n >>> train_loss=", train_loss)
         if valid_iters > 0:
-            val_loss = self.loss(val_gt_flow, val_predictions)
+            # Despite not using HFEM to backpropagate and update weights, it is key to compare losses at the same scale
+            val_loss = self.loss(val_gt_flow, val_predictions, dd_hard_flow_mining=add_hfem, lambda_weight=lambda_w,
+                                 hard_examples_perc=hfem_perc, edges=val_edges_a)
             # Add validation loss to a different collection to avoid adding it to the train one when calling get_loss()
             # By default, all losses are added to the same collection (tf.GraphKeys.LOSSES)
             tf.losses.add_loss(val_loss, loss_collection='validation_losses')

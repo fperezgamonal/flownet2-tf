@@ -246,7 +246,7 @@ def average_endpoint_error(labels, predictions):
 
 
 # TODO: add HFEM to AEPE function (since it seems that adding losses later produces a "var X has no gradient")
-def average_endpoint_error_hfem(labels, predictions, add_hfem=False, lambda_w=2., perc_hfem=50):
+def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., perc_hfem=50, edges=None):
     """
     Given labels and predictions of size (N, H, W, 2), calculates average endpoint error:
     sqrt[sum_across_channels{(X - Y)^2}].
@@ -258,11 +258,13 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem=False, lambda_w=2.
      larger error
     :param labels: ground truth flow predictions at a particular scale
     :param predictions: network outputted flow at a given scale
-    :param add_hfem: whether to add HFEM loss or not
+    :param add_hfem: whether to add HFEM loss or not ('edges' use edges, 'hard' use hardcases, '' for standard AEPE)
     :param lambda_w: weight of this Hard Flow Example Mining error (relative to AEPE)
-    :param perc_hfem: percentage of pixels to consider as Hard Examples (i.e.: top 50%)
+    :param perc_hfem: percentage of pixels to consider as Hard Examples (i.e.: top 50%). Used only for 'hard'
+    :param edges: edges computed by SED algorithm (not binary but smooth in [0,1])
     According to the config: https://github.com/nbei/Deep-Flow-Guided-Video-Inpainting/tree/master/tools
-    Lambda_w = 2 in training from scratch, 1 in later fine-tuning
+    Lambda_w = 2 in training from scratch, 1 in later fine-tuning (for 'hard' only, for 'edges', experiment a bit)
+    In the original approach, they did not use edges because they were doing inpainting (in this case we try it too)
     """
     # 0. Convert all variables that are not tensors into tensors
     lambda_w = tf.convert_to_tensor(lambda_w, name='lambda')
@@ -282,7 +284,7 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem=False, lambda_w=2.
     aepe = tf.reduce_sum(epe) / num_samples
 
     # 2. Compute HFEM loss
-    if add_hfem:
+    if add_hfem.lower() == 'hard':
         # 2.0. Flatten EPE matrix to make finding idxs etc. easier
         epe_flatten = tf.reshape(epe, [-1])   # Reshape (flatten) EPE (decreasing)
 
@@ -312,6 +314,17 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem=False, lambda_w=2.
         # aepe + aepe_fem
         aepe_with_hfem = tf.add(aepe, aepe_hfem)
         return aepe_with_hfem
+    elif add_hfem.lower() == 'edges' and edges is not None:
+        # Reshape into height x width (was height x width x 1 to be fed to the network)
+        edges_img = tf.reshape(edges, [edges.shape[0], edges.shape[1]])
+        # aepe_hfem_edges = lambda * edges_img * epe_img
+        edges_times_epe = tf.multiply(epe, edges_img)
+        lambda_edges = tf.multiply(lambda_w, edges_times_epe)
+
+        # Add both losses together
+        # aepe + aepe_edges
+        aepe_with_edges = tf.add(aepe, lambda_edges)
+        return aepe_with_edges
     else:
         # Return Average EPE
         return aepe

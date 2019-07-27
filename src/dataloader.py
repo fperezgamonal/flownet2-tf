@@ -323,15 +323,17 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
 
         if input_type == 'image_matches':
             image_b = None
-            image_a, matches_a, sparse_flow, flow = data_provider.get(['image_a', 'matches_a', 'sparse_flow', 'flow'])
+            image_a, matches_a, sparse_flow, edges_a, flow = data_provider.get(['image_a', 'matches_a', 'sparse_flow',
+                                                                                'edges_a', 'flow'])
             # tensors are already of type float (redundant conversion), remove when everything is tested
             # image_a, matches_a, sparse_flow, flow = map(tf.to_float, [image_a, matches_a, sparse_flow, flow])
             # image_a, matches_a = map(tf.to_float, [image_a, matches_a])
 
-            image_a, matches_a = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a, matches_a])  # flow is float32
+            image_a, matches_a, edges_a = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a, matches_a, edges_a])
         else:
             matches_a = None
             sparse_flow = None
+            edges_a = None
             image_a, image_b, flow = data_provider.get(['image_a', 'image_b', 'flow'])
             # tensors are already of type float (redundant conversion), remove when everything is tested
             # image_a, image_b, flow = map(tf.to_float, [image_a, image_b, flow])
@@ -358,11 +360,12 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
 
         if input_type == 'image_matches':
             image_bs = None
-            image_as, matches_as, sparse_flows, flows = map(lambda x: tf.expand_dims(x, 0),
-                                                            [image_a, matches_a, sparse_flow, flow])
+            image_as, matches_as, sparse_flows, edges_as, flows = map(lambda x: tf.expand_dims(x, 0),
+                                                                      [image_a, matches_a, sparse_flow, edges_a, flow])
         else:
             matches_as = None
             sparse_flows = None
+            edges_as = None
             image_as, image_bs, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b, flow])
 
         #
@@ -447,7 +450,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
         if input_type == 'image_matches':
             print("(dataloader.py): input_type is 'image_matches'; split is '{}'".format(split_name))
             if split_name == 'valid':
-                return tf.train.batch([image_as, matches_as, sparse_flows, flows],
+                return tf.train.batch([image_as, matches_as, sparse_flows, edges_as, flows],
                                       enqueue_many=True,
                                       batch_size=batch_size,
                                       capacity=batch_size * capacity_in_batches_val,
@@ -455,7 +458,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                                       num_threads=num_threads)
             else:
 
-                return tf.train.batch([image_as, matches_as, sparse_flows, flows],
+                return tf.train.batch([image_as, matches_as, sparse_flows, edges_as, flows],
                                       enqueue_many=True,
                                       batch_size=batch_size,
                                       capacity=batch_size * capacity_in_batches_train,

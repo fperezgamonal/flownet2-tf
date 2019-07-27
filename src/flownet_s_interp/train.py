@@ -76,7 +76,7 @@ def main():
     if FLAGS.input_type == 'image_matches':
         print("Input_type: 'image_matches'")
         # Train
-        input_a, matches_a, sparse_flow, flow = load_batch(
+        input_a, matches_a, sparse_flow, edges_a, flow = load_batch(
             FLAGS.dataset_config, 'train', input_type=FLAGS.input_type,
             common_queue_capacity=FLAGS.common_queue_capacity,
             common_queue_min=FLAGS.common_queue_min,
@@ -86,7 +86,7 @@ def main():
             batch_size=FLAGS.batch_size,)
         # Validation
         if FLAGS.val_iters > 0:
-            val_input_a, val_matches_a, val_sparse_flow, val_flow = load_batch(
+            val_input_a, val_matches_a, val_sparse_flow, val_edges_a, val_flow = load_batch(
                 FLAGS.dataset_config, 'valid',
                 input_type=FLAGS.input_type,
                 common_queue_capacity=FLAGS.common_queue_capacity,
@@ -100,6 +100,7 @@ def main():
             val_input_a = None
             val_matches_a = None
             val_sparse_flow = None
+            val_edges_a = None
             val_flow = None
 
         # Train on the data
@@ -142,7 +143,7 @@ def main():
             batch_size=FLAGS.batch_size,)
         # Validation
         if FLAGS.val_iters > 0:
-            val_input_a, val_input_b,  val_flow = load_batch(
+            val_input_a, val_input_b, val_flow = load_batch(
                 FLAGS.dataset_config, 'valid', input_type=FLAGS.input_type,
                 common_queue_capacity=FLAGS.common_queue_capacity,
                 common_queue_min=FLAGS.common_queue_min,
@@ -438,17 +439,21 @@ if __name__ == '__main__':
     # Add Hard Flow Example Mining params
     parser.add_argument(
         '--add_hard_flow_example_mining',
-        type=str2bool,
+        type=str,
         nargs='?',
         required=False,
-        help='Whether to add an extra cost for the hard examples (defined as those with largest EPE loss)',
-        default=False,
+        help="Whether to add an extra cost for the hard examples (defined as those with largest EPE loss)."
+             "If 'edges', the SED edges are given extra weight in the loss function, "
+             "if 'hard', the first percen hardest examples (largest error) are given extra weight",
+        default='',
     )
     parser.add_argument(
         '--hfem_lambda_w',
         type=float,
         required=False,
-        help='If we use HFEM, relative weight of the added loss (i.e.: AEPE + lambda * HFEM_AEPE)',
+        help='If we use HFEM, relative weight of the added loss (i.e.: AEPE + lambda * HFEM_AEPE).'
+             'This weight changes for SED edges as they are in the range [0, 1] and one may need to increase this value'
+             'to consider most edges and not only the hardest ones',
         default=2
     )
     parser.add_argument(
