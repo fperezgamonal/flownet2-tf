@@ -284,49 +284,52 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
     aepe = tf.reduce_sum(epe) / num_samples
 
     # 2. Compute HFEM loss
-    if add_hfem.lower() == 'hard':
-        # 2.0. Flatten EPE matrix to make finding idxs etc. easier
-        epe_flatten = tf.reshape(epe, [-1])   # Reshape (flatten) EPE (decreasing)
+    if add_hfem:  # add_hfem not empty
+        if add_hfem.lower() == 'hard':
+            # 2.0. Flatten EPE matrix to make finding idxs etc. easier
+            epe_flatten = tf.reshape(epe, [-1])   # Reshape (flatten) EPE (decreasing)
 
-        # 2.1. Pick first p percentage (w. corresponding indices)
-        # top_k = int(np.round((perc_hm / 100) * np.prod(epe.shape)))
-        a1 = tf.divide(perc_hfem, 100)
-        a2 = tf.cast(tf.reduce_prod(tf.shape(epe)), tf.float32)
-        a1_times_a2 = tf.multiply(a1, a2)
-        top_k = tf.cast(tf.round(a1_times_a2), tf.int32)  # compute the number of samples considered hard
-        epe_top_k, epe_top_k_idxs = tf.nn.top_k(epe_flatten, k=top_k)  # get top_k largest elements in one go!
+            # 2.1. Pick first p percentage (w. corresponding indices)
+            # top_k = int(np.round((perc_hm / 100) * np.prod(epe.shape)))
+            a1 = tf.divide(perc_hfem, 100)
+            a2 = tf.cast(tf.reduce_prod(tf.shape(epe)), tf.float32)
+            a1_times_a2 = tf.multiply(a1, a2)
+            top_k = tf.cast(tf.round(a1_times_a2), tf.int32)  # compute the number of samples considered hard
+            epe_top_k, epe_top_k_idxs = tf.nn.top_k(epe_flatten, k=top_k)  # get top_k largest elements in one go!
 
-        # 2.2. Create mask to only take into account pixels in step 2
-        HM_mask = tf.Variable(tf.zeros(tf.shape(epe_flatten)), trainable=False)
-        ones = tf.Variable(tf.ones(tf.shape(epe_top_k_idxs)), trainable=False)
-        HM_mask = tf.scatter_update(HM_mask, epe_top_k_idxs, ones)
+            # 2.2. Create mask to only take into account pixels in step 2
+            HM_mask = tf.Variable(tf.zeros(tf.shape(epe_flatten)), trainable=False)
+            ones = tf.Variable(tf.ones(tf.shape(epe_top_k_idxs)), trainable=False)
+            HM_mask = tf.scatter_update(HM_mask, epe_top_k_idxs, ones)
 
-        # 2.3. Compute AEPE for "hard" pixels (we only miss the tf.reduce_sum(loss)/ num_hard_examples
-        # epe_flatten_filtered = epe_flatten[HM_mask == 1]
-        epe_flatten_filtered = tf.cast(tf.boolean_mask(epe_flatten, HM_mask), dtype=tf.float32)
-        # aepe_hfem = lambda * sum(EPE[hard_flows]) / len(hard_flows)
-        sum_epe_flatten_filtered = tf.reduce_sum(epe_flatten_filtered)
-        b1 = tf.multiply(lambda_w, sum_epe_flatten_filtered)
-        b2 = tf.cast(tf.size(epe_flatten_filtered), tf.float32)
-        aepe_hfem = tf.divide(b1, b2)
+            # 2.3. Compute AEPE for "hard" pixels (we only miss the tf.reduce_sum(loss)/ num_hard_examples
+            # epe_flatten_filtered = epe_flatten[HM_mask == 1]
+            epe_flatten_filtered = tf.cast(tf.boolean_mask(epe_flatten, HM_mask), dtype=tf.float32)
+            # aepe_hfem = lambda * sum(EPE[hard_flows]) / len(hard_flows)
+            sum_epe_flatten_filtered = tf.reduce_sum(epe_flatten_filtered)
+            b1 = tf.multiply(lambda_w, sum_epe_flatten_filtered)
+            b2 = tf.cast(tf.size(epe_flatten_filtered), tf.float32)
+            aepe_hfem = tf.divide(b1, b2)
 
-        # Add both losses together
-        # aepe + aepe_fem
-        aepe_with_hfem = tf.add(aepe, aepe_hfem)
-        return aepe_with_hfem
-    elif add_hfem.lower() == 'edges' and edges is not None:
-        # Reshape into height x width (was height x width x 1 to be fed to the network)
-        edges_img = tf.reshape(edges, [edges.shape[0], edges.shape[1]])
-        # aepe_hfem_edges = lambda * edges_img * epe_img
-        edges_times_epe = tf.multiply(epe, edges_img)
-        lambda_edges = tf.multiply(lambda_w, edges_times_epe)
+            # Add both losses together
+            # aepe + aepe_fem
+            aepe_with_hfem = tf.add(aepe, aepe_hfem)
+            return aepe_with_hfem
+        elif add_hfem.lower() == 'edges' and edges is not None:
+            # Reshape into height x width (was height x width x 1 to be fed to the network)
+            edges_img = tf.reshape(edges, [edges.shape[0], edges.shape[1]])
+            # aepe_hfem_edges = lambda * edges_img * epe_img
+            edges_times_epe = tf.multiply(epe, edges_img)
+            lambda_edges = tf.multiply(lambda_w, edges_times_epe)
 
-        # Add both losses together
-        # aepe + aepe_edges
-        aepe_with_edges = tf.add(aepe, lambda_edges)
-        return aepe_with_edges
+            # Add both losses together
+            # aepe + aepe_edges
+            aepe_with_edges = tf.add(aepe, lambda_edges)
+            return aepe_with_edges
+        else:
+            # Return Average EPE
+            return aepe
     else:
-        # Return Average EPE
         return aepe
 
 
