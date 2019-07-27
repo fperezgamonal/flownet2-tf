@@ -882,7 +882,7 @@ class Net(object):
 
         :return:
         """
-
+        print("edges.shape: {}".format(edges_a.shape))
         if log_verbosity <= 1:  # print loss and tfinfo to stdout
             tf.logging.set_verbosity(tf.logging.INFO)
         else:  # debug info (more verbose)
