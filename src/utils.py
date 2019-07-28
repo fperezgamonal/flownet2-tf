@@ -315,8 +315,9 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
             return aepe_with_hfem
         elif add_hfem.lower() == 'edges' and edges is not None:
             print("edges.shape: {}".format(edges.shape))
+            print(type(edges))
             # Reshape into height x width (was batch x height x width x 1 to be fed to the network)
-            edges_img = tf.reshape(edges, tf.shape(epe))
+            edges_img = edges  # tf.reshape(edges, tf.shape(epe))
             # aepe_hfem_edges = lambda * edges_img * epe_img
             edges_times_epe = tf.multiply(epe, edges_img)
             lambda_edges = tf.multiply(lambda_w, edges_times_epe)
