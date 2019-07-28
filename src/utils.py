@@ -267,20 +267,19 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
     # 0. Convert all variables that are not tensors into tensors
     lambda_w = tf.convert_to_tensor(lambda_w, name='lambda')
     perc_hfem = tf.convert_to_tensor(perc_hfem, name='perc_hardflows')
-    num_samples = predictions.shape.as_list()[0]
+    batch_size = tf.to_float(tf.shape(predictions)[0])
 
     # 1. Compute "standard AEPE"
     predictions = tf.to_float(predictions)
     labels = tf.to_float(labels)
     predictions.get_shape().assert_is_compatible_with(labels.get_shape())
 
-    # aepe = tf.reduce_sum(epe) / num_samples ==> this was not properly computed!
-    # We are adding over all pixels together and then dividing by the num_samples (batch size)
-    # We should instead compute the mean error over the whole batch (out_shape: (h, w, 1) and then aggregate this)
-    # aepe is only a number, as by default reduce_sum averages over all dimensions
     # aepe = ||labels-predictions||2 = 1/N sum(sqrt((labels - predictions)**2)
-    epe = tf.norm(labels - predictions, axis=3, keepdims=True, ord='euclidean')
-    aepe = tf.reduce_mean(epe)  # equivalent to first getting the average across batches and then for each pixel
+    # double-checked formulas thanks to: https://github.com/ppliuboy/SelFlow
+    epe = tf.norm(labels - predictions, axis=-1, keepdims=True)  # defaults to euclidean norm
+    epe_sum = tf.reduce_sum(epe)
+    loss_mean = epe_sum / tf.prod(tf.shape(predictions)[:-1])
+    aepe = epe_sum / batch_size
 
     # 2. Compute HFEM loss
     if add_hfem:  # add_hfem not empty
