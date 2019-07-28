@@ -268,6 +268,7 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
     lambda_w = tf.convert_to_tensor(lambda_w, name='lambda')
     perc_hfem = tf.convert_to_tensor(perc_hfem, name='perc_hardflows')
     num_samples = predictions.shape.as_list()[0]
+    print("num_samples: {}".format(num_samples))
 
     # 1. Compute "standard AEPE"
     predictions = tf.to_float(predictions)
