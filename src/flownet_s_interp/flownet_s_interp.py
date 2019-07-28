@@ -144,13 +144,13 @@ class FlowNetS_interp(Net):
         losses = []
         INPUT_HEIGHT, INPUT_WIDTH = float(flow.shape[1].value), float(flow.shape[2].value)
 
-        print("edges.shape: {}".format(edges.shape))
         # L2 loss between predict_flow6, blob23 (weighted w/ 0.32)
         predict_flow6 = predictions['predict_flow6']
         size = [predict_flow6.shape[1], predict_flow6.shape[2]]
         downsampled_flow6 = downsample(flow, size)
         losses.append(average_endpoint_error_hfem(downsampled_flow6, predict_flow6, add_hfem=add_hard_flow_mining,
-                                                  lambda_w=lambda_weight, perc_hfem=hard_examples_perc, edges=edges))
+                                                  lambda_w=lambda_weight, perc_hfem=hard_examples_perc, edges=edges,
+                                                  ))
 
         # L2 loss between predict_flow5, blob28 (weighted w/ 0.08)
         predict_flow5 = predictions['predict_flow5']

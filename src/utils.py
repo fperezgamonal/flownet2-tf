@@ -254,8 +254,6 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
     This resembles the approach in the paper "Deep Flow-Guided Video Inpainting" by Rui Xu et. al where they increase
     the contribution to the loss for what they consider hard flow examples (which happen to be mostly on edges).
     Originally they use the L1 norm.
-    :param epe:  average endpoint error (still in matrix form!) based on which we define the hard examples as those with
-     larger error
     :param labels: ground truth flow predictions at a particular scale
     :param predictions: network outputted flow at a given scale
     :param add_hfem: whether to add HFEM loss or not ('edges' use edges, 'hard' use hardcases, '' for standard AEPE)
@@ -316,8 +314,9 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
             aepe_with_hfem = tf.add(aepe, aepe_hfem)
             return aepe_with_hfem
         elif add_hfem.lower() == 'edges' and edges is not None:
+            print("edges.shape: {}".format(edges.shape))
             # Reshape into height x width (was batch x height x width x 1 to be fed to the network)
-            edges_img = tf.reshape(edges, [edges.shape[1], edges.shape[2]])
+            edges_img = tf.reshape(edges, tf.shape(epe))
             # aepe_hfem_edges = lambda * edges_img * epe_img
             edges_times_epe = tf.multiply(epe, edges_img)
             lambda_edges = tf.multiply(lambda_w, edges_times_epe)
