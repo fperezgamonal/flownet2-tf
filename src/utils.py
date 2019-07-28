@@ -323,7 +323,7 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
             # aepe_hfem_edges = lambda * edges_img * epe_img
             epe_times_edges = tf.multiply(epe, edges)  # both have shape: (batch, height, width, 1)
             # Sum all error and divide by num_samples (batch_size)
-            aepe_edges = tf.reduce_sum(epe_times_edges) / num_samples
+            aepe_edges = tf.reduce_mean(epe_times_edges)
             lambda_edges = tf.multiply(lambda_w, aepe_edges)
 
             # Add both losses together
