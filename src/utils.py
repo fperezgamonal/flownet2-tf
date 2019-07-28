@@ -246,7 +246,7 @@ def average_endpoint_error(labels, predictions):
 
 
 # TODO: add HFEM to AEPE function (since it seems that adding losses later produces a "var X has no gradient")
-def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., perc_hfem=50, edges=None):
+def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., perc_hfem=50): #, edges=None):
     """
     Given labels and predictions of size (N, H, W, 2), calculates average endpoint error:
     sqrt[sum_across_channels{(X - Y)^2}].
