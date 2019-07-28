@@ -276,7 +276,7 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
 
     squared_difference = tf.square(tf.subtract(predictions, labels))
     # sum across channels: sum[(X - Y)^2] -> N, H, W, 1
-    print("(before tf.reduce_sum(..., keep_dims=True) epe.shape: {}".format(epe.shape))
+    print("(before tf.reduce_sum(..., keep_dims=True) epe.shape: {}".format(squared_difference.shape))
     epe = tf.reduce_sum(squared_difference, 3, keepdims=True)  # sum across channels (u,v)
     epe = tf.sqrt(epe)
     # Here epe is still (batch_size, height, width, 1)
