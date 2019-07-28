@@ -268,20 +268,23 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
     lambda_w = tf.convert_to_tensor(lambda_w, name='lambda')
     perc_hfem = tf.convert_to_tensor(perc_hfem, name='perc_hardflows')
     num_samples = predictions.shape.as_list()[0]
-    print("num_samples: {}".format(num_samples))
 
     # 1. Compute "standard AEPE"
     predictions = tf.to_float(predictions)
     labels = tf.to_float(labels)
     predictions.get_shape().assert_is_compatible_with(labels.get_shape())
-    print("predictions.shape: {}".format(predictions.shape))
 
     squared_difference = tf.square(tf.subtract(predictions, labels))
     # sum across channels: sum[(X - Y)^2] -> N, H, W, 1
+    print("(before tf.reduce_sum(..., keep_dims=True) epe.shape: {}".format(epe.shape))
     epe = tf.reduce_sum(squared_difference, 3, keepdims=True)  # sum across channels (u,v)
     epe = tf.sqrt(epe)
+    # Here epe is still (batch_size, height, width, 1)
+    print("(after tf.reduce_sum(..., keep_dims=True) epe.shape: {}".format(epe.shape))
 
     aepe = tf.reduce_sum(epe) / num_samples
+    # aepe is only a number, as by default reduce_sum averages over all dimensions
+    print("aepe.shape: {}".format(aepe.shape))
 
     # 2. Compute HFEM loss
     if add_hfem:  # add_hfem not empty
