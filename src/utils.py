@@ -315,23 +315,23 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
             # aepe + aepe_fem
             aepe_with_hfem = tf.add(aepe, aepe_hfem)
             return aepe_with_hfem
-        elif add_hfem.lower() == 'edges' and edges is not None:
-            print("edges.shape: {}".format(edges.shape))
-            print(type(edges))
-            # Reshape into height x width (was batch x height x width x 1 to be fed to the network)
-            # edges_img = edges  # tf.reshape(edges, tf.shape(epe))
-            # aepe_hfem_edges = lambda * edges_img * epe_img
-            arr = tf.TensorArray(tf.float32, size=len(edges))
-            for i in range(len(edges)):
-                edge_sample = input[i]
-                edge_sample_rs = tf.reshape(edge_sample, [edge_sample[0], edge_sample[1]])
-                edges_times_epe = tf.multiply(epe, edge_sample_rs)
-                lambda_edges = tf.multiply(lambda_w, edges_times_epe)
-
-            # Add both losses together
-            # aepe + aepe_edges
-            aepe_with_edges = tf.add(aepe, lambda_edges)
-            return aepe_with_edges
+        # elif add_hfem.lower() == 'edges' and edges is not None:
+        #     print("edges.shape: {}".format(edges.shape))
+        #     print(type(edges))
+        #     # Reshape into height x width (was batch x height x width x 1 to be fed to the network)
+        #     # edges_img = edges  # tf.reshape(edges, tf.shape(epe))
+        #     # aepe_hfem_edges = lambda * edges_img * epe_img
+        #     arr = tf.TensorArray(tf.float32, size=len(edges))
+        #     for i in range(len(edges)):
+        #         edge_sample = input[i]
+        #         edge_sample_rs = tf.reshape(edge_sample, [edge_sample[0], edge_sample[1]])
+        #         edges_times_epe = tf.multiply(epe, edge_sample_rs)
+        #         lambda_edges = tf.multiply(lambda_w, edges_times_epe)
+        #
+        #     # Add both losses together
+        #     # aepe + aepe_edges
+        #     aepe_with_edges = tf.add(aepe, lambda_edges)
+        #     return aepe_with_edges
         else:
             # Return Average EPE
             return aepe
