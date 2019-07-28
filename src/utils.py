@@ -273,6 +273,7 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
     predictions = tf.to_float(predictions)
     labels = tf.to_float(labels)
     predictions.get_shape().assert_is_compatible_with(labels.get_shape())
+    print("predictions.shape: {}".format(predictions.shape))
 
     squared_difference = tf.square(tf.subtract(predictions, labels))
     # sum across channels: sum[(X - Y)^2] -> N, H, W, 1
@@ -317,10 +318,14 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
             print("edges.shape: {}".format(edges.shape))
             print(type(edges))
             # Reshape into height x width (was batch x height x width x 1 to be fed to the network)
-            edges_img = edges  # tf.reshape(edges, tf.shape(epe))
+            # edges_img = edges  # tf.reshape(edges, tf.shape(epe))
             # aepe_hfem_edges = lambda * edges_img * epe_img
-            edges_times_epe = tf.multiply(epe, edges_img)
-            lambda_edges = tf.multiply(lambda_w, edges_times_epe)
+            arr = tf.TensorArray(tf.float32, size=len(edges))
+            for i in range(len(edges)):
+                edge_sample = input[i]
+                edge_sample_rs = tf.reshape(edge_sample, [edge_sample[0], edge_sample[1]])
+                edges_times_epe = tf.multiply(epe, edge_sample_rs)
+                lambda_edges = tf.multiply(lambda_w, edges_times_epe)
 
             # Add both losses together
             # aepe + aepe_edges
