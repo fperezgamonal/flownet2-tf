@@ -896,7 +896,7 @@ class Net(object):
                 tf.summary.scalar('debug/image_a_mean', tf.reduce_mean(input_a))
                 tf.summary.scalar('debug/matches_a_mean', tf.reduce_mean(matches_a))
                 tf.summary.scalar('debug/sparse_a_mean', tf.reduce_mean(sparse_flow))
-                # tf.summary.scalar('debug/edges_a_mean', tf.reduce_mean(edges_a))
+                tf.summary.scalar('debug/edges_a_mean', tf.reduce_mean(edges_a))
                 tf.summary.scalar('debug/gtflow_a_mean', tf.reduce_mean(gt_flow))
             if valid_iters > 0:
                 tf.summary.image("valid/image_a", val_input_a, max_outputs=1)
@@ -905,7 +905,7 @@ class Net(object):
                     tf.summary.scalar('debug/val_image_a_mean', tf.reduce_mean(val_input_a))
                     tf.summary.scalar('debug/val_matches_a_mean', tf.reduce_mean(val_matches_a))
                     tf.summary.scalar('debug/val_sparse_a_mean', tf.reduce_mean(val_sparse_flow))
-                    # tf.summary.scalar('debug/val_edges_a_mean', tf.reduce_mean(val_edges_a))
+                    tf.summary.scalar('debug/val_edges_a_mean', tf.reduce_mean(val_edges_a))
                     tf.summary.scalar('debug/val_gtflow_a_mean', tf.reduce_mean(val_gt_flow))
 
             if matches_a is not None and sparse_flow is not None and input_type == 'image_matches':
@@ -1154,13 +1154,13 @@ class Net(object):
 
         # Compute losses (optionally add hard flow mining)
         train_loss = self.loss(gt_flow, predictions, add_hard_flow_mining=add_hfem, lambda_weight=lambda_w,
-                               hard_examples_perc=hfem_perc) #, edges=edges_a)
+                               hard_examples_perc=hfem_perc, edges=edges_a)
         if log_verbosity > 1:
             print("\n >>> train_loss=", train_loss)
         if valid_iters > 0:
             # Despite not using HFEM to backpropagate and update weights, it is key to compare losses at the same scale
             val_loss = self.loss(val_gt_flow, val_predictions, add_hard_flow_mining=add_hfem, lambda_weight=lambda_w,
-                                 hard_examples_perc=hfem_perc) #, edges=val_edges_a)
+                                 hard_examples_perc=hfem_perc, edges=val_edges_a)
             # Add validation loss to a different collection to avoid adding it to the train one when calling get_loss()
             # By default, all losses are added to the same collection (tf.GraphKeys.LOSSES)
             tf.losses.add_loss(val_loss, loss_collection='validation_losses')

@@ -76,34 +76,25 @@ def main():
     if FLAGS.input_type == 'image_matches':
         print("Input_type: 'image_matches'")
         # Train
-        # input_a, matches_a, sparse_flow, edges_a, flow = load_batch(
-        #     FLAGS.dataset_config, 'train', input_type=FLAGS.input_type,
-        #     common_queue_capacity=FLAGS.common_queue_capacity,
-        #     common_queue_min=FLAGS.common_queue_min,
-        #     num_threads=FLAGS.num_threads,
-        #     capacity_in_batches_train=FLAGS.capacity_in_batches_train,
-        #     capacity_in_batches_val=FLAGS.capacity_in_batches_val,
-        #     batch_size=FLAGS.batch_size,)
-        input_a, matches_a, sparse_flow, flow = load_batch(
+        input_a, matches_a, sparse_flow, edges_a, flow = load_batch(
             FLAGS.dataset_config, 'train', input_type=FLAGS.input_type,
             common_queue_capacity=FLAGS.common_queue_capacity,
             common_queue_min=FLAGS.common_queue_min,
             num_threads=FLAGS.num_threads,
             capacity_in_batches_train=FLAGS.capacity_in_batches_train,
             capacity_in_batches_val=FLAGS.capacity_in_batches_val,
-            batch_size=FLAGS.batch_size, )
+            batch_size=FLAGS.batch_size,)
+        # input_a, matches_a, sparse_flow, flow = load_batch(
+        #     FLAGS.dataset_config, 'train', input_type=FLAGS.input_type,
+        #     common_queue_capacity=FLAGS.common_queue_capacity,
+        #     common_queue_min=FLAGS.common_queue_min,
+        #     num_threads=FLAGS.num_threads,
+        #     capacity_in_batches_train=FLAGS.capacity_in_batches_train,
+        #     capacity_in_batches_val=FLAGS.capacity_in_batches_val,
+        #     batch_size=FLAGS.batch_size, )
         # Validation
         if FLAGS.val_iters > 0:
-            # val_input_a, val_matches_a, val_sparse_flow, val_edges_a, val_flow = load_batch(
-            #     FLAGS.dataset_config, 'valid',
-            #     input_type=FLAGS.input_type,
-            #     common_queue_capacity=FLAGS.common_queue_capacity,
-            #     common_queue_min=FLAGS.common_queue_min,
-            #     num_threads=FLAGS.num_threads,
-            #     capacity_in_batches_train=FLAGS.capacity_in_batches_train,
-            #     capacity_in_batches_val=FLAGS.capacity_in_batches_val,
-            #     batch_size=FLAGS.batch_size,)
-            val_input_a, val_matches_a, val_sparse_flow, val_flow = load_batch(
+            val_input_a, val_matches_a, val_sparse_flow, val_edges_a, val_flow = load_batch(
                 FLAGS.dataset_config, 'valid',
                 input_type=FLAGS.input_type,
                 common_queue_capacity=FLAGS.common_queue_capacity,
@@ -111,7 +102,16 @@ def main():
                 num_threads=FLAGS.num_threads,
                 capacity_in_batches_train=FLAGS.capacity_in_batches_train,
                 capacity_in_batches_val=FLAGS.capacity_in_batches_val,
-                batch_size=FLAGS.batch_size, )
+                batch_size=FLAGS.batch_size,)
+            # val_input_a, val_matches_a, val_sparse_flow, val_flow = load_batch(
+            #     FLAGS.dataset_config, 'valid',
+            #     input_type=FLAGS.input_type,
+            #     common_queue_capacity=FLAGS.common_queue_capacity,
+            #     common_queue_min=FLAGS.common_queue_min,
+            #     num_threads=FLAGS.num_threads,
+            #     capacity_in_batches_train=FLAGS.capacity_in_batches_train,
+            #     capacity_in_batches_val=FLAGS.capacity_in_batches_val,
+            #     batch_size=FLAGS.batch_size, )
 
         else:
             val_input_a = None
@@ -127,13 +127,13 @@ def main():
             input_a=input_a,
             matches_a=matches_a,
             sparse_flow=sparse_flow,
-            edges_a=None,
+            edges_a=edges_a,
             gt_flow=flow,
             valid_iters=FLAGS.val_iters,
             val_input_a=val_input_a,
             val_matches_a=val_matches_a,
             val_sparse_flow=val_sparse_flow,
-            val_edges_a=None,
+            val_edges_a=val_edges_a,
             val_gt_flow=val_flow,
             input_type=FLAGS.input_type,
             checkpoints=checkpoints,

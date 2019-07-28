@@ -139,7 +139,7 @@ class FlowNetS_interp(Net):
                     }
 
     # Computes the AEPE or AEPE + HFEM loss for all model scales
-    def loss(self, flow, predictions, add_hard_flow_mining='', lambda_weight=2., hard_examples_perc=50):  #, edges=None):
+    def loss(self, flow, predictions, add_hard_flow_mining='', lambda_weight=2., hard_examples_perc=50, edges=None):
         flow = flow * 0.05  # i.e.: flow / 20
         losses = []
         INPUT_HEIGHT, INPUT_WIDTH = float(flow.shape[1].value), float(flow.shape[2].value)
@@ -149,35 +149,35 @@ class FlowNetS_interp(Net):
         size = [predict_flow6.shape[1], predict_flow6.shape[2]]
         downsampled_flow6 = downsample(flow, size)
         losses.append(average_endpoint_error_hfem(downsampled_flow6, predict_flow6, add_hfem=add_hard_flow_mining,
-                                                  lambda_w=lambda_weight, perc_hfem=hard_examples_perc,)) # edges=edges,))
+                                                  lambda_w=lambda_weight, perc_hfem=hard_examples_perc, edges=edges,))
 
         # L2 loss between predict_flow5, blob28 (weighted w/ 0.08)
         predict_flow5 = predictions['predict_flow5']
         size = [predict_flow5.shape[1], predict_flow5.shape[2]]
         downsampled_flow5 = downsample(flow, size)
         losses.append(average_endpoint_error_hfem(downsampled_flow5, predict_flow5, add_hfem=add_hard_flow_mining,
-                                                  lambda_w=lambda_weight, perc_hfem=hard_examples_perc, )) # edges=edges))
+                                                  lambda_w=lambda_weight, perc_hfem=hard_examples_perc, edges=edges))
 
         # L2 loss between predict_flow4, blob33 (weighted w/ 0.02)
         predict_flow4 = predictions['predict_flow4']
         size = [predict_flow4.shape[1], predict_flow4.shape[2]]
         downsampled_flow4 = downsample(flow, size)
         losses.append(average_endpoint_error_hfem(downsampled_flow4, predict_flow4, add_hfem=add_hard_flow_mining,
-                                                  lambda_w=lambda_weight, perc_hfem=hard_examples_perc, )) # edges=edges))
+                                                  lambda_w=lambda_weight, perc_hfem=hard_examples_perc, edges=edges))
 
         # L2 loss between predict_flow3, blob38 (weighted w/ 0.01)
         predict_flow3 = predictions['predict_flow3']
         size = [predict_flow3.shape[1], predict_flow3.shape[2]]
         downsampled_flow3 = downsample(flow, size)
         losses.append(average_endpoint_error_hfem(downsampled_flow3, predict_flow3, add_hfem=add_hard_flow_mining,
-                                                  lambda_w=lambda_weight, perc_hfem=hard_examples_perc, )) # edges=edges))
+                                                  lambda_w=lambda_weight, perc_hfem=hard_examples_perc, edges=edges))
 
         # L2 loss between predict_flow2, blob43 (weighted w/ 0.005)
         predict_flow2 = predictions['predict_flow2']
         size = [predict_flow2.shape[1], predict_flow2.shape[2]]
         downsampled_flow2 = downsample(flow, size)
         losses.append(average_endpoint_error_hfem(downsampled_flow2, predict_flow2, add_hfem=add_hard_flow_mining,
-                                                  lambda_w=lambda_weight, perc_hfem=hard_examples_perc, )) # edges=edges))
+                                                  lambda_w=lambda_weight, perc_hfem=hard_examples_perc, edges=edges))
 
         loss = tf.losses.compute_weighted_loss(losses, [0.32, 0.08, 0.02, 0.01, 0.005])
         # Make sure loss is present in the final collection:

@@ -242,11 +242,11 @@ def average_endpoint_error(labels, predictions):
         # sum across channels: sum[(X - Y)^2] -> N, H, W, 1
         epe = tf.reduce_sum(squared_difference, 3, keepdims=True)  # sum across channels (u,v)
         epe = tf.sqrt(epe)
-        return tf.reduce_sum(epe) / num_samples, epe  # reduced to one number, mean/average epe (sum/num_samples)
+        return tf.reduce_sum(epe) / num_samples
 
 
 # TODO: add HFEM to AEPE function (since it seems that adding losses later produces a "var X has no gradient")
-def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., perc_hfem=50): #, edges=None):
+def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., perc_hfem=50, edges=None):
     """
     Given labels and predictions of size (N, H, W, 2), calculates average endpoint error:
     sqrt[sum_across_channels{(X - Y)^2}].
@@ -274,23 +274,21 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
     labels = tf.to_float(labels)
     predictions.get_shape().assert_is_compatible_with(labels.get_shape())
 
-    squared_difference = tf.square(tf.subtract(predictions, labels))
-    # sum across channels: sum[(X - Y)^2] -> N, H, W, 1
-    print("(before tf.reduce_sum(..., keep_dims=True) epe.shape: {}".format(squared_difference.shape))
-    epe = tf.reduce_sum(squared_difference, 3, keepdims=True)  # sum across channels (u,v)
-    epe = tf.sqrt(epe)
-    # Here epe is still (batch_size, height, width, 1)
-    print("(after tf.reduce_sum(..., keep_dims=True) epe.shape: {}".format(epe.shape))
-
-    aepe = tf.reduce_sum(epe) / num_samples
+    # aepe = tf.reduce_sum(epe) / num_samples ==> this was not properly computed!
+    # We are adding over all pixels together and then dividing by the num_samples (batch size)
+    # We should instead compute the mean error over the whole batch (out_shape: (h, w, 1) and then aggregate this)
     # aepe is only a number, as by default reduce_sum averages over all dimensions
-    print("aepe.shape: {}".format(aepe.shape))
+    # aepe = ||labels-predictions||2 = 1/N sum(sqrt((labels - predictions)**2)
+    epe = tf.norm(labels - predictions, axis=3, keepdims=True, ord='euclidean')
+    aepe = tf.reduce_mean(epe)  # equivalent to first getting the average across batches and then for each pixel
 
     # 2. Compute HFEM loss
     if add_hfem:  # add_hfem not empty
         if add_hfem.lower() == 'hard':
-            # 2.0. Flatten EPE matrix to make finding idxs etc. easier
-            epe_flatten = tf.reshape(epe, [-1])   # Reshape (flatten) EPE (decreasing)
+            # 2.0.1 Average epe error 'images' over all batch (so we penalise top-k pixels w. largest MEAN error)
+            epe_average_batch = tf.reduce_mean(epe, 0, keep_dims=True)
+            # 2.0.2 Flatten EPE matrix to make finding idxs etc. easier
+            epe_flatten = tf.reshape(epe_average_batch, [-1])   # Reshape (flatten) EPE
 
             # 2.1. Pick first p percentage (w. corresponding indices)
             # top_k = int(np.round((perc_hm / 100) * np.prod(epe.shape)))
@@ -318,23 +316,20 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
             # aepe + aepe_fem
             aepe_with_hfem = tf.add(aepe, aepe_hfem)
             return aepe_with_hfem
-        # elif add_hfem.lower() == 'edges' and edges is not None:
-        #     print("edges.shape: {}".format(edges.shape))
-        #     print(type(edges))
-        #     # Reshape into height x width (was batch x height x width x 1 to be fed to the network)
-        #     # edges_img = edges  # tf.reshape(edges, tf.shape(epe))
-        #     # aepe_hfem_edges = lambda * edges_img * epe_img
-        #     arr = tf.TensorArray(tf.float32, size=len(edges))
-        #     for i in range(len(edges)):
-        #         edge_sample = input[i]
-        #         edge_sample_rs = tf.reshape(edge_sample, [edge_sample[0], edge_sample[1]])
-        #         edges_times_epe = tf.multiply(epe, edge_sample_rs)
-        #         lambda_edges = tf.multiply(lambda_w, edges_times_epe)
-        #
-        #     # Add both losses together
-        #     # aepe + aepe_edges
-        #     aepe_with_edges = tf.add(aepe, lambda_edges)
-        #     return aepe_with_edges
+        elif add_hfem.lower() == 'edges' and edges is not None:
+            print("should be (b, h, w, 1) => edges.shape: {}".format(edges.shape))
+            print("should be tensor ==> type(edges): {}".format(type(edges)))
+            # Reshape into height x width (was batch x height x width x 1 to be fed to the network)
+            # aepe_hfem_edges = lambda * edges_img * epe_img
+            epe_times_edges = tf.multiply(epe, edges)  # both have shape: (batch, height, width, 1)
+            # Sum all error and divide by num_samples (batch_size)
+            aepe_edges = tf.reduce_sum(epe_times_edges) / num_samples
+            lambda_edges = tf.multiply(lambda_w, aepe_edges)
+
+            # Add both losses together
+            # aepe + aepe_edges
+            aepe_with_edges = tf.add(aepe, lambda_edges)
+            return aepe_with_edges
         else:
             # Return Average EPE
             return aepe
