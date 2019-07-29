@@ -51,7 +51,7 @@ def open_flo_file(filename):
 
 
 def load_edges_file(edges_file_name, width, height):
-    edges_img = np.ndarray((height, width), dtype=np.uint64)
+    edges_img = np.ndarray((height, width), dtype=np.float32)
     with open(edges_file_name, 'rb') as f:
         f.readinto(edges_img)
     return edges_img
