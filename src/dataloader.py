@@ -76,7 +76,9 @@ class Image(slim.tfexample_decoder.ItemHandler):
         image = decode_raw()
         # image.set_shape([None, None, self._channels])
         if self._shape is not None:
+            print("Decoding image, reshaping...")
             image = tf.reshape(image, self._shape)
+            print("Decoding image, reshaping DONE!")
 
         return image
 

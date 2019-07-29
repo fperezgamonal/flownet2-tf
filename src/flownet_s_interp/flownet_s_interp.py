@@ -143,8 +143,7 @@ class FlowNetS_interp(Net):
         flow = flow * 0.05  # i.e.: flow / 20
         losses = []
         INPUT_HEIGHT, INPUT_WIDTH = float(flow.shape[1].value), float(flow.shape[2].value)
-        assert INPUT_HEIGHT == tf.shape(predictions)[1] and INPUT_WIDTH == tf.shape(predictions)[2] and \
-               INPUT_HEIGHT == tf.shape(edges)[1] and INPUT_WIDTH == tf.shape(edges)[2], "Mismatch at original scale"
+        predictions.get_shape().assert_is_compatible_with(flow.get_shape())
 
         # L2 loss between predict_flow6, blob23 (weighted w/ 0.32)
         predict_flow6 = predictions['predict_flow6']
@@ -153,8 +152,7 @@ class FlowNetS_interp(Net):
         if edges is not None and add_hard_flow_mining:
             # Must downsample edges image so we can compute weighted loss at each scale
             downsampled_edges6 = downsample(edges, size)
-            assert tf.shape(predict_flow6) == tf.shape(downsampled_flow6) and \
-                   tf.shape(predict_flow6)[:-1] == tf.shape(downsampled_edges6)[:-1], "Mismatch dims in scale 6"
+            downsampled_flow6.get_shape()[:-1].assert_is_compatible_with(downsampled_edges6.get_shape()[:-1])
         else:
             downsampled_edges6 = edges
         losses.append(average_endpoint_error_hfem(downsampled_flow6, predict_flow6, add_hfem=add_hard_flow_mining,
@@ -168,8 +166,7 @@ class FlowNetS_interp(Net):
         if edges is not None and add_hard_flow_mining:
             # Must downsample edges image so we can compute weighted loss at each scale
             downsampled_edges5 = downsample(edges, size)
-            assert tf.shape(predict_flow5) == tf.shape(downsampled_flow5) and \
-                   tf.shape(predict_flow5)[:-1] == tf.shape(downsampled_edges5)[:-1], "Mismatch dims in scale 5"
+            downsampled_flow5.get_shape()[:-1].assert_is_compatible_with(downsampled_edges5.get_shape()[:-1])
         else:
             downsampled_edges5 = edges
         losses.append(average_endpoint_error_hfem(downsampled_flow5, predict_flow5, add_hfem=add_hard_flow_mining,
@@ -183,8 +180,7 @@ class FlowNetS_interp(Net):
         if edges is not None and add_hard_flow_mining:
             # Must downsample edges image so we can compute weighted loss at each scale
             downsampled_edges4 = downsample(edges, size)
-            assert tf.shape(predict_flow4) == tf.shape(downsampled_flow4) and \
-                   tf.shape(predict_flow4)[:-1] == tf.shape(downsampled_edges4)[:-1], "Mismatch dims in scale 4"
+            downsampled_flow4.get_shape()[:-1].assert_is_compatible_with(downsampled_edges4.get_shape()[:-1])
         else:
             downsampled_edges4 = edges
         losses.append(average_endpoint_error_hfem(downsampled_flow4, predict_flow4, add_hfem=add_hard_flow_mining,
@@ -198,8 +194,7 @@ class FlowNetS_interp(Net):
         if edges is not None and add_hard_flow_mining:
             # Must downsample edges image so we can compute weighted loss at each scale
             downsampled_edges3 = downsample(edges, size)
-            assert tf.shape(predict_flow3) == tf.shape(downsampled_flow3) and \
-                   tf.shape(predict_flow3)[:-1] == tf.shape(downsampled_edges3)[:-1], "Mismatch dims in scale 3"
+            downsampled_flow3.get_shape()[:-1].assert_is_compatible_with(downsampled_edges3.get_shape()[:-1])
         else:
             downsampled_edges3 = edges
         losses.append(average_endpoint_error_hfem(downsampled_flow3, predict_flow3, add_hfem=add_hard_flow_mining,
@@ -213,8 +208,7 @@ class FlowNetS_interp(Net):
         if edges is not None and add_hard_flow_mining:
             # Must downsample edges image so we can compute weighted loss at each scale
             downsampled_edges2 = downsample(edges, size)
-            assert tf.shape(predict_flow2) == tf.shape(downsampled_flow2) and \
-                   tf.shape(predict_flow2)[:-1] == tf.shape(downsampled_edges2)[:-1], "Mismatch dims in scale 2"
+            downsampled_flow2.get_shape()[:-1].assert_is_compatible_with(downsampled_edges2.get_shape()[:-1])
         else:
             downsampled_edges2 = edges
         losses.append(average_endpoint_error_hfem(downsampled_flow2, predict_flow2, add_hfem=add_hard_flow_mining,
