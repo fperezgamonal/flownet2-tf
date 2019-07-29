@@ -262,7 +262,7 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
         if add_hfem.lower() == 'hard':
             print("Adding Hard Examples to weighted loss function...")
             # 2.0.1 Average epe error 'images' over all batch (so we penalise top-k pixels w. largest MEAN error)
-            epe_average_batch = tf.reduce_mean(epe, 0, keep_dims=True)
+            epe_average_batch = epe # tf.reduce_mean(epe, 0, keep_dims=True)
             # 2.0.2 Flatten EPE matrix to make finding idxs etc. easier
             epe_flatten = tf.reshape(epe_average_batch, [-1])   # Reshape (flatten) EPE
 
