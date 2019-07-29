@@ -7,7 +7,6 @@ from imageio import imread
 import tensorflow as tf
 from math import ceil
 import time
-from ..src.utils import get_padded_image_size
 FLAGS = None
 
 # Values defined here: https://lmb.informatik.uni-freiburg.de/resources/datasets/FlyingChairs.en.html#flyingchairs
@@ -24,6 +23,17 @@ sintel_sparse_perc = 0.222320
 
 # TODO: this is very, very slow for big datasets, try using shards instead to divide work among all threads
 # See: https://gist.github.com/psycharo/58717872a3a00284fbbcd9575d265785
+# auxiliar function to compute the new image size (for test only) for input images which are not divisble by divisor
+def get_padded_image_size(og_height, og_width, divisor=64):
+    if og_height % divisor != 0 or og_width % divisor != 0:
+        new_height = int(ceil(og_height / divisor) * divisor)
+        new_width = int(ceil(og_width / divisor) * divisor)
+    else:
+        # New image size is equal to original one
+        new_height = og_height
+        new_width = og_width
+    return new_height, new_width
+
 
 # https://stackoverflow.com/questions/28013200/reading-middlebury-flow-files-with-python-bytes-array-numpy
 def open_flo_file(filename):
