@@ -278,7 +278,7 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
     # double-checked formulas thanks to: https://github.com/ppliuboy/SelFlow
     epe = tf.norm(labels - predictions, axis=-1, keepdims=True)  # defaults to euclidean norm
     epe_sum = tf.reduce_sum(epe)
-    loss_mean = epe_sum / tf.prod(tf.shape(predictions)[:-1])
+    loss_mean = epe_sum / tf.cast(tf.reduce_prod(tf.shape(predictions)[:-1]), tf.float32)
     aepe = epe_sum / batch_size
 
     # 2. Compute HFEM loss
