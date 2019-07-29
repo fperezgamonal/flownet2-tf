@@ -6,6 +6,7 @@ import argparse
 import numpy as np
 
 
+# TODO: include losses in new file losses.py if we use many
 def str2bool(v):
     if isinstance(v, bool):
        return v
@@ -17,6 +18,7 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
+# === Training policies/schedules ===
 def exponentially_increasing_lr(global_step, min_lr=1e-10, max_lr=1, num_iters=10000, name=None):
     if global_step is None:
         raise ValueError("global_step is required for cyclic_learning_rate.")
@@ -115,15 +117,7 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
     x = tf.abs(tf.add(1., tmp))
 
     a1 = tf.maximum(0., tf.subtract(1., x))  # max(0, 1-x)
-
-    # if one_cycle and tf.equal(cycle, one_cycle_tar):
-    #     tf.print(cycle)
-    #     tf.print(cycle.dtype)
-    #     # computing: clr = learning_rate - ( learning_rate – learning_rate * anneal_factor ) * max( 0, 1 - x )
-    #     a2 = tf.subtract(lr, tf.multiply(lr, anneal_fact))
-    # else:  # for anything else than one cycle with LR (not momentum, exitted above)
-    #     # computing: clr = learning_rate + ( max_lr – learning_rate ) * max( 0, 1 - x )
-    #     a2 = tf.subtract(max_lr, lr)
+    # If one cycle, the final (current) LR is the one for the annealing phase: min_lr - min_lr * annealing_factor
     a2 = tf.cond(tf.logical_and(tf.equal(one_cycle_value, tf.constant(True)), tf.equal(cycle, one_cycle_tar)),
                  lambda: tf.subtract(lr, tf.multiply(lr, anneal_fact)), lambda: tf.subtract(max_lr, lr))
 
@@ -138,10 +132,6 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
                      lambda: tf.subtract(lr, clr), lambda: tf.add(lr, clr))
 
     return new_lr
-    # if one_cycle and tf.equal(cycle, one_cycle_tar):
-    #     return tf.subtract(lr, clr, name=op_name)
-    # else:
-    #     return tf.add(lr, clr, name=op_name)
 
 
 def _mom_cyclic(g_step_op, base_mom=None, max_mom=None, step_size=None, gamma=0.99994, mode='triangular',
@@ -205,28 +195,15 @@ def _mom_cyclic(g_step_op, base_mom=None, max_mom=None, step_size=None, gamma=0.
             cmom = tf.multiply(tf.pow(gamma, global_step), cmom)
 
         return tf.subtract(max_mom, cmom, name=op_name)
-
+    # Momentum is kept constant at its maximum if we use one_cycle and we are on the annealing phase
     return_mom = tf.cond(tf.logical_and(tf.equal(one_cycle_value, tf.constant(True)), tf.equal(cycle, one_cycle_tar)),
                          lambda: tf.identity(max_mom, name=op_name), lambda: momentum_clr())
 
     return return_mom
-    # if one_cycle and tf.equal(cycle, one_cycle_tar):
-    #     tf.print(cycle)
-    #     tf.print(cycle.dtype)
-    #     return tf.identity(max_mom, name=op_name)
-    # else:
 
 
-# Thanks, https://github.com/tensorflow/tensorflow/issues/4079
-# Replaced by tensorflow built-in (should be quicker?)
-def LeakyReLU(x, leak=0.1, name="lrelu"):
-    with tf.variable_scope(name):
-        f1 = 0.5 * (1.0 + leak)
-        f2 = 0.5 * (1.0 - leak)
-        return f1 * x + f2 * abs(x)
-
-
-# TODO: if the code below works and there is no warning on "has no gradient", remove THIS!
+# === Network losses ===
+# TODO: the function below extend this function's functionality ==> can be removed
 def average_endpoint_error(labels, predictions):
     """
     Given labels and predictions of size (N, H, W, 2), calculates average endpoint error:
@@ -245,7 +222,6 @@ def average_endpoint_error(labels, predictions):
         return tf.reduce_sum(epe) / num_samples
 
 
-# TODO: add HFEM to AEPE function (since it seems that adding losses later produces a "var X has no gradient")
 def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., perc_hfem=50, edges=None):
     """
     Given labels and predictions of size (N, H, W, 2), calculates average endpoint error:
@@ -336,6 +312,60 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
         return aepe
 
 
+# Losses from SelFlow, the top performing OF estimation method on Sintel (at the time of writing this)
+# They do an unsupervised training + supervised fine-tuning only on Sintel (no need to use FC or FT3D!)
+# The authors made their code available at: https://github.com/ppliuboy/SelFlow
+# The article can be found at: https://arxiv.org/abs/1904.09117
+# Currently (29/07/19), only the test code is available (training code + models to be released in August)
+def robust_loss(diff, mask, c=3.0, alpha=1.):
+    """
+    *OWN* clarifications: alternative robust loss to the one described in the paper
+    :param diff:
+    :param mask:
+    :param c:
+    :param alpha:
+    :return:
+    """
+    z_alpha = max(1, 2-alpha)
+    diff =  z_alpha / alpha * (tf.pow( tf.square((diff)/c)/z_alpha + 1 , alpha/2.)-1)
+    diff = tf.multiply(diff, mask)
+    diff_sum = tf.reduce_sum(diff)
+    loss_mean = diff_sum / (tf.reduce_sum(mask) * 2 + 1e-6)
+    batch_size = tf.to_float(tf.shape(diff)[0])
+    loss_sum = diff_sum / batch_size
+    return loss_mean, loss_sum
+
+
+def abs_robust_loss(diff, mask, q=0.4):
+    """
+    *OWN* clarifications: robust loss from the paper, defined as psi(x) = np.power((np.abs(x) + epsilon), q)
+    loss_mean is the one returned in validation (loss_sum is ignored)
+    in training...(complete when training code is available) but probably loss_sum is the one used (we need an scalar
+    to assign a loss to a given batch to guide training)
+    :param diff: input tensor representing the difference between two other tensors (one may be ground truth or not)
+    :param mask: mask specifying the valid pixels where the robust loss is defined (e.g.: only occluded, only non-occ.)
+    :param q: smoothing factor
+    :return:
+    """
+    diff = tf.pow((tf.abs(diff)+0.01), q)
+    diff = tf.multiply(diff, mask)
+    diff_sum = tf.reduce_sum(diff)
+    loss_mean = diff_sum / (tf.reduce_sum(mask) * 2 + 1e-6)
+    batch_size = tf.to_float(tf.shape(diff)[0])
+    loss_sum = diff_sum / batch_size
+    return loss_mean, loss_sum
+
+
+# === Custom network layers/operations ===
+# Thanks, https://github.com/tensorflow/tensorflow/issues/4079
+# Replaced by tensorflow built-in (should be quicker?)
+def LeakyReLU(x, leak=0.1, name="lrelu"):
+    with tf.variable_scope(name):
+        f1 = 0.5 * (1.0 + leak)
+        f2 = 0.5 * (1.0 - leak)
+        return f1 * x + f2 * abs(x)
+
+
 def pad(tensor, num=1):
     """
     Pads the given tensor along the height and width dimensions with `num` 0s on each side
@@ -350,3 +380,120 @@ def antipad(tensor, num=1):
     """
     batch, h, w, c = tensor.shape.as_list()
     return tf.slice(tensor, begin=[0, num, num, 0], size=[batch, h - 2 * num, w - 2 * num, c])
+
+
+# TODO: we use a cuda operator to do the warping ATM, if we want to use occlusion(), we would need to adapt it
+# Auxiliar functions to warp an image according to a flowfield
+def get_pixel_value(img, x, y):
+    """
+    Utility function to get pixel value for coordinate
+    vectors x and y from a  4D tensor image.
+    Input
+    -----
+    - img: tensor of shape (B, H, W, C)
+    - x: flattened tensor of shape (B*H*W, )
+    - y: flattened tensor of shape (B*H*W, )
+    Returns
+    -------
+    - output: tensor of shape (B, H, W, C)
+    """
+    shape = tf.shape(x)
+    batch_size = shape[0]
+    height = shape[1]
+    width = shape[2]
+
+    batch_idx = tf.range(0, batch_size)
+    batch_idx = tf.reshape(batch_idx, (batch_size, 1, 1))
+    b = tf.tile(batch_idx, (1, height, width))
+
+    indices = tf.stack([b, y, x], 3)
+
+    return tf.gather_nd(img, indices)
+
+
+def tf_warp(img, flow, H, W):
+    #    H = 256
+    #    W = 256
+    x,y = tf.meshgrid(tf.range(W), tf.range(H))
+    x = tf.expand_dims(x,0)
+    x = tf.expand_dims(x,-1)
+
+    y = tf.expand_dims(y,0)
+    y = tf.expand_dims(y,-1)
+
+    x = tf.cast(x, tf.float32)
+    y = tf.cast(y, tf.float32)
+    grid = tf.concat([x,y],axis = -1)
+#    print grid.shape
+    flows = grid+flow
+    #print(flows.shape)
+    max_y = tf.cast(H - 1, tf.int32)
+    max_x = tf.cast(W - 1, tf.int32)
+    zero = tf.zeros([], dtype=tf.int32)
+
+    x = flows[:,:,:, 0]
+    y = flows[:,:,:, 1]
+    x0 = x
+    y0 = y
+    x0 = tf.cast(x0, tf.int32)
+    x1 = x0 + 1
+    y0 = tf.cast(y0,  tf.int32)
+    y1 = y0 + 1
+
+    # clip to range [0, H/W] to not violate img boundaries
+    x0 = tf.clip_by_value(x0, zero, max_x)
+    x1 = tf.clip_by_value(x1, zero, max_x)
+    y0 = tf.clip_by_value(y0, zero, max_y)
+    y1 = tf.clip_by_value(y1, zero, max_y)
+
+    # get pixel value at corner coords
+    Ia = get_pixel_value(img, x0, y0)
+    Ib = get_pixel_value(img, x0, y1)
+    Ic = get_pixel_value(img, x1, y0)
+    Id = get_pixel_value(img, x1, y1)
+
+    # recast as float for delta calculation
+    x0 = tf.cast(x0, tf.float32)
+    x1 = tf.cast(x1, tf.float32)
+    y0 = tf.cast(y0, tf.float32)
+    y1 = tf.cast(y1, tf.float32)
+
+
+    # calculate deltas
+    wa = (x1-x) * (y1-y)
+    wb = (x1-x) * (y-y0)
+    wc = (x-x0) * (y1-y)
+    wd = (x-x0) * (y-y0)
+
+    # add dimension for addition
+    wa = tf.expand_dims(wa, axis=3)
+    wb = tf.expand_dims(wb, axis=3)
+    wc = tf.expand_dims(wc, axis=3)
+    wd = tf.expand_dims(wd, axis=3)
+
+    # compute output
+    out = tf.add_n([wa*Ia, wb*Ib, wc*Ic, wd*Id])
+    return out
+
+
+# From SelFlow (FWD-BWD consistency check with a different thresholding condition)
+def length_sq(x):
+    return tf.reduce_sum(tf.square(x), 3, keepdims=True)
+
+
+def occlusion(flow_fw, flow_bw):
+    x_shape = tf.shape(flow_fw)
+    H = x_shape[1]
+    W = x_shape[2]
+    flow_bw_warped = tf_warp(flow_bw, flow_fw, H, W)
+    flow_fw_warped = tf_warp(flow_fw, flow_bw, H, W)
+    flow_diff_fw = flow_fw + flow_bw_warped
+    flow_diff_bw = flow_bw + flow_fw_warped
+    mag_sq_fw = length_sq(flow_fw) + length_sq(flow_bw_warped)
+    mag_sq_bw = length_sq(flow_bw) + length_sq(flow_fw_warped)
+    occ_thresh_fw =  0.01 * mag_sq_fw + 0.5
+    occ_thresh_bw =  0.01 * mag_sq_bw + 0.5
+    occ_fw = tf.cast(length_sq(flow_diff_fw) > occ_thresh_fw, tf.float32)
+    occ_bw = tf.cast(length_sq(flow_diff_bw) > occ_thresh_bw, tf.float32)
+
+    return occ_fw, occ_bw
