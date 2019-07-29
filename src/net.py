@@ -534,7 +534,7 @@ class Net(object):
                     inv_mask = imread(inv_mask)
 
                 # Compute all metrics
-                metrics = compute_all_metrics(pred_flow, gt_flow, occ_mask=occ_mask, inv_mask=inv_mask)
+                metrics, _, _, _, _ = compute_all_metrics(pred_flow, gt_flow, occ_mask=occ_mask, inv_mask=inv_mask)
                 final_str_formated = get_metrics(metrics)
                 print(final_str_formated)
 
