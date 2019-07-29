@@ -143,7 +143,7 @@ class FlowNetS_interp(Net):
         flow = flow * 0.05  # i.e.: flow / 20
         losses = []
         INPUT_HEIGHT, INPUT_WIDTH = float(flow.shape[1].value), float(flow.shape[2].value)
-        predictions.get_shape().assert_is_compatible_with(flow.get_shape())
+        predictions['flow'].get_shape().assert_is_compatible_with(flow.get_shape())
 
         # L2 loss between predict_flow6, blob23 (weighted w/ 0.32)
         predict_flow6 = predictions['predict_flow6']
