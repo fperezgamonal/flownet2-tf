@@ -16,6 +16,15 @@ def main():
         print("Input file extension (input_a) is: '{}'".format(FLAGS.input_a[-4:]))
         print("{}".format(FLAGS.input_a[-4:] == '.txt'))
 
+    # If there is any compulsory entry missing, use default example
+    if FLAGS.input_a is None or not FLAGS.input_a:
+        FLAGS.input_a = 'data/samples/sintel/frame_00186.png'
+        FLAGS.input_b = 'data/samples/sintel/frame_00187.png'
+        FLAGS.matches_a = 'data/samples/sintel/frame_00186_dm_mask.png'
+        FLAGS.sparse_flow = 'data/samples/sintel/frame_00186_dm_sparse_flow.flo'
+        FLAGS.gt_flow = 'data/samples/sintel/frame_00186.flo'
+        FLAGS.occ_mask = 'data/samples/sintel/frame_00186_occ_mask.png'
+        FLAGS.inv_mask = 'data/samples/sintel/frame_00186_inv_mask.png'
     # Test on the data
     if os.path.isfile(FLAGS.input_a) and FLAGS.input_a[-4:] != '.txt':  # pair of images (not a batch)
         print("Inferring on 'single' mode...")
@@ -60,21 +69,21 @@ if __name__ == '__main__':
         type=str,
         required=False,
         help='Path to first image',
-        default='data/samples/sintel/frame_00186.png',
+        default=None,
     )
     parser.add_argument(
         '--matches_a',
         type=str,
         required=False,
         help='Path to matches mask',
-        default='data/samples/sintel/frame_00186_dm_mask.png',
+        default=None,
     )
     parser.add_argument(
         '--sparse_flow',
         type=str,
         required=False,
         help='Sparse flow initialized from sparse matches',
-        default='data/samples/sintel/frame_00186_dm_sparse_flow.flo',
+        default=None,
     )
     parser.add_argument(
         '--checkpoint',
@@ -153,21 +162,21 @@ if __name__ == '__main__':
         type=str,
         required=False,
         help='Path to ground truth flow so we can compute error metrics',
-        default='data/samples/sintel/frame_00186.flo',
+        default=None,
     )
     parser.add_argument(
         '--occ_mask',
         type=str,
         required=False,
         help='Path to occlusions mask (1s indicate pixel is occluded, 0 otherwise)',
-        default='data/samples/sintel/frame_00186_occ_mask.png',
+        default=None,
     )
     parser.add_argument(
         '--inv_mask',
         type=str,
         required=False,
         help='Path to invalid mask with pixels that should not be considered when computing metrics = 1(invalid flow)',
-        default='data/samples/sintel/frame_00186_inv_mask.png',
+        default=None,
     )
     parser.add_argument(
         '--width',
