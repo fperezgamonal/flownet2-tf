@@ -76,9 +76,7 @@ class Image(slim.tfexample_decoder.ItemHandler):
         image = decode_raw()
         # image.set_shape([None, None, self._channels])
         if self._shape is not None:
-            print("Decoding image, reshaping...")
             image = tf.reshape(image, self._shape)
-            print("Decoding image, reshaping DONE!")
 
         return image
 
@@ -375,7 +373,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                                                                       [image_a, matches_a, sparse_flow, edges_a, flow])
             # image_as, matches_as, sparse_flows, flows = map(lambda x: tf.expand_dims(x, 0),
             #                                                           [image_a, matches_a, sparse_flow, flow])
-            print("tf.shape(edges_as: {}".format(tf.shape(edges_as)))
+            print("(dataloader.py): tf.shape(edges_as: {}".format(edges_as.shape.value))
         else:
             matches_as = None
             sparse_flows = None
