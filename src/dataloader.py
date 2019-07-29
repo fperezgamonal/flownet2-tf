@@ -376,7 +376,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             print("(dataloader.py): edges_as.shape: ({}, {}, {}, {})".format(float(edges_as.shape[0].value),
                                                                              float(edges_as.shape[1].value),
                                                                              float(edges_as.shape[2].value),
-                                                                             float(edges_as.shape[4].value)))
+                                                                             float(edges_as.shape[3].value)))
         else:
             matches_as = None
             sparse_flows = None
