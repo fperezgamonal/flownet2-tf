@@ -252,14 +252,15 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
 
     # aepe = ||labels-predictions||2 = 1/N sum(sqrt((labels - predictions)**2)
     # double-checked formulas thanks to: https://github.com/ppliuboy/SelFlow
-    epe = tf.norm(labels - predictions, axis=-1, keepdims=True)  # defaults to euclidean norm
+    epe = tf.norm(labels - predictions, axis=3, keepdims=True)  # defaults to euclidean norm
     epe_sum = tf.reduce_sum(epe)
-    loss_mean = epe_sum / tf.cast(tf.reduce_prod(tf.shape(predictions)[:-1]), tf.float32)
+    # loss_mean = epe_sum / tf.cast(tf.reduce_prod(tf.shape(predictions)[:-1]), tf.float32)
     aepe = epe_sum / batch_size
 
     # 2. Compute HFEM loss
     if add_hfem:  # add_hfem not empty
         if add_hfem.lower() == 'hard':
+            print("Adding Hard Examples to weighted loss function...")
             # 2.0.1 Average epe error 'images' over all batch (so we penalise top-k pixels w. largest MEAN error)
             epe_average_batch = tf.reduce_mean(epe, 0, keep_dims=True)
             # 2.0.2 Flatten EPE matrix to make finding idxs etc. easier
@@ -292,10 +293,20 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
             aepe_with_hfem = tf.add(aepe, aepe_hfem)
             return aepe_with_hfem
         elif add_hfem.lower() == 'edges' and edges is not None:
+            print("Adding edges to weighted loss function...")
             print("should be (b, h, w, 1) => edges.shape: ({}, {}, {}, {})".format(edges.shape[0].value,
                                                                                    edges.shape[1].value,
                                                                                    edges.shape[2].value,
                                                                                    edges.shape[3].value))
+            print("should be (b, h, w, 2) => predictions.shape: ({}, {}, {}, {})".format(predictions.shape[0].value,
+                                                                                         predictions.shape[1].value,
+                                                                                         predictions.shape[2].value,
+                                                                                         predictions.shape[3].value))
+            print("should be (b, h, w, 1) => epe.shape: ({}, {}, {}, {})".format(epe.shape[0].value,
+                                                                                 epe.shape[1].value,
+                                                                                 epe.shape[2].value,
+                                                                                 epe.shape[3].value))
+
             print("should be tensor ==> type(edges): {}".format(type(edges)))
             # Reshape into height x width (was batch x height x width x 1 to be fed to the network)
             # aepe_hfem_edges = lambda * edges_img * epe_img
