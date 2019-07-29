@@ -4,9 +4,22 @@ from tensorflow.python.ops import math_ops
 from tensorflow.python.eager import context
 import argparse
 import numpy as np
+from math import ceil
 
 
 # TODO: include losses in new file losses.py if we use many
+# auxiliar function to compute the new image size (for test only) for input images which are not divisble by divisor
+def get_padded_image_size(og_height, og_width, divisor=64):
+    if og_height % divisor != 0 or og_width % divisor != 0:
+        new_height = int(ceil(og_height / divisor) * divisor)
+        new_width = int(ceil(og_width / divisor) * divisor)
+    else:
+        # New image size is equal to original one
+        new_height = og_height
+        new_width = og_width
+    return new_height, new_width
+
+
 def str2bool(v):
     if isinstance(v, bool):
        return v

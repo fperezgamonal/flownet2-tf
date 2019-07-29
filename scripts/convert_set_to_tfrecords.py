@@ -7,14 +7,14 @@ from imageio import imread
 import tensorflow as tf
 from math import ceil
 import time
-
+from ..src.utils import get_padded_image_size
 FLAGS = None
 
 # Values defined here: https://lmb.informatik.uni-freiburg.de/resources/datasets/FlyingChairs.en.html#flyingchairs
 TRAIN = 1
 VAL = 2
 # Any other value means that some image is not used for a reason (e.g.: in FlyingThings3D, complicated examples)
-DEBUG = False  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
+DEBUG = True  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
 
 # DM sparsness (in % of not 0 pixels in sparse mask) computed in FC, FT3D and Sintel (training parts)
 fc_sparse_perc = 0.267129
@@ -32,16 +32,16 @@ def open_flo_file(filename):
         if 202021.25 != magic:
             print('Magic number incorrect. Invalid .flo file')
         else:
-            w = np.fromfile(f, np.int32, count=1)[0]
-            h = np.fromfile(f, np.int32, count=1)[0]
+            w = np.fromfile(f, np.int32, count=1)
+            h = np.fromfile(f, np.int32, count=1)
             # print("Reading {0} x {1} flo file".format(h, w))
-            data = np.fromfile(f, np.float32, count=2*w*h)
+            data = np.fromfile(f, np.float32, count=int(2*w*h))
             # Reshape data into 3D array (columns, rows, bands)
-            return np.resize(data, (h, w, 2))
+            return np.resize(data, (h[0], w[0], 2))
 
 
 def load_edges_file(edges_file_name, width, height):
-    edges_img = np.ndarray((height, width), dtype=np.float32)
+    edges_img = np.ndarray((height, width), dtype=np.uint64)
     with open(edges_file_name, 'rb') as f:
         f.readinto(edges_img)
     return edges_img
@@ -56,7 +56,7 @@ def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 
-def image_example(image_a, image_b, matches_a, sparse_flow, flow, edges_a):
+def image_example(image_a, image_b, matches_a, sparse_flow, edges_a, flow):
     """
     Creates a tf.Example message ready to be written to a file.
     """
@@ -67,8 +67,8 @@ def image_example(image_a, image_b, matches_a, sparse_flow, flow, edges_a):
         'image_b': _bytes_feature(image_b),
         'matches_a': _bytes_feature(matches_a),
         'sparse_flow': _bytes_feature(sparse_flow),
-        'flow': _bytes_feature(flow),
         'edges_a': _bytes_feature(edges_a),
+        'flow': _bytes_feature(flow),
     }
 
     # Create a Features message using tf.train.Example.
@@ -94,6 +94,8 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
 
         for i in indices:
             if dataset == 'flying_chairs':
+                target_height = 384
+                target_width = 512
                 image_a_path = os.path.join(data_dir, '{0:05d}_img1.png'.format(i + 1))
                 image_b_path = os.path.join(data_dir, '{0:05d}_img2.png'.format(i + 1))
                 flow_path = os.path.join(data_dir, '{0:05d}_flow.flo'.format(i + 1))
@@ -115,6 +117,8 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     burden.  Also, we follow FlowNet2.0 training and discard a set of difficult sequences (1388, 
                     to be precise)
                 """
+                target_height = 540
+                target_width = 960
                 image_a_path = os.path.join(data_dir, '{0:07d}.png'.format(i))
                 image_b_path = os.path.join(data_dir, '{0:07d}.png'.format(i + 1))
                 flow_path = os.path.join(data_dir, '{0:07d}.flo'.format(i))
@@ -130,6 +134,8 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                         raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
 
             elif dataset == 'sintel_clean':
+                target_height = 436
+                target_width = 1024
                 pass_dir = 'clean'
                 image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
                 image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
@@ -147,6 +153,8 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                         raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
 
             elif dataset == 'sintel_final':
+                target_height = 436
+                target_width = 1024
                 pass_dir = 'final'
                 image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
                 image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
@@ -163,6 +171,8 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     else:
                         raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
             elif dataset == 'sintel_all':
+                target_height = 436
+                target_width = 1024
                 pass_dir = 'final'
                 image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i+1))
                 image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i+2))
@@ -181,6 +191,8 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                         raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
             elif dataset == 'fc_sintel':
                 if 'train' in split_name:
+                    target_height = 384
+                    target_width = 512
                     image_a_path = os.path.join(data_dir, '{0:05d}_img1.png'.format(i + 1))
                     image_b_path = os.path.join(data_dir, '{0:05d}_img2.png'.format(i + 1))
                     flow_path = os.path.join(data_dir, '{0:05d}_flow.flo'.format(i + 1))
@@ -198,6 +210,8 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                             raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
 
                 elif 'val' in split_name:
+                    target_height = 436
+                    target_width = 1024
                     pass_dir = 'final'
                     image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 1))
                     image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 2))
@@ -221,6 +235,8 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
 
             elif dataset == 'ft3d_sintel':
                 if 'train' in split_name:
+                    target_height = 540
+                    target_width = 960
                     image_a_path = os.path.join(data_dir, '{0:07d}.png'.format(i))
                     image_b_path = os.path.join(data_dir, '{0:07d}.png'.format(i + 1))
                     flow_path = os.path.join(data_dir, '{0:07d}.flo'.format(i))
@@ -237,6 +253,8 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                             raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
 
                 elif 'val' in split_name:
+                    target_height = 436
+                    target_width = 1024
                     pass_dir = 'final'
                     image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 1))
                     image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 2))
@@ -297,7 +315,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 random_percentage = np.random.choice(np.linspace(lower_bound, upper_bound, 50))
                 p_fill_in = random_percentage/100
                 matches_a = np.random.choice([0, 255], size=image_a.shape[:-1], p=[1 - p_fill_in, p_fill_in]).astype(
-                    np.uint64)
+                    np.uint8)
                 if DEBUG:
                     print("Percentage of pixels to sample from gt_flow: {}".format(
                         100 * (np.sum(matches_a == 255) / np.product(image_a.shape[:-1]))))
@@ -347,16 +365,32 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
             assert height_a == height_ed and width_a == width_ed, ("FATAL: edges width and/or height does not match"
                                                                    " image's Images have shape: {0}, edges: {1}".format(
                 image_a.shape[:-1], edges_a.shape[:-1]))
+            assert height_ma == height_ed and width_ma == width_ed, ("FATAL: edges width, height + n_ch does not match"
+                                                                     " matches's have shape: {0}, edges: {1}".format(
+                matches_a.shape, edges_a.shape))
             # Assert correct number of channels
             assert channels_ma == 1, ("FATAL: mask should be binary but the number of channels is not 1 but {0}".format(
                 channels_ma
             ))
+            assert channels_ed == 1, "FATAL: edges should have only one channel (grayscale)"
 
             if DEBUG:
                 print("OG shapes before padding (images-matches): ")
                 print("img_a: {0}\nimg_b: {1}\nmch_a: {2}\nedges_a: {3}\n".format(image_a.shape, image_b.shape,
                                                                                   matches_a.shape, edges_a.shape))
                 print("matches has unique values: {}".format(np.unique(matches_a)))
+
+                print("Checking actual read dimensions against target ones...")
+                assert target_height == image_a.shape[0] and target_width == image_a.shape[1],\
+                    "FATAL: target height and width do not match actual ones for image_a"
+                assert target_height == matches_a.shape[0] and target_width == matches_a.shape[1],\
+                    "FATAL: target height and width do not match actual ones for matches_a"
+                assert target_height == sparse_flow.shape[0] and target_width == sparse_flow.shape[1],\
+                    "FATAL: target height and width do not match actual ones for sparse_flow"
+                assert target_height == edges_a.shape[0] and target_width == edges_a.shape[1],\
+                    "FATAL: target height and width do not match actual ones for edges_a"
+                assert target_height == flow.shape[0] and target_width == flow.shape[1],\
+                    "FATAL: target height and width do not match actual ones for flow"
 
             if height_a % divisor != 0 or width_a % divisor != 0:
                 if DEBUG:
@@ -422,6 +456,20 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 print("NEW shapes after padding (flows): ")
                 print("sparse_flow: {0}\nflow: {1}".format(sparse_flow.shape, flow.shape))
 
+                print("Checking actual padded sizes to those computed from target sizes...")
+                height_padded, width_padded = get_padded_image_size(og_height=target_height, og_width=target_width,
+                                                                    divisor=divisor)
+                assert height_padded == image_a.shape[0] and width_padded == image_a.shape[1], \
+                    "FATAL: target height and width do not match actual ones for image_a"
+                assert height_padded == matches_a.shape[0] and width_padded == matches_a.shape[1], \
+                    "FATAL: target height and width do not match actual ones for matches_a"
+                assert height_padded == sparse_flow.shape[0] and width_padded == sparse_flow.shape[1], \
+                    "FATAL: target height and width do not match actual ones for sparse_flow"
+                assert height_padded == edges_a.shape[0] and width_padded == edges_a.shape[1], \
+                    "FATAL: target height and width do not match actual ones for edges_a"
+                assert height_padded == flow.shape[0] and width_padded == flow.shape[1], \
+                    "FATAL: target height and width do not match actual ones for flow"
+
             # Flush all prints (get stuck for some reason)
             sys.stdout.flush()
 
@@ -429,7 +477,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
             flow_raw = flow.tostring()
             sparse_flow_raw = sparse_flow.tostring()
 
-            tf_example = image_example(image_a_raw, image_b_raw, matches_a_raw, sparse_flow_raw, flow_raw, edges_a_raw)
+            tf_example = image_example(image_a_raw, image_b_raw, matches_a_raw, sparse_flow_raw, edges_a_raw, flow_raw)
             writer.write(tf_example.SerializeToString())
             pbar.update(count + 1)
             count += 1
