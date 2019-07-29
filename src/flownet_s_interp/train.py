@@ -84,6 +84,27 @@ def main():
             capacity_in_batches_train=FLAGS.capacity_in_batches_train,
             capacity_in_batches_val=FLAGS.capacity_in_batches_val,
             batch_size=FLAGS.batch_size,)
+        print("(train.py): printing tensor shape before batching, should be (batch_size, height, width, n_ch)")
+        print("(train.py): image_as.shape: ({}, {}, {}, {})".format(input_a.shape[0].value,
+                                                                    input_a.shape[1].value,
+                                                                    input_a.shape[2].value,
+                                                                    input_a.shape[3].value))
+        print("(train.py): matches_as.shape: ({}, {}, {}, {})".format(matches_a.shape[0].value,
+                                                                      matches_a.shape[1].value,
+                                                                      matches_a.shape[2].value,
+                                                                      matches_a.shape[3].value))
+        print("(train.py): sparse_flows.shape: ({}, {}, {}, {})".format(sparse_flow.shape[0].value,
+                                                                        sparse_flow.shape[1].value,
+                                                                        sparse_flow.shape[2].value,
+                                                                        sparse_flow.shape[3].value))
+        print("(train.py): edges_as.shape: ({}, {}, {}, {})".format(edges_a.shape[0].value,
+                                                                    edges_a.shape[1].value,
+                                                                    edges_a.shape[2].value,
+                                                                    edges_a.shape[3].value))
+        print("(train.py): flows.shape: ({}, {}, {}, {})".format(flow.shape[0].value,
+                                                                 flow.shape[1].value,
+                                                                 flow.shape[2].value,
+                                                                 flow.shape[3].value))
         # input_a, matches_a, sparse_flow, flow = load_batch(
         #     FLAGS.dataset_config, 'train', input_type=FLAGS.input_type,
         #     common_queue_capacity=FLAGS.common_queue_capacity,
@@ -103,6 +124,28 @@ def main():
                 capacity_in_batches_train=FLAGS.capacity_in_batches_train,
                 capacity_in_batches_val=FLAGS.capacity_in_batches_val,
                 batch_size=FLAGS.batch_size,)
+            print("(train.py): validation, printing tensor shape before batching, should be (batch_size, height, width,"
+                  " n_ch)")
+            print("(train.py): image_as.shape: ({}, {}, {}, {})".format(val_input_a.shape[0].value,
+                                                                        val_input_a.shape[1].value,
+                                                                        val_input_a.shape[2].value,
+                                                                        val_input_a.shape[3].value))
+            print("(train.py): matches_as.shape: ({}, {}, {}, {})".format(val_matches_a.shape[0].value,
+                                                                          val_matches_a.shape[1].value,
+                                                                          val_matches_a.shape[2].value,
+                                                                          val_matches_a.shape[3].value))
+            print("(train.py): sparse_flows.shape: ({}, {}, {}, {})".format(val_sparse_flow.shape[0].value,
+                                                                            val_sparse_flow.shape[1].value,
+                                                                            val_sparse_flow.shape[2].value,
+                                                                            val_sparse_flow.shape[3].value))
+            print("(train.py): edges_as.shape: ({}, {}, {}, {})".format(val_edges_a.shape[0].value,
+                                                                        val_edges_a.shape[1].value,
+                                                                        val_edges_a.shape[2].value,
+                                                                        val_edges_a.shape[3].value))
+            print("(train.py): flows.shape: ({}, {}, {}, {})".format(val_flow.shape[0].value,
+                                                                     val_flow.shape[1].value,
+                                                                     val_flow.shape[2].value,
+                                                                     val_flow.shape[3].value))
             # val_input_a, val_matches_a, val_sparse_flow, val_flow = load_batch(
             #     FLAGS.dataset_config, 'valid',
             #     input_type=FLAGS.input_type,
