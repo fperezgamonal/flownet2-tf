@@ -422,7 +422,8 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
 
             if DEBUG:
                 print("NEW shapes after padding (images-matches): ")
-                print("img_a: {0}\nimg_b: {1}\nmch_a: {2}".format(image_a.shape, image_b.shape, matches_a.shape))
+                print("img_a: {0}\nimg_b: {1}\nmch_a: {2}\nedg_a: {3}".format(image_a.shape, image_b.shape,
+                                                                              matches_a.shape, edges_a.shape))
                 print("img_a has range: ({}, {})".format(np.min(image_a), np.max(image_a)))
                 print("matches_a has range: ({}, {})".format(np.min(matches_a), np.max(matches_a)))
                 print("img_b has range: ({}, {})".format(np.min(image_b), np.max(image_b)))
