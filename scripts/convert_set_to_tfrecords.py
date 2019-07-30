@@ -13,7 +13,7 @@ FLAGS = None
 TRAIN = 1
 VAL = 2
 # Any other value means that some image is not used for a reason (e.g.: in FlyingThings3D, complicated examples)
-DEBUG = True  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
+DEBUG = False  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
 
 # DM sparsness (in % of not 0 pixels in sparse mask) computed in FC, FT3D and Sintel (training parts)
 fc_sparse_perc = 0.267129
