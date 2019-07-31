@@ -488,8 +488,8 @@ def flow_error_mask(tu, tv, u, v, mask=None, gt_value=False, bord=0):
     return mang, stdang, mepe
 
 
-# TODO: add optional input parameter max_flow which overrides the normalization by max(rad), similarly to flow_to_color
-
+# Added 'maxflow' to control saturation (to compare different flow visualisations)
+# Implemented as seen on https://github.com/mnhrdt/imscript/blob/master/src/viewflow.c
 def flow_to_image(flow, maxflow=None):
     """
     Convert flow into middlebury color code image
