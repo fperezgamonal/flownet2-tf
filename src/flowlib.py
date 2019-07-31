@@ -488,7 +488,9 @@ def flow_error_mask(tu, tv, u, v, mask=None, gt_value=False, bord=0):
     return mang, stdang, mepe
 
 
-def flow_to_image(flow):
+# TODO: add optional input parameter max_flow which overrides the normalization by max(rad), similarly to flow_to_color
+
+def flow_to_image(flow, maxflow=None):
     """
     Convert flow into middlebury color code image
     :param flow: optical flow map
@@ -513,7 +515,10 @@ def flow_to_image(flow):
     minv = min(minv, np.min(v))
 
     rad = np.sqrt(u ** 2 + v ** 2)
-    maxrad = max(-1, np.max(rad))
+    if maxflow is None:
+        maxrad = max(-1, np.max(rad))
+    else:
+        maxrad = maxflow
 
     if DEBUG:
         print("max flow: {.4f}\nflow range:\nu = {.3f} .. {.3f}\nv = {.3f} .. {.3f}".format(maxrad, minu, maxu, minv,
@@ -528,6 +533,83 @@ def flow_to_image(flow):
     img[idx] = 0
 
     return np.uint8(img)
+
+
+# Converted from tensorflow (used 'inside' training code with sess.run()) to numpy
+# Source at: https://github.com/ppliuboy/SelFlow/blob/master/flowlib.py
+def flow_to_color(flow, mask=None, max_flow=None):
+    """Converts flow to 3-channel color image.
+    Args:
+        :param flow: numpy array of shape [height, width, 2].
+        :param mask: flow validity mask of shape [height, width, 1].
+        :param max_flow: the flow will be normalised by this value (forces more or less percentage of saturated pixels)
+        using this parameter is very useful to more fairly compare visual results of different experiments/methods.
+    """
+    n = 8
+    height, width, _ = flow.shape
+    mask = np.ones([height, width, 1]) if mask is None else mask
+    flow_u, flow_v = flow[:, :, 0], flow[:, :, 1]
+    if max_flow is not None:
+        max_flow = np.max((max_flow, 1.))
+    else:
+        max_flow = np.max(np.abs(flow * mask))
+    mag = np.sqrt(np.sum(np.square(flow), axis=-1))
+    angle = np.arctan2(flow_v, flow_u)
+
+    im_h = np.mod(angle / (2 * np.pi) + 1.0, 1.0)
+    im_s = np.clip(mag * n / max_flow, 0, 1)
+    im_v = np.clip(n - im_s, 0, 1)
+    im_hsv = np.stack([im_h, im_s, im_v], axis=-1)
+    im = cl.hsv_to_rgb(im_hsv)
+    return im * mask
+
+
+def flow_error_image(flow_1, flow_2, mask_occ, mask_noc=None, log_colors=True):
+    """Visualize the error between two flows as 3-channel color image.
+    Adapted from the KITTI C++ devkit.
+    Args:
+        flow_1: first flow of shape [height, width, 2].
+        flow_2: second flow (ground truth)
+        mask_occ: flow validity mask of shape [height, width, 1].
+            Equals 1 at (occluded and non-occluded) valid pixels.
+        mask_noc: Is 1 only at valid pixels which are not occluded.
+        log_colors
+    """
+    mask_noc = np.ones(mask_occ.shape) if mask_noc is None else mask_noc
+    diff_sq = (flow_1 - flow_2) ** 2
+    diff = np.sqrt(np.sum(diff_sq, axis=-1, keepdims=True))
+    if log_colors:
+        height, width, _ = flow_1.shape
+        colormap = [
+            [0, 0.0625, 49, 54, 149],
+            [0.0625, 0.125, 69, 117, 180],
+            [0.125, 0.25, 116, 173, 209],
+            [0.25, 0.5, 171, 217, 233],
+            [0.5, 1, 224, 243, 248],
+            [1, 2, 254, 224, 144],
+            [2, 4, 253, 174, 97],
+            [4, 8, 244, 109, 67],
+            [8, 16, 215, 48, 39],
+            [16, 1000000000.0, 165, 0, 38]]
+        colormap = np.asarray(colormap, dtype=np.float32)
+        colormap[:, 2:5] = colormap[:, 2:5] / 255
+        mag = np.sqrt(np.sum(np.square(flow_2), axis=-1, keepdims=True))
+        error = np.min(diff / 3, 20 * diff / mag)
+        im = np.zeros([height, width, 3])
+        for i in range(colormap.shape[0]):
+            colors = colormap[i, :]
+            cond = np.logical_and(np.greater_equal(error, colors[0]), np.less(error, colors[1]))
+            im = np.where(np.tile(cond, [1, 1, 1, 3]), np.ones([height, width, 1]) * colors[2:5], im)
+
+        im = np.where(np.tile(np.array(mask_noc, dtype=bool), [1, 1, 1, 3]), im, im * 0.5)
+        im = im * mask_occ
+    else:
+        error = (np.min(diff, 5) / 5) * mask_occ
+        im_r = error  # errors in occluded areas will be red
+        im_g = error * mask_noc
+        im_b = error * mask_noc
+        im = np.stack([im_r, im_g, im_b], axis=-1)
+    return im
 
 
 def evaluate_flow_file(gt, pred):

@@ -314,7 +314,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     lower_bound = fc_sparse_perc - step
                     upper_bound = fc_sparse_perc + step
                 elif dataset == 'sintel_all' or dataset == 'sintel_clean' or dataset == 'sintel_final':
-                    step = ft3d_sparse_perc / 2
+                    step = sintel_sparse_perc / 2
                     lower_bound = sintel_sparse_perc - step
                     upper_bound = sintel_sparse_perc + step
                 else:

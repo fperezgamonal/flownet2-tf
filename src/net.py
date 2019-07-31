@@ -291,7 +291,7 @@ class Net(object):
         # Scale from [0, 255] -> [0.0, 1.0] if needed
         if input_a.max() > 1.0:
             input_a = input_a / 255.0
-        if sparse_flow is not None and matches_a is not None:
+        if sparse_flow is not None and matches_a is not None and matches_a.max() > 1.0:
             matches_a = matches_a / 255.0
         else:
             if input_b.max() > 1.0:
