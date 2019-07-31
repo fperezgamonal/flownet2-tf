@@ -513,12 +513,20 @@ class Net(object):
             # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
             unique_name = os.path.basename(input_a_path)[:-4]
 
+            if compute_metrics and gt_flow is not None:
+                gt_flow = read_flow(gt_flow)
+                # Normalise predicted flow image by the maximum of the gt_flow so they can easily be compared
+                # (same saturation)
+                max_flow = np.max(gt_flow)
+            else:
+                max_flow = None
+
             if save_image or save_flo:
                 if not os.path.isdir(out_path):
                     os.makedirs(out_path)
 
             if save_image:
-                flow_img = flow_to_image(pred_flow)
+                flow_img = flow_to_image(pred_flow, maxflow=max_flow)
                 full_out_path = os.path.join(out_path, unique_name + '_viz.png')
                 imsave(full_out_path, flow_img)
 
@@ -527,7 +535,6 @@ class Net(object):
                 write_flow(pred_flow, full_out_path)
 
             if compute_metrics and gt_flow is not None:
-                gt_flow = read_flow(gt_flow)
                 if occ_mask is not None:
                     occ_mask = imread(occ_mask)
                 if inv_mask is not None:
@@ -713,6 +720,10 @@ class Net(object):
                     occ_mask_0 = imread(path_inputs[5])
                     inv_mask_0 = imread(path_inputs[6])
 
+                if compute_metrics and gt_flow_0 is not None:
+                    max_flow = np.max(gt_flow_0)
+                else:
+                    max_flow = None
                 # Convert all inputs to numpy arrays
                 if sparse_flow_0 is not None and matches_0 is not None and input_type == 'image_matches':
                     frame_0, matches_0, sparse_flow_0 = map(lambda x: np.array(x), [frame_0, matches_0, sparse_flow_0])
@@ -760,7 +771,7 @@ class Net(object):
                         os.makedirs(out_path_complete)
 
                 if save_image:
-                    flow_img = flow_to_image(predicted_flow_cropped)
+                    flow_img = flow_to_image(predicted_flow_cropped, maxflow=max_flow)
                     full_out_path = os.path.join(out_path_complete, unique_name + '_viz.png')
                     imsave(full_out_path, flow_img)
 
