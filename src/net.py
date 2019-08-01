@@ -542,7 +542,7 @@ class Net(object):
 
                 # Compute all metrics
                 metrics, _, _, _, _ = compute_all_metrics(pred_flow, gt_flow, occ_mask=occ_mask, inv_mask=inv_mask)
-                final_str_formated = get_metrics(metrics)
+                final_str_formated = get_metrics(metrics, flow_fname=unique_name)
                 print(final_str_formated)
 
     # TODO: double-check the number of columns of the txt file to ensure it is properly formatted
