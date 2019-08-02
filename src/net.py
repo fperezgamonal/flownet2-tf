@@ -331,13 +331,6 @@ class Net(object):
             pad_width = new_width - width_a
 
             padding = [(0, 0), (0, pad_height), (0, pad_width), (0, 0)]
-            # if self.mode == Mode.TRAIN:  # working with batches, adapt to match dimensions (batch, height, width, ch)
-            #     padding = [(0, 0), (0, pad_height), (0, pad_width), (0, 0)]
-            # elif self.mode == Mode.TEST:  # working with pair of images (for now there is no inference on whole batches)
-            #     # TODO: modify test.py so we can predict batches (much quicker for whole datasets) and simplify this!
-            #     padding = [(0, pad_height), (0, pad_width), (0, 0)]
-            # else:
-            #     padding = [(0, pad_height), (0, pad_width), (0, 0)]
 
             x_adapt_info = input_a.shape  # Save original shape
             input_a = np.pad(input_a, padding, mode='constant', constant_values=0.)
@@ -517,7 +510,7 @@ class Net(object):
                 gt_flow = read_flow(gt_flow)
                 # Normalise predicted flow image by the maximum of the gt_flow so they can easily be compared
                 # (same saturation)
-                max_flow = np.max(gt_flow)
+                max_flow = np.max(np.sqrt(gt_flow[:, :, 0] ** 2 + gt_flow[:, :, 1] ** 2))   # max velocity for gt
             else:
                 max_flow = None
 
