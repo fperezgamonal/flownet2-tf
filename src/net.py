@@ -518,10 +518,12 @@ class Net(object):
                 if not os.path.isdir(out_path):
                     os.makedirs(out_path)
 
-            if save_image:
-                flow_img = flow_to_image(pred_flow, maxflow=max_flow)
-                full_out_path = os.path.join(out_path, unique_name + '_viz.png')
+            if save_image:  # save normalised and unormalised versions (awful results may be clipped to some colour)
+                flow_img = flow_to_image(pred_flow)
+                flow_img_norm = flow_to_image(pred_flow, maxflow=max_flow)
+                full_out_path = os.path.join(pred_flow, unique_name + '_viz.png')
                 imsave(full_out_path, flow_img)
+                imsave(full_out_path.replace('.png', '_norm_gt_max_motion.png'), flow_img_norm)
 
             if save_flo:
                 full_out_path = os.path.join(out_path, unique_name + '_flow.flo')
@@ -763,10 +765,12 @@ class Net(object):
                     if not os.path.isdir(out_path_complete):
                         os.makedirs(out_path_complete)
 
-                if save_image:
-                    flow_img = flow_to_image(predicted_flow_cropped, maxflow=max_flow)
+                if save_image:  # save normalised and unormalised versions (awful results may be clipped to some colour)
+                    flow_img = flow_to_image(predicted_flow_cropped)
+                    flow_img_norm = flow_to_image(predicted_flow_cropped, maxflow=max_flow)
                     full_out_path = os.path.join(out_path_complete, unique_name + '_viz.png')
                     imsave(full_out_path, flow_img)
+                    imsave(full_out_path.replace('.png', '_norm_gt_max_motion.png'), flow_img_norm)
 
                 if save_flo:
                     full_out_path = os.path.join(out_path_complete, unique_name + '_flow.flo')
