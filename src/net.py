@@ -955,7 +955,7 @@ class Net(object):
                 # Initialise checkpoint for stacked nets with the global step as the number of the outermost net
                 step_number = int(checkpoint_path.split('-')[-1])
                 checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
-                                                            dtype='int64')
+                                                            dtype=tf.int64)
             # TODO: adapt resuming from saver to stacked architectures
             elif isinstance(checkpoints, str):
                 checkpoint_path = checkpoints
@@ -966,15 +966,15 @@ class Net(object):
                         print("Found step number: {}".format(step_number))
 
                     checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
-                                                                dtype='int64')
+                                                                dtype=tf.int64)
                 else:
                     if log_verbosity > 1:
                         print("Defining global step as 0 (reset_global_step = True)")
-                    checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype='int64')
+                    checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64)
             else:
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
         else:
-            checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype='int64')
+            checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64)
 
         # max_steps overrides max_iter which is configured in training_schedules.py
         if 'max_steps' in train_params_dict:
@@ -1297,7 +1297,7 @@ class Net(object):
                 # Initialise checkpoint for stacked nets with the global step as the number of the outermost net
                 step_number = int(os.path.basename(checkpoint_path).split('-')[-1])
                 checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
-                                                            dtype='int64')
+                                                            dtype=tf.int64)
                 # TODO: adapt resuming from saver to stacked architectures
                 saver = None
             # TODO: double-check but it seems that if we remove the last checkpoint and keep and older point this fails

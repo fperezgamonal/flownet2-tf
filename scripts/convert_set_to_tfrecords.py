@@ -13,7 +13,7 @@ FLAGS = None
 TRAIN = 1
 VAL = 2
 # Any other value means that some image is not used for a reason (e.g.: in FlyingThings3D, complicated examples)
-DEBUG = True  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
+DEBUG = False  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
 
 # DM sparsness (in % of not 0 pixels in sparse mask) computed in FC, FT3D and Sintel (training parts)
 fc_sparse_perc = 0.267129
@@ -586,12 +586,12 @@ def main():
 
     # Actual conversion
     print("Generating TFRecords...")
-    if FLAGS.specify_split == 'train':  # only create train split
+    if FLAGS.specify_split.lower() == 'train':  # only create train split
         print("Current split: {}".format(train_name))
         convert_dataset(train_idxs, train_name, matcher=FLAGS.matcher, dataset=set_name,
                         sparse_from_gt=FLAGS.sparse_flow_from_gt)
 
-    elif FLAGS.specify_split == 'val':  # only create validation split
+    elif FLAGS.specify_split.lower() == 'val':  # only create validation split
         print("Current split: {}".format(val_name))
         convert_dataset(val_idxs, val_name, matcher=FLAGS.matcher, dataset=set_name,
                         sparse_from_gt=FLAGS.sparse_flow_from_gt)
