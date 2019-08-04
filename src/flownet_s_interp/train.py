@@ -9,8 +9,11 @@ def main():
     # Create a new network
     net = FlowNetS_interp(no_deconv_biases=FLAGS.no_deconv_biases)
     if FLAGS.checkpoint is not None and FLAGS.checkpoint:  # the second checks if the string is NOT empty
+        print("Checkpoint path is NOT empty, parsing it...")
+        print("ckpt_path: {}".format(FLAGS.checkpoint))
         checkpoints = FLAGS.checkpoint  # we want to define it as a string (only one checkpoint to load)
     else:
+        print("Checkpoint IS empty, will train from scratch!")
         checkpoints = None  # double-check None
 
     # initialise range test values (exponentially/linearly increasing lr to be tested)

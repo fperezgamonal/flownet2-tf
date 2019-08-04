@@ -135,7 +135,7 @@ def __get_dataset(dataset_config, split_name, input_type='image_pairs'):
                     channels=2),
                 'edges_a': Image(
                     image_key='edges_a',
-                    dtype=tf.float64,
+                    dtype=tf.float32,
                     shape=[image_height, image_width, 1],
                     channels=1),
                 'flow': Image(

@@ -263,6 +263,7 @@ class Net(object):
             new_width = og_width
         return new_height, new_width
 
+    # Not used any longer
     def numpy2tensor(self, input_a, input_b, matches_a, sparse_flow, input_type='image_pairs'):
         if input_type == 'image_matches':
             input_a, matches_a, sparse_flow = map(lambda x: tf.convert_to_tensor(x), [input_a, matches_a, sparse_flow])

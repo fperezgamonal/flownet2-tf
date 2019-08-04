@@ -13,7 +13,7 @@ FLAGS = None
 TRAIN = 1
 VAL = 2
 # Any other value means that some image is not used for a reason (e.g.: in FlyingThings3D, complicated examples)
-DEBUG = False  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
+DEBUG = True  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
 
 # DM sparsness (in % of not 0 pixels in sparse mask) computed in FC, FT3D and Sintel (training parts)
 fc_sparse_perc = 0.267129
@@ -93,7 +93,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
     writeOpts = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.ZLIB)
     with tf.python_io.TFRecordWriter(filename, options=writeOpts) as writer:
 
-        # Load each data sample (image_a, image_b, matches_a, sparse_flow, flow) and write it to the TFRecord
+        # Load each data sample (image_a, image_b, matches_a, edges_a, sparse_flow, flow) and write it to the TFRecord
         count = 0
         pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=len(indices)).start()
         # Define data dir source depending on the split_name
@@ -109,7 +109,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 image_a_path = os.path.join(data_dir, '{0:05d}_img1.png'.format(i + 1))
                 image_b_path = os.path.join(data_dir, '{0:05d}_img2.png'.format(i + 1))
                 flow_path = os.path.join(data_dir, '{0:05d}_flow.flo'.format(i + 1))
-                if sparse_from_gt is not None:
+                if sparse_from_gt is None:  # use DM/SIFT seeds directly instead of sampling GT flow
                     if matcher == 'sift':
                         matches_a_path = os.path.join(data_dir, '{0:05d}_img1_sift_mask.png'.format(i + 1))
                         sparse_flow_path = os.path.join(data_dir, '{0:05d}_img1_sift_sparse_flow.flo'.format(i + 1))
@@ -119,6 +119,9 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     # add more matchers if need be (more elif's)
                     else:
                         raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                else:
+                    matches_a_path = None
+                    sparse_flow_path = None
 
             elif dataset == 'flying_things3D':
                 """
@@ -132,7 +135,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 image_a_path = os.path.join(data_dir, '{0:07d}.png'.format(i))
                 image_b_path = os.path.join(data_dir, '{0:07d}.png'.format(i + 1))
                 flow_path = os.path.join(data_dir, '{0:07d}.flo'.format(i))
-                if sparse_from_gt is not None:
+                if sparse_from_gt is None:  # use DM/SIFT seeds directly instead of sampling GT flow
                     if matcher == 'sift':
                         matches_a_path = os.path.join(data_dir, '{0:07d}_sift_mask.png'.format(i))
                         sparse_flow_path = os.path.join(data_dir, '{0:07d}_sift_sparse_flow.flo'.format(i))
@@ -142,6 +145,9 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     # add more matchers if need be (more elif's)
                     else:
                         raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                else:
+                    matches_a_path = None
+                    sparse_flow_path = None
 
             elif dataset == 'sintel_clean':
                 target_height = 436
@@ -150,7 +156,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
                 image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
                 flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.flo'.format(i+1))
-                if sparse_from_gt is not None:
+                if sparse_from_gt is None:  # use DM/SIFT seeds directly instead of sampling GT flow
                     if matcher == 'sift':
                         matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_sift_mask.png'.format(i+1))
                         sparse_flow_path = os.path.join(data_dir, pass_dir,
@@ -161,6 +167,9 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                                                         'frame_{0:04d}_dm_sparse_flow.flo'.format(i+1))
                     else:
                         raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                else:
+                    matches_a_path = None
+                    sparse_flow_path = None
 
             elif dataset == 'sintel_final':
                 target_height = 436
@@ -169,7 +178,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
                 image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
                 flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.flo'.format(i+1))
-                if sparse_from_gt is not None:
+                if sparse_from_gt is None:  # use DM/SIFT seeds directly instead of sampling GT flow
                     if matcher == 'sift':
                         matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_sift_mask.png'.format(i+1))
                         sparse_flow_path = os.path.join(data_dir, pass_dir,
@@ -180,6 +189,10 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                                                         'frame_{0:04d}_dm_sparse_flow.flo'.format(i+1))
                     else:
                         raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                else:
+                    matches_a_path = None
+                    sparse_flow_path = None
+
             elif dataset == 'sintel_all':
                 target_height = 436
                 target_width = 1024
@@ -188,7 +201,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i+2))
                 flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i+1))
                 edges_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}_edges.dat'.format(i + 1))
-                if sparse_from_gt is not None:
+                if sparse_from_gt is None:  # use DM/SIFT seeds directly instead of sampling GT flow
                     if matcher == 'sift':
                         matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}_sift_mask.png'.format(i+1))
                         sparse_flow_path = os.path.join(data_dir, pass_dir,
@@ -199,6 +212,10 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                                                         'frame_{0:05d}_dm_sparse_flow.flo'.format(i+1))
                     else:
                         raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                else:
+                    matches_a_path = None
+                    sparse_flow_path = None
+
             elif dataset == 'fc_sintel':
                 if 'train' in split_name:
                     target_height = 384
@@ -207,7 +224,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     image_b_path = os.path.join(data_dir, '{0:05d}_img2.png'.format(i + 1))
                     flow_path = os.path.join(data_dir, '{0:05d}_flow.flo'.format(i + 1))
                     edges_path = os.path.join(data_dir, '{0:05d}_img1_edges.dat'.format(i + 1))
-                    if sparse_from_gt is not None:
+                    if sparse_from_gt is None:  # use DM/SIFT seeds directly instead of sampling GT flow
                         if matcher == 'sift':
                             matches_a_path = os.path.join(data_dir, '{0:05d}_img1_sift_mask.png'.format(i + 1))
                             sparse_flow_path = os.path.join(data_dir,
@@ -218,6 +235,9 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                         # add more matchers if need be (more elif's)
                         else:
                             raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                    else:
+                        matches_a_path = None
+                        sparse_flow_path = None
 
                 elif 'val' in split_name:
                     target_height = 436
@@ -227,7 +247,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 2))
                     flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i + 1))
                     edges_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}_edges.dat'.format(i + 1))
-                    if sparse_from_gt is not None:
+                    if sparse_from_gt is None:  # use DM/SIFT seeds directly instead of sampling GT flow
                         if matcher == 'sift':
                             matches_a_path = os.path.join(data_dir, pass_dir,
                                                           'frame_{0:05d}_sift_mask.png'.format(i + 1))
@@ -240,6 +260,9 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                                                             'frame_{0:05d}_dm_sparse_flow.flo'.format(i + 1))
                         else:
                             raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                    else:
+                        matches_a_path = None
+                        sparse_flow_path = None
                 else:
                     raise ValueError("Invalid split name ('train' (training) or 'val' (validation)")
 
@@ -251,7 +274,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     image_b_path = os.path.join(data_dir, '{0:07d}.png'.format(i + 1))
                     flow_path = os.path.join(data_dir, '{0:07d}.flo'.format(i))
                     edges_path = os.path.join(data_dir, '{0:07d}_edges.dat'.format(i))
-                    if sparse_from_gt is not None:
+                    if sparse_from_gt is None:  # use DM/SIFT seeds directly instead of sampling GT flow
                         if matcher == 'sift':
                             matches_a_path = os.path.join(data_dir, '{0:07d}_sift_mask.png'.format(i))
                             sparse_flow_path = os.path.join(data_dir, '{0:07d}_sift_sparse_flow.flo'.format(i))
@@ -261,6 +284,9 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                         # add more matchers if need be (more elif's)
                         else:
                             raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                    else:
+                        matches_a_path = None
+                        sparse_flow_path = None
 
                 elif 'val' in split_name:
                     target_height = 436
@@ -270,7 +296,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 2))
                     flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i + 1))
                     edges_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}_edges.dat'.format(i + 1))
-                    if sparse_from_gt is not None:
+                    if sparse_from_gt is None:  # use DM/SIFT seeds directly instead of sampling GT flow
                         if matcher == 'sift':
                             matches_a_path = os.path.join(data_dir, pass_dir,
                                                           'frame_{0:05d}_sift_mask.png'.format(i + 1))
@@ -283,6 +309,9 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                                                             'frame_{0:05d}_dm_sparse_flow.flo'.format(i + 1))
                         else:
                             raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                    else:
+                        matches_a_path = None
+                        sparse_flow_path = None
                 else:
                     raise ValueError("Invalid split name ('train' (training) or 'val' (validation)")
 
@@ -340,7 +369,9 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 if DEBUG:
                     print("Sparse flow should have be of the same type as flow")
                     print("sparse_flow.dtype: {}, flow.dtype: {}".format(sparse_flow.dtype, flow.dtype))
-
+                assert sparse_flow.dtype == flow.dtype, "Sparse flow should have be of the same type as flow" \
+                                                        " (float32) but are: '{}' and '{}', respectively" \
+                                                        "".format(sparse_flow.dtype, flow.dtype)
             else:
                 matches_a = imread(matches_a_path)
                 # Add new axis to mask so it has shape: (height x width x num_channels)
@@ -425,9 +456,9 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 print("img_a: {0}\nimg_b: {1}\nmch_a: {2}\nedg_a: {3}".format(image_a.shape, image_b.shape,
                                                                               matches_a.shape, edges_a.shape))
                 print("img_a has range: ({}, {})".format(np.min(image_a), np.max(image_a)))
-                print("matches_a has range: ({}, {})".format(np.min(matches_a), np.max(matches_a)))
-                print("img_b has range: ({}, {})".format(np.min(image_b), np.max(image_b)))
-                print("edges_a has range: ({}, {})".format(np.min(edges_a), np.max(edges_a)))
+                print("matches_a has range: ({}, {}) target: within (0-1)".format(np.min(matches_a), np.max(matches_a)))
+                print("img_b has range: ({}, {}) target: within (0-1)".format(np.min(image_b), np.max(image_b)))
+                print("edges_a has range: ({}, {}) target: within (0-1)".format(np.min(edges_a), np.max(edges_a)))
 
             image_a_raw = image_a.tostring()
             image_b_raw = image_b.tostring()
@@ -444,14 +475,18 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 ("Fatal: both flows should have matching dimensions but instead have: out_flow.shape: {0},"
                  " sparse_flow: {1}".format(flow.shape, sparse_flow.shape))
 
-            assert flow_ch == 2, ("Expected flow field to have 2 channels (horizontal + vertical) but it has: "
+            assert flow_ch == 2, ("Expected gt flow field to have 2 channels (horizontal + vertical) but it has: "
                                   "{0}".format(flow_ch))
+            assert sparse_ch == 2, ("Expected sparse flow field to have 2 channels (horizontal + vertical) but it has: "
+                                    "{0}".format(sparse_ch))
 
             if DEBUG:
                 print("OG shapes before padding (flows): ")
                 print("sparse_flow: {0}\nflow: {1}".format(sparse_flow.shape, flow.shape))
                 print("sparse_flow has range: ({}, {})".format(np.min(sparse_flow), np.max(sparse_flow)))
                 print("and after normalisation: ({}, {})".format(np.min(sparse_flow)/20, np.max(sparse_flow)/20))
+                print("gt_flow has range: ({}, {})".format(np.min(flow), np.max(flow)))
+                print("and after normalisation: ({}, {})".format(np.min(flow) / 20, np.max(flow) / 20))
 
             # Pad if necessary (like above or to be more precise like 'apply_y' (net.py))
             if flow_height % divisor != 0 or flow_width % divisor != 0:
