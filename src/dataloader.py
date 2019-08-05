@@ -373,28 +373,6 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                                                                       [image_a, matches_a, sparse_flow, edges_a, flow])
             # image_as, matches_as, sparse_flows, flows = map(lambda x: tf.expand_dims(x, 0),
             #                                                           [image_a, matches_a, sparse_flow, flow])
-            print ("(dataloader.py): printing tensor shape before batching, should be (1, height, width, n_ch)")
-            print("(dataloader.py): image_as.shape: ({}, {}, {}, {})".format(image_as.shape[0].value,
-                                                                             image_as.shape[1].value,
-                                                                             image_as.shape[2].value,
-                                                                             image_as.shape[3].value))
-            print("(dataloader.py): matches_as.shape: ({}, {}, {}, {})".format(matches_as.shape[0].value,
-                                                                               matches_as.shape[1].value,
-                                                                               matches_as.shape[2].value,
-                                                                               matches_as.shape[3].value))
-            print("(dataloader.py): sparse_flows.shape: ({}, {}, {}, {})".format(sparse_flows.shape[0].value,
-                                                                                 sparse_flows.shape[1].value,
-                                                                                 sparse_flows.shape[2].value,
-                                                                                 sparse_flows.shape[3].value))
-            print("(dataloader.py): edges_as.shape: ({}, {}, {}, {})".format(edges_as.shape[0].value,
-                                                                             edges_as.shape[1].value,
-                                                                             edges_as.shape[2].value,
-                                                                             edges_as.shape[3].value))
-            print("(dataloader.py): flows.shape: ({}, {}, {}, {})".format(flows.shape[0].value,
-                                                                          flows.shape[1].value,
-                                                                          flows.shape[2].value,
-                                                                          flows.shape[3].value))
-
         else:
             matches_as = None
             sparse_flows = None
