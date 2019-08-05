@@ -125,9 +125,12 @@ class FlowNetS_interp(Net):
 
                     flow = predict_flow2 * 20.0
                     # TODO: Look at Accum (train) or Resample (deploy) to see if we need to do something different
-                    flow = tf.image.resize_bilinear(flow,
-                                                    tf.stack([height, width]),
-                                                    align_corners=True)
+                    # TODO: should use TF2.0 compat version as this has a bug
+                    # bug: asymmetrical padding ==> see:
+                    # https://stackoverflow.com/questions/50591669/tf-image-resize-bilinear-vs-cv2-resize/50611485#50611485
+                    # Not too bad if we add the flag: half_pixel_centers=True
+                    flow = tf.image.resize_bilinear(flow, tf.stack([height, width]), align_corners=True,)
+                    # half_pixel_centers=True) ==> cluster version 1.12 does not have it (added on TF 1.13)
 
                     return {
                         'predict_flow6': predict_flow6,

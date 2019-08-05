@@ -541,7 +541,7 @@ def flow_to_image(flow, maxflow=-1):
 
 # Converted from tensorflow (used 'inside' training code with sess.run()) to numpy
 # Source at: https://github.com/ppliuboy/SelFlow/blob/master/flowlib.py
-def flow_to_color(flow, mask=None, max_flow=None):
+def flow_to_color(flow, mask=None, max_flow=-1):
     """Converts flow to 3-channel color image.
     Args:
         :param flow: numpy array of shape [height, width, 2].
@@ -553,7 +553,7 @@ def flow_to_color(flow, mask=None, max_flow=None):
     height, width, _ = flow.shape
     mask = np.ones([height, width, 1]) if mask is None else mask
     flow_u, flow_v = flow[:, :, 0], flow[:, :, 1]
-    if max_flow is not None:
+    if max_flow > 0:
         max_flow = np.max((max_flow, 1.))
     else:
         max_flow = np.max(np.abs(flow * mask))

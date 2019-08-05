@@ -4,7 +4,9 @@ import numpy as np
 
 # From: https://github.com/ppliuboy/SelFlow/blob/master/data_augmentation.py
 # All rights to its rightful owner(s)
-# TODO: ppliuboy uses tf.slim like us but does not use tf.batch and feeds lists of images (adapt to fix our broken DA)
+# TODO: ppliuboy uses tf.slim like us and feeds lists of images (we feed tensors before batching)
+# Adapt to fix the Cuda-broken D.A (see issues: https://github.com/sampepose/flownet2-tf/issues/14,
+#                                   https://github.com/sampepose/flownet2-tf/issues/30
 def random_crop(img_list, crop_h, crop_w):
     img_size = tf.shape(img_list[0])
     # crop image and flow

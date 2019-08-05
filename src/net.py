@@ -513,7 +513,7 @@ class Net(object):
                 # (same saturation)
                 max_flow = np.max(np.sqrt(gt_flow[:, :, 0] ** 2 + gt_flow[:, :, 1] ** 2))   # max velocity for gt
             else:
-                max_flow = None
+                max_flow = -1
 
             if save_image or save_flo:
                 if not os.path.isdir(out_path):
@@ -719,7 +719,7 @@ class Net(object):
                 if compute_metrics and gt_flow_0 is not None:
                     max_flow = np.max(gt_flow_0)
                 else:
-                    max_flow = None
+                    max_flow = -1
                 # Convert all inputs to numpy arrays
                 if sparse_flow_0 is not None and matches_0 is not None and input_type == 'image_matches':
                     frame_0, matches_0, sparse_flow_0 = map(lambda x: np.array(x), [frame_0, matches_0, sparse_flow_0])

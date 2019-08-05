@@ -379,6 +379,10 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             edges_as = None
             image_as, image_bs, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b, flow])
 
+        # Data Augmentation
+
+
+
         #
         # Perform data augmentation on GPU  fperezgamonal: typo, it does not work on the GPU, only on the CPU!
         # TODO: despite not reporting segmentation fault, the process is killed when data_augmentation is added. Test:
