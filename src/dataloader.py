@@ -9,10 +9,21 @@ from .dataset_configs import FLYING_CHAIRS_ALL_DATASET_CONFIG, SINTEL_FINAL_ALL_
     FT3D_TRAIN_SINTEL_VAL_DATASET_CONFIG, FLYING_CHAIRS_MINI_DATASET_CONFIG, FT3D_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG,\
     FC_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG, FLYING_THINGS_3D_MINI_DATASET_CONFIG, SINTEL_MINI_DATASET_CONFIG, \
     ALLEY_MINI_DATASET_CONFIG
+from src.data_augmentation import *
 
 _preprocessing_ops = tf.load_op_library(
     tf.resource_loader.get_path_to_datafile("./ops/build/preprocessing.so"))
 
+
+# Code modified from the following repos:
+#   * https://github.com/ppliuboy/DDFlow/blob/master/datasets.py
+def augment_image_pair(img1, img2, crop_h, crop_w):
+    img1, img2 = random_crop([img1, img2], crop_h, crop_w)
+    img1, img2 = random_flip([img1, img2])
+    img1, img2 = random_channel_swap([img1, img2])
+    return img1, img2
+
+# TODO: Add augment_all to transform matches, sparse flow and gt_flow accordingly
 
 # https://github.com/tensorflow/tensorflow/blob/master/tensorflow/contrib/slim/python/slim/data/tfexample_decoder.py
 class Image(slim.tfexample_decoder.ItemHandler):

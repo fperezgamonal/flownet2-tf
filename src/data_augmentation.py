@@ -2,11 +2,15 @@ import tensorflow as tf
 import numpy as np
 
 
-# From: https://github.com/ppliuboy/SelFlow/blob/master/data_augmentation.py
-# All rights to its rightful owner(s)
-# TODO: ppliuboy uses tf.slim like us and feeds lists of images (we feed tensors before batching)
-# Adapt to fix the Cuda-broken D.A (see issues: https://github.com/sampepose/flownet2-tf/issues/14,
-#                                   https://github.com/sampepose/flownet2-tf/issues/30
+# Code from the following repos:
+#   * https://github.com/ppliuboy/SelFlow/blob/master/data_augmentation.py
+# All rights go to its rightful owner(s)
+# TODO: Adapt to fix the Cuda-broken Data Augmentation
+#   * see issues: https://github.com/sampepose/flownet2-tf/issues/14, https://github.com/sampepose/flownet2-tf/issues/30
+# Changes to apply:
+#   - Probably none or almost none (i.e.: test as is and fix any bugs that may occur)
+
+
 def random_crop(img_list, crop_h, crop_w):
     img_size = tf.shape(img_list[0])
     # crop image and flow
@@ -74,7 +78,8 @@ def random_channel_swap(img_list):
 
 def flow_resize(flow, out_size, is_scale=True, method=0):
     """
-        method: 0 mean bilinear, 1 means nearest
+        method: 0 mean bilinear, 1 means nearest, 2 bicubic and 3 area
+        See: https://www.tensorflow.org/api_docs/python/tf/image/ResizeMethod
     """
     flow_size = tf.to_float(tf.shape(flow)[-3:-1])
     flow = tf.image.resize_images(flow, out_size, method=method, align_corners=True)
