@@ -109,6 +109,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 image_a_path = os.path.join(data_dir, '{0:05d}_img1.png'.format(i + 1))
                 image_b_path = os.path.join(data_dir, '{0:05d}_img2.png'.format(i + 1))
                 flow_path = os.path.join(data_dir, '{0:05d}_flow.flo'.format(i + 1))
+                edges_path = os.path.join(data_dir, '{0:05d}_img1_edges.dat'.format(i + 1))
                 if sparse_from_gt is None:  # use DM/SIFT seeds directly instead of sampling GT flow
                     if matcher == 'sift':
                         matches_a_path = os.path.join(data_dir, '{0:05d}_img1_sift_mask.png'.format(i + 1))
@@ -135,6 +136,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 image_a_path = os.path.join(data_dir, '{0:07d}.png'.format(i))
                 image_b_path = os.path.join(data_dir, '{0:07d}.png'.format(i + 1))
                 flow_path = os.path.join(data_dir, '{0:07d}.flo'.format(i))
+                edges_path = os.path.join(data_dir, '{0:07d}_edges.dat'.format(i))
                 if sparse_from_gt is None:  # use DM/SIFT seeds directly instead of sampling GT flow
                     if matcher == 'sift':
                         matches_a_path = os.path.join(data_dir, '{0:07d}_sift_mask.png'.format(i))
@@ -156,6 +158,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
                 image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
                 flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.flo'.format(i+1))
+                edges_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}_edges.dat'.format(i + 1))
                 if sparse_from_gt is None:  # use DM/SIFT seeds directly instead of sampling GT flow
                     if matcher == 'sift':
                         matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_sift_mask.png'.format(i+1))
@@ -178,6 +181,7 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
                 image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
                 flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.flo'.format(i+1))
+                edges_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}_edges.dat'.format(i + 1))
                 if sparse_from_gt is None:  # use DM/SIFT seeds directly instead of sampling GT flow
                     if matcher == 'sift':
                         matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_sift_mask.png'.format(i+1))
