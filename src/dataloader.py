@@ -23,7 +23,23 @@ def augment_image_pair(img1, img2, crop_h, crop_w):
     img1, img2 = random_channel_swap([img1, img2])
     return img1, img2
 
-# TODO: Add augment_all to transform matches, sparse flow and gt_flow accordingly
+
+# TODO: Add augment_all to transform matches, sparse flow and gt_flow accordingly (unsupervised ==> supervised)
+def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop_w):
+    image, matches, sparse_flow, edges, gt_flow = random_crop([image, matches, sparse_flow, edges, gt_flow], crop_h,
+                                                              crop_w)
+    [image, matches, edges], [sparse_flow, gt_flow] = random_flip_with_flow([image, matches, edges], [sparse_flow,
+                                                                                                      gt_flow])
+    image, matches, edges = random_channel_swap([image, matches, edges])  # only for 'image-like' inputs (not flow)
+    return image, matches, sparse_flow, edges, gt_flow
+
+
+def augment_all_estimation(image1, image2, gt_flow, crop_h, crop_w):
+    image, image2, gt_flow = random_crop([image1, image2, gt_flow], crop_h, crop_w)
+    [image1, image2], gt_flow = random_flip_with_flow([image1, image2], gt_flow)
+    image1, image2 = random_channel_swap([image1, image2])  # only for 'image-like' inputs (not flow)
+    return image1, image2, gt_flow
+
 
 # https://github.com/tensorflow/tensorflow/blob/master/tensorflow/contrib/slim/python/slim/data/tfexample_decoder.py
 class Image(slim.tfexample_decoder.ItemHandler):
@@ -295,7 +311,7 @@ def _generate_coeff(param, discount_coeff=tf.constant(1.0), default_value=tf.con
 # TODO: fix bug with data augmentation
 def load_batch(dataset_config_str, split_name, global_step=None, input_type='image_pairs', common_queue_capacity=64,
                common_queue_min=32, capacity_in_batches_train=4, capacity_in_batches_val=1, num_threads=8,
-               batch_size=None):
+               batch_size=None, data_augmentation=True):
 
     if dataset_config_str.lower() == 'flying_things3d':
         dataset_config = FLYING_THINGS_3D_ALL_DATASET_CONFIG
@@ -342,28 +358,20 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             image_b = None
             image_a, matches_a, sparse_flow, edges_a, flow = data_provider.get(['image_a', 'matches_a', 'sparse_flow',
                                                                                 'edges_a', 'flow'])
-            # image_a, matches_a, sparse_flow, flow = data_provider.get(['image_a', 'matches_a', 'sparse_flow',
-            #                                                            'flow'])
-            # tensors are already of type float (redundant conversion), remove when everything is tested
-            # image_a, matches_a, sparse_flow, flow = map(tf.to_float, [image_a, matches_a, sparse_flow, flow])
-            # image_a, matches_a = map(tf.to_float, [image_a, matches_a])
 
             image_a, matches_a, edges_a = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a, matches_a, edges_a])
-            # image_a, matches_a = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a, matches_a])
         else:
             matches_a = None
             sparse_flow = None
             edges_a = None
             image_a, image_b, flow = data_provider.get(['image_a', 'image_b', 'flow'])
-            # tensors are already of type float (redundant conversion), remove when everything is tested
-            # image_a, image_b, flow = map(tf.to_float, [image_a, image_b, flow])
-            # Need all to be float32 for certain operations (flow is already of type float32)
-            # image_a, image_b = map(tf.to_float, [image_a, image_b])
             image_a, image_b = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a, image_b])
 
-        if dataset_config['PREPROCESS']['scale']:
+        if dataset_config['PREPROCESS']['scale']:  # if record data has not been scaled, 'scale' should be True
             image_a = image_a / 255.0
-            if not input_type == 'image_matches':
+            if input_type == 'image_matches':  # Note: we assume edges_a to be in the range [0,1] in both cases
+                matches_a = matches_a / 255.0
+            else:
                 image_b = image_b / 255.0
 
         if dataset_config_str.lower() == 'fc_sintel' or dataset_config_str.lower() == 'ft3d_sintel':
@@ -375,26 +383,29 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                         dataset_config['PREPROCESS']['crop_width'][1]]
             else:
                 raise ValueError("FATAL: unexpected 'split_name'. Must be either 'train' or 'valid'")
-        config_a = config_to_arrays(dataset_config['PREPROCESS']['image_a'])
-        config_b = config_to_arrays(dataset_config['PREPROCESS']['image_b'])
-
+        # config_a = config_to_arrays(dataset_config['PREPROCESS']['image_a'])
+        # config_b = config_to_arrays(dataset_config['PREPROCESS']['image_b'])
+        # Data Augmentation
         if input_type == 'image_matches':
             image_bs = None
             image_as, matches_as, sparse_flows, edges_as, flows = map(lambda x: tf.expand_dims(x, 0),
                                                                       [image_a, matches_a, sparse_flow, edges_a, flow])
-            # image_as, matches_as, sparse_flows, flows = map(lambda x: tf.expand_dims(x, 0),
-            #                                                           [image_a, matches_a, sparse_flow, flow])
+            if data_augmentation:
+                print("(image_matches) Applying data augmentation...")  # temporally to debug
+                image_as, matches_as, sparse_flows, edges_as, flows = augment_all_interp(
+                    image_as, matches_as, sparse_flows, edges_as, flows, crop_h=crop[0], crop_w=crop[1])
+
         else:
             matches_as = None
             sparse_flows = None
             edges_as = None
             image_as, image_bs, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b, flow])
+            if data_augmentation:
+                print("(image_pairs) Applying data augmentation...")  # temporally to debug
+                image_as, image_bs, flows = augment_all_estimation(image_as, image_bs, flows, crop_h=crop[0],
+                                                                   crop_w=crop[1])
 
-        # Data Augmentation
-
-
-
-        #
+        #  ====================== OLD, BROKEN DATA AUGMENTATION ==> REMOVE ONCE THE ABOVE WORKS ========================
         # Perform data augmentation on GPU  fperezgamonal: typo, it does not work on the GPU, only on the CPU!
         # TODO: despite not reporting segmentation fault, the process is killed when data_augmentation is added. Test:
         #   - See if it works in GPU (more memory)
@@ -472,6 +483,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
         #     # Perform flow augmentation using spatial parameters from data augmentation
         #     flows = _preprocessing_ops.flow_augmentation(
         #         flows, transforms_from_a, transforms_from_b, crop)
+        # ==============================================================================================================
 
         if input_type == 'image_matches':
             print("(dataloader.py): input_type is 'image_matches'; split is '{}'".format(split_name))
