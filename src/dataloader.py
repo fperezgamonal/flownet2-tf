@@ -390,8 +390,9 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             image_bs = None
             image_as, matches_as, sparse_flows, edges_as, flows = map(lambda x: tf.expand_dims(x, 0),
                                                                       [image_a, matches_a, sparse_flow, edges_a, flow])
-            if data_augmentation:
+            if data_augmentation and split_name == 'train':
                 print("(image_matches) Applying data augmentation...")  # temporally to debug
+                print("only on training images with shape: {}".format(image_as.shape))
                 image_as, matches_as, sparse_flows, edges_as, flows = augment_all_interp(
                     image_as, matches_as, sparse_flows, edges_as, flows, crop_h=crop[0], crop_w=crop[1])
 
@@ -400,7 +401,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             sparse_flows = None
             edges_as = None
             image_as, image_bs, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b, flow])
-            if data_augmentation:
+            if data_augmentation and split_name == 'train':
                 print("(image_pairs) Applying data augmentation...")  # temporally to debug
                 image_as, image_bs, flows = augment_all_estimation(image_as, image_bs, flows, crop_h=crop[0],
                                                                    crop_w=crop[1])

@@ -441,6 +441,16 @@ if __name__ == '__main__':
         help='integer that specifies the batch size',
         default=None,
     )
+    # ==== Data augmentation ====
+    parser.add_argument(
+        '--data_augmentation',
+        type=str2bool,
+        nargs='?',
+        required=False,
+        help='Whether to use data augmentation in training ',
+        default=True,
+    )
+
     # ==== Losses =====
     # Add Hard Flow Example Mining params
     parser.add_argument(
@@ -460,7 +470,7 @@ if __name__ == '__main__':
         help='If we use HFEM, relative weight of the added loss (i.e.: AEPE + lambda * HFEM_AEPE).'
              'This weight changes for SED edges as they are in the range [0, 1] and one may need to increase this value'
              'to consider most edges and not only the hardest ones',
-        default=2
+        default=2.0
     )
     parser.add_argument(
         '--hfem_perc_hard',
