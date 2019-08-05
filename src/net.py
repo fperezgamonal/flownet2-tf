@@ -978,9 +978,10 @@ class Net(object):
 
         # max_steps overrides max_iter which is configured in training_schedules.py
         if 'max_steps' in train_params_dict:
-            training_schedule['max_iters'] = train_params_dict['max_steps']
-            print("Overwritten default value of max_iters={} by user-inputted={}".format(
-                training_schedule['max_iters'], train_params_dict['max_steps']))
+            if train_params_dict['max_steps'] > 0:
+                training_schedule['max_iters'] = train_params_dict['max_steps']
+                print("Overwritten default value of max_iters={} by user-inputted={}".format(
+                    training_schedule['max_iters'], train_params_dict['max_steps']))
 
         if lr_range_test:  # learning rate range test to bound max/min optimal learning rate (2015, Leslie N. Smith)
             if lr_range_test is not None:  # use the input params

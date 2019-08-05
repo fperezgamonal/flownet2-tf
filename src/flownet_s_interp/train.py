@@ -430,7 +430,7 @@ if __name__ == '__main__':
         type=float,
         required=False,
         help='If > 0, clip gradient norms by this value (to mitigate exploding gradients)',
-        default=0,
+        default=-1.0,  # disabled
     )
     # ==== Batch size ====
     # Overrides training_schedules.py default
