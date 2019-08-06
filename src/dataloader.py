@@ -375,8 +375,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                 image_b = image_b / 255.0
 
         if data_augmentation and split_name == 'train':
-            crop = [dataset_config['PREPROCESS']['crop_height'],
-                        dataset_config['PREPROCESS']['crop_width']]
+            crop = [dataset_config['PREPROCESS']['crop_height'], dataset_config['PREPROCESS']['crop_width']]
 
         # Data Augmentation (SelFlow functions work on a 'standard' 3D-array (still not batched) => (h, w, ch)
         if input_type == 'image_matches':

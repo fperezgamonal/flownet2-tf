@@ -1166,6 +1166,8 @@ class Net(object):
         # Define input dictionary (VALIDATION)
         if valid_iters > 0:
             if val_matches_a is not None and val_sparse_flow is not None and input_type == 'image_matches':
+                print("val_input_a.shape: {}\nval_matches_a.shape: {}\nval_sparse_flow.shape: {}".format(
+                    val_input_a.shape, val_matches_a.shape, val_sparse_flow.shape))
                 val_inputs = {'input_a': val_input_a, 'matches_a': val_matches_a, 'sparse_flow': val_sparse_flow, }
             else:
                 val_inputs = {'input_a': val_input_a, 'input_b': val_input_b, }
