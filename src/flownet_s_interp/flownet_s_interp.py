@@ -16,6 +16,7 @@ class FlowNetS_interp(Net):
     # TODO: see where we can output the OF confidence map (based off last conv layer => heat map like?)
     # TODO: "modernise" architecture (remove 7x7 and 5x5 filters by 3x3 and proper stride!)
     # TODO: take "hints" from PWC-Net as it is has more or less the same nº of weights
+    # TODO: remove the use of argscope
     def model(self, inputs, training_schedule, trainable=True):
         _, height, width, _ = inputs['input_a'].shape.as_list()
         stacked = False
@@ -48,7 +49,7 @@ class FlowNetS_interp(Net):
                 # Must set reuse for the first convolution to None so we can take different-sizes images for
                 # validation and training while freezing and evaluating the weights on the current iteration
                 # Source: https://www.researchgate.net/post/In_tensorflow_how_to_make_a_two-stream_neural_network_share_the_same_weights_in_several_layers
-                conv_1 = slim.conv2d(pad(concat_inputs, 3), 64, 7, scope='conv1', stride=2, reuse=False,
+                conv_1 = slim.conv2d(pad(concat_inputs, 3), 64, 7, scope='conv1', stride=2, reuse=tf.AUTO_REUSE,
                                      weights_regularizer=weights_regularizer)
                 with slim.arg_scope([slim.conv2d], weights_regularizer=weights_regularizer):
                     with slim.arg_scope([slim.conv2d], stride=2):
