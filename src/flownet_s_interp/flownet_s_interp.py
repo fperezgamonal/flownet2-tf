@@ -43,15 +43,14 @@ class FlowNetS_interp(Net):
                                 # LeakyReLU, changed custom to TF's built-in
                                 activation_fn=lambda x: tf.nn.leaky_relu(x, alpha=0.1),
                                 # We will do our own padding to match the original Caffe code
-                                padding='VALID',
-                                ):
+                                padding='VALID',):
                 weights_regularizer = slim.l2_regularizer(training_schedule['l2_regularization'])
                 with slim.arg_scope([slim.conv2d], weights_regularizer=weights_regularizer):
                     with slim.arg_scope([slim.conv2d], stride=2):
                         # Must set reuse for the first convolution to None so we can take different-sizes images for
                         # validation and training while freezing and evaluating the weights on the current iteration
                         # Source: https://www.researchgate.net/post/In_tensorflow_how_to_make_a_two-stream_neural_network_share_the_same_weights_in_several_layers
-                        conv_1 = slim.conv2d(pad(concat_inputs, 3), 64, 7, scope='conv1', reuse=None)
+                        conv_1 = slim.conv2d(pad(concat_inputs, 3), 64, 7, scope='conv1', reuse=False)
                         conv_2 = slim.conv2d(pad(conv_1, 2), 128, 5, scope='conv2', reuse=tf.AUTO_REUSE)
                         conv_3 = slim.conv2d(pad(conv_2, 2), 256, 5, scope='conv3', reuse=tf.AUTO_REUSE)
 
