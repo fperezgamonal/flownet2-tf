@@ -73,7 +73,7 @@ def main():
         train_params_dict = None
 
     # Add max_steps if the user wishes to overwrite the config in training_schedules.py
-    if FLAGS.max_steps is not None:
+    if FLAGS.max_steps > 0:
         train_params_dict['max_steps'] = FLAGS.max_steps
 
     if FLAGS.input_type == 'image_matches':
@@ -336,7 +336,7 @@ if __name__ == '__main__':
         required=False,
         help="Maximum number of iterations to train for (Careful, this overrides the setting of the current training "
              "schedule defined in training_schedules.py)",
-        default=None,
+        default=-1,
     )
     # Overrides Adam optimizer as the default
     parser.add_argument(
