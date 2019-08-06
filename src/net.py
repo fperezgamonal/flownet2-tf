@@ -166,7 +166,7 @@ class Net(object):
         if 'sintel' in training_schedule_str.lower():  # put all Sintel fine-tuning under the same log folder
             training_schedule_fld = 'fine_sintel'
         elif 'fine' in training_schedule_str.lower():  # format it a little better, FT3D for FlyingThings3D
-            training_schedule_fld = "Sfine_FT3D"
+            training_schedule_fld = "Sfine"
         elif 'clr' in training_schedule_str.lower():  # make it all caps for readability
             training_schedule_fld = "CLR"
         elif 'one_cycle' in training_schedule_str.lower():
@@ -174,7 +174,7 @@ class Net(object):
         elif 'exp_decr' in training_schedule_str.lower():
             training_schedule_fld = "exp_decr"
         elif 'long' in training_schedule_str.lower():
-            training_schedule_fld = "Slong_FC".format(training_schedule_str)  # FC for FlyingChairs
+            training_schedule_fld = "Slong"
         else:
             training_schedule_fld = training_schedule_str  # leave it as is
 
@@ -217,8 +217,6 @@ class Net(object):
             event_string = '{0}'.format(date_string)
         elif 'kitti' in training_schedule_str.lower():
             event_string = '{0}'.format(date_string)
-        elif 'fine' in training_schedule_str.lower():  # format it a little better, FT3D for FlyingThings3D
-            event_string = '{0}'.format(date_string)
 
         elif 'clr' in training_schedule_str.lower():  # make it all caps for readability
             event_string = '{0}_from_{1}_it_{2}_trainSch_CLR_opt_{3}_wd_{4}_minlr_{5}_maxlr_{6}_stepsize_{7}_{8}' \
@@ -244,9 +242,20 @@ class Net(object):
                     train_params_dict['clr_stepsize'], maximum_iters, add_hfem, date_string)
 
         elif 'exp_decr' in training_schedule_str.lower():
-            event_string = 'exp_decr_{0}'.format(date_string)
+            event_string = 'exp_decr_startlr_{0}_endlr_{1}_HFEM_{2}_{3}'.format(train_params_dict['start_lr'],
+                                                                                train_params_dict['end_lr'], add_hfem,
+                                                                                date_string)
         elif 'long' in training_schedule_str.lower():
-            event_string = 'Slong_{0}'.format(date_string)
+            event_string = 'Slong_{0}_{1}_it={2}_opt_{3}_wd={4}HFEM_{5}_{6}'.format(dataset_name, ckpt_str, step_number,
+                                                                                    train_params_dict['optimizer'],
+                                                                                    train_params_dict['weight_decay'],
+                                                                                    add_hfem, date_string)
+        elif 'fine' in training_schedule_str.lower():  # format it a little better, FT3D for FlyingThings3D
+            event_string = 'Sfine_{0}_{1}_it={2}_opt_{3}_wd={4}HFEM_{5}_{6}'.format(dataset_name, ckpt_str, step_number,
+                                                                                    train_params_dict['optimizer'],
+                                                                                    train_params_dict['weight_decay'],
+                                                                                    add_hfem, date_string)
+
         else:
             event_string = '{0}'.format(date_string)
 
