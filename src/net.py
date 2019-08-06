@@ -985,14 +985,17 @@ class Net(object):
         else:
             checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64)
 
+        # TODO: simplify (if possible) how we separate the step-wise policies (train_params_dict is None) vs the rest
         # max_steps overrides max_iter which is configured in training_schedules.py
-        if 'max_steps' in train_params_dict:
-            if train_params_dict['max_steps'] > 0:
-                training_schedule['max_iters'] = train_params_dict['max_steps']
-                print("Overwritten default value of max_iters={} by user-inputted={}".format(
-                    training_schedule['max_iters'], train_params_dict['max_steps']))
+        if train_params_dict is not None:
+            if 'max_steps' in train_params_dict:
+                if train_params_dict['max_steps'] > 0:
+                    training_schedule['max_iters'] = train_params_dict['max_steps']
+                    print("Overwritten default value of max_iters={} by user-inputted={}".format(
+                        training_schedule['max_iters'], train_params_dict['max_steps']))
 
-        if lr_range_test:  # learning rate range test to bound max/min optimal learning rate (2015, Leslie N. Smith)
+        # learning rate range test to bound max/min optimal learning rate (2015, Leslie N. Smith)
+        if lr_range_test and train_params_dict is not None:
             if lr_range_test is not None:  # use the input params
                 start_lr = train_params_dict['start_lr']
                 end_lr = train_params_dict['end_lr']
@@ -1020,7 +1023,8 @@ class Net(object):
                 learning_rate = _lr_cyclic(g_step_op=checkpoint_global_step_tensor, base_lr=start_lr, max_lr=end_lr,
                                            step_size=lr_range_niters, mode='triangular')
 
-        elif isinstance(training_schedule['learning_rates'], str) and not lr_range_test:  # non-piecewise learning
+        elif isinstance(training_schedule['learning_rates'], str) and not lr_range_test and \
+                train_params_dict is not None:
             if training_schedule['learning_rates'].lower() == 'clr' and training_schedule_str == 'clr':
                 if log_verbosity > 1:
                     print("Learning rate policy is CLR (Cyclical Learning Rate)")
@@ -1052,7 +1056,7 @@ class Net(object):
             else:
                 if log_verbosity > 1:
                     print("Reverting to original learning rate, fixed to 3e-4 (Adam)")
-                learning_rate = 3e-4  # for Adam only!
+                learning_rate = 1e-4  # for Adam only!
             # add other policies (1-cycle), cosine-decay, etc.
         else:  #
             if log_verbosity > 1:
@@ -1061,84 +1065,89 @@ class Net(object):
                                                         [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
                                                         training_schedule['learning_rates'])
         # TODO: define common variables outside of individual if-statements to keep it as short as possible
-        if train_params_dict['optimizer'] is not None:
-            # Stochastic Gradient Descent (SGD)
-            if train_params_dict['optimizer'].lower() == 'sgd':
-                if log_verbosity > 1:
-                    print("Optimizer is 'SGD' (Stochastic Gradient Descent)")
-                optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-            # Momentum (SGD + Momentum)
-            elif train_params_dict['optimizer'].lower() == 'momentum':
-                if log_verbosity > 1:
-                    print("Optimizer is 'Momentum' (SGD + Momentum). Nesterov defaults to True")
-                # Overides default in config
-                if train_params_dict['weight_decay'] is not None:
-                    training_schedule['l2_regularization'] = train_params_dict['weight_decay']
-
-                # Use cyclic momentum if using CLR or 1 cycle (accelerates convergence)
-                if train_params_dict['momentum'] is None and train_params_dict['min_momentum'] is not None and \
-                        train_params_dict['max_momentum'] is not None:
-                    if lr_range_test:
-                        if log_verbosity > 1:
-                            print("Using cyclical momentum (only decreasing) for LR range test...")
-                            print("Cycle boundaries are: max={}, min={}".format(train_params_dict['max_momentum'],
-                                                                                train_params_dict['min_momentum']))
-                        # Use cyclical momentum (only decreasing half-cycle while LR increases)
-                        momentum = _lr_cyclic(g_step_op=checkpoint_global_step_tensor,
-                                              base_lr=train_params_dict['max_momentum'],
-                                              max_lr=train_params_dict['min_momentum'],
-                                              step_size=lr_range_niters,
-                                              mode='triangular')
-
-                    else:
-                        if log_verbosity > 1:
-                            print("Momentum optimizer used together with CLR/1cycle, will be using cyclical momentum")
-                            if training_schedule['learning_rates'].lower() == 'one_cycle':
-                                is_one_cycle = True
-                                train_params_dict['gamma'] = 1  # effectively disables (avoids duplicate code)
-                            else:
-                                is_one_cycle = False
-                        momentum = _mom_cyclic(g_step_op=checkpoint_global_step_tensor,
-                                               base_mom=train_params_dict['min_momentum'],
-                                               max_mom=train_params_dict['max_momentum'],
-                                               gamma=train_params_dict['gamma'],
-                                               step_size=train_params_dict['clr_stepsize'], mode='triangular',
-                                               one_cycle=is_one_cycle)
-                else:  # Use fixed momentum
+        if train_params_dict is not None:
+            if train_params_dict['optimizer'] is not None:
+                # Stochastic Gradient Descent (SGD)
+                if train_params_dict['optimizer'].lower() == 'sgd':
                     if log_verbosity > 1:
-                        print("Using user-specified (fixed) momentum value")
-                    momentum = train_params_dict['momentum']
+                        print("Optimizer is 'SGD' (Stochastic Gradient Descent)")
+                    optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+                # Momentum (SGD + Momentum)
+                elif train_params_dict['optimizer'].lower() == 'momentum':
+                    if log_verbosity > 1:
+                        print("Optimizer is 'Momentum' (SGD + Momentum). Nesterov defaults to True")
+                    # Overides default in config
+                    if train_params_dict['weight_decay'] is not None:
+                        training_schedule['l2_regularization'] = train_params_dict['weight_decay']
 
-                # Track momentum value (just for debugging initially)
-                if log_verbosity > 1 and log_tensorboard:
-                    print("Logging momentum to tensorboard...")
-                    tf.summary.scalar('momentum', momentum)
+                    # Use cyclic momentum if using CLR or 1 cycle (accelerates convergence)
+                    if train_params_dict['momentum'] is None and train_params_dict['min_momentum'] is not None and \
+                            train_params_dict['max_momentum'] is not None:
+                        if lr_range_test:
+                            if log_verbosity > 1:
+                                print("Using cyclical momentum (only decreasing) for LR range test...")
+                                print("Cycle boundaries are: max={}, min={}".format(train_params_dict['max_momentum'],
+                                                                                    train_params_dict['min_momentum']))
+                            # Use cyclical momentum (only decreasing half-cycle while LR increases)
+                            momentum = _lr_cyclic(g_step_op=checkpoint_global_step_tensor,
+                                                  base_lr=train_params_dict['max_momentum'],
+                                                  max_lr=train_params_dict['min_momentum'],
+                                                  step_size=lr_range_niters,
+                                                  mode='triangular')
 
-                optimizer = tf.train.MomentumOptimizer(learning_rate, momentum, use_nesterov=True)
-            # AdamW (w. proper weight decay not L2 regularisation), as suggested in https://arxiv.org/abs/1711.05101
-            elif train_params_dict['optimizer'].lower() == 'adamw':
-                if log_verbosity > 1:
-                    print("Optimizer is 'AdamW' (Adam with proper Weight Decay)")
-                if train_params_dict['weight_decay'] is not None:
-                    weight_decay = train_params_dict['weight_decay']
+                        else:
+                            if log_verbosity > 1:
+                                print("Momentum optimizer  with CLR/1cycle, will be using cyclical momentum")
+                                if training_schedule['learning_rates'].lower() == 'one_cycle':
+                                    is_one_cycle = True
+                                    train_params_dict['gamma'] = 1  # effectively disables (avoids duplicate code)
+                                else:
+                                    is_one_cycle = False
+                            momentum = _mom_cyclic(g_step_op=checkpoint_global_step_tensor,
+                                                   base_mom=train_params_dict['min_momentum'],
+                                                   max_mom=train_params_dict['max_momentum'],
+                                                   gamma=train_params_dict['gamma'],
+                                                   step_size=train_params_dict['clr_stepsize'], mode='triangular',
+                                                   one_cycle=is_one_cycle)
+                    else:  # Use fixed momentum
+                        if log_verbosity > 1:
+                            print("Using user-specified (fixed) momentum value")
+                        momentum = train_params_dict['momentum']
+
+                    # Track momentum value (just for debugging initially)
+                    if log_verbosity > 1 and log_tensorboard:
+                        print("Logging momentum to tensorboard...")
+                        tf.summary.scalar('momentum', momentum)
+
+                    optimizer = tf.train.MomentumOptimizer(learning_rate, momentum, use_nesterov=True)
+                # AdamW (w. proper weight decay not L2 regularisation), as suggested in https://arxiv.org/abs/1711.05101
+                elif train_params_dict['optimizer'].lower() == 'adamw':
+                    if log_verbosity > 1:
+                        print("Optimizer is 'AdamW' (Adam with proper Weight Decay)")
+                    if train_params_dict['weight_decay'] is not None:
+                        weight_decay = train_params_dict['weight_decay']
+                    else:
+                        weight_decay = 1e-4  # some reasonable default
+                    # adam_wd is a new class
+                    adam_wd = tf.contrib.opt.extend_with_decoupled_weight_decay(tf.train.AdamOptimizer)
+                    # Create a adam_wd object
+                    optimizer = adam_wd(weight_decay=weight_decay, learning_rate=learning_rate,
+                                        beta1=training_schedule['momentum'], beta2=training_schedule['momentum2'])
                 else:
-                    weight_decay = 1e-4  # some reasonable default
-                # adam_wd is a new class
-                adam_wd = tf.contrib.opt.extend_with_decoupled_weight_decay(tf.train.AdamOptimizer)
-                # Create a adam_wd object
-                optimizer = adam_wd(weight_decay=weight_decay, learning_rate=learning_rate,
-                                    beta1=training_schedule['momentum'], beta2=training_schedule['momentum2'])
-            else:
-                # default to Adam
+                    # default to Adam
+                    if log_verbosity > 1:
+                        print("(Unknown train_params_dict['optimizer']\nUsing default optimizer (Adam)")
+
+                    optimizer = tf.train.AdamOptimizer(learning_rate, training_schedule['momentum'],
+                                                       training_schedule['momentum2'])
+            else:  # Adam (step-wise originally used Adam)
                 if log_verbosity > 1:
-                    print("Using default optimizer (Adam)")
-                if training_schedule['momentum'] is None or training_schedule['momentum2'] is None:
-                    training_schedule['momentum'] = 0.9
-                    training_schedule['momentum2'] = 0.999
+                    print("(train_params_dict['optimizer'] is None\nUsing default optimizer (Adam)")
 
                 optimizer = tf.train.AdamOptimizer(learning_rate, training_schedule['momentum'],
                                                    training_schedule['momentum2'])
-        else:  # default to Adam
+
+        else:  # default to Adam (step-wise originally use Adam only)
             if train_params_dict['weight_decay'] is not None:
                 training_schedule['l2_regularization'] = train_params_dict['weight_decay']
             if training_schedule['momentum'] is None or training_schedule['momentum2'] is None:
@@ -1247,13 +1256,18 @@ class Net(object):
         if reset_global_step:
             print("global_step has value: {}".format(tf.train.get_global_step()))
             checkpoint_global_step_tensor.assign(0)
+
+        if train_params_dict is not None:
+            clip_grad_norm = train_params_dict['clip_grad_norm']
+        else:
+            clip_grad_norm = -1.0  # disabled
         # Create the train_op
         training_op = slim.learning.create_train_op(
             train_loss,
             optimizer,
             summarize_gradients=summarise_grads,
             global_step=checkpoint_global_step_tensor,
-            clip_gradient_norm=train_params_dict['clip_grad_norm'],
+            clip_gradient_norm=clip_grad_norm,
         )
 
         # ==== Add validation by defining a custom train_step_fn ====
