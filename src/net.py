@@ -1148,8 +1148,6 @@ class Net(object):
                                                    training_schedule['momentum2'])
 
         else:  # default to Adam (step-wise originally use Adam only)
-            if train_params_dict['weight_decay'] is not None:
-                training_schedule['l2_regularization'] = train_params_dict['weight_decay']
             if training_schedule['momentum'] is None or training_schedule['momentum2'] is None:
                 training_schedule['momentum'] = 0.9
                 training_schedule['momentum2'] = 0.999
