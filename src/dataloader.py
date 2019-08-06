@@ -378,29 +378,30 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             crop = [dataset_config['PREPROCESS']['crop_height'],
                         dataset_config['PREPROCESS']['crop_width']]
 
-        # config_a = config_to_arrays(dataset_config['PREPROCESS']['image_a']) ==> config for broken D.A.
-        # config_b = config_to_arrays(dataset_config['PREPROCESS']['image_b'])
-        # Data Augmentation
+        # Data Augmentation (SelFlow functions work on a 'standard' 3D-array (still not batched) => (h, w, ch)
         if input_type == 'image_matches':
+            if data_augmentation and split_name == 'train':
+                print("(image_matches) Applying data augmentation...")  # temporally to debug
+                print("only on training images with shape: {}".format(image_a.shape))
+                image_a, matches_a, sparse_flow, edges_a, flow = augment_all_interp(
+                    image_a, matches_a, sparse_flow, edges_a, flow, crop_h=crop[0], crop_w=crop[1])
+
+            # Add extra 'batching' dimension
             image_bs = None
             image_as, matches_as, sparse_flows, edges_as, flows = map(lambda x: tf.expand_dims(x, 0),
                                                                       [image_a, matches_a, sparse_flow, edges_a, flow])
-            if data_augmentation and split_name == 'train':
-                print("(image_matches) Applying data augmentation...")  # temporally to debug
-                print("only on training images with shape: {}".format(image_as.shape))
-                image_as, matches_as, sparse_flows, edges_as, flows = augment_all_interp(
-                    image_as, matches_as, sparse_flows, edges_as, flows, crop_h=crop[0], crop_w=crop[1])
 
         else:
+            if data_augmentation and split_name == 'train':
+                print("(image_pairs) Applying data augmentation...")  # temporally to debug
+                image_a, image_b, flow = augment_all_estimation(image_a, image_b, flow, crop_h=crop[0], crop_w=crop[1])
             matches_as = None
             sparse_flows = None
             edges_as = None
             image_as, image_bs, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b, flow])
-            if data_augmentation and split_name == 'train':
-                print("(image_pairs) Applying data augmentation...")  # temporally to debug
-                image_as, image_bs, flows = augment_all_estimation(image_as, image_bs, flows, crop_h=crop[0],
-                                                                   crop_w=crop[1])
 
+        # config_a = config_to_arrays(dataset_config['PREPROCESS']['image_a']) ==> config for broken D.A.
+        # config_b = config_to_arrays(dataset_config['PREPROCESS']['image_b'])
         #  ====================== OLD, BROKEN DATA AUGMENTATION ==> REMOVE ONCE THE ABOVE WORKS ========================
         # Perform data augmentation on GPU  fperezgamonal: typo, it does not work on the GPU, only on the CPU!
         # TODO: despite not reporting segmentation fault, the process is killed when data_augmentation is added. Test:
