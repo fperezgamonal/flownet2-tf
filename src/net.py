@@ -1054,7 +1054,7 @@ class Net(object):
                     print("Reverting to original learning rate, fixed to 3e-4 (Adam)")
                 learning_rate = 3e-4  # for Adam only!
             # add other policies (1-cycle), cosine-decay, etc.
-        else:
+        else:  #
             if log_verbosity > 1:
                 print("Piecewise constant learning selected (defined in 'training_schedules.py')")
             learning_rate = tf.train.piecewise_constant(checkpoint_global_step_tensor,

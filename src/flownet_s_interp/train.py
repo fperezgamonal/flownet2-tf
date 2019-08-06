@@ -69,7 +69,7 @@ def main():
             'weight_decay': FLAGS.weight_decay,
             'clip_grad_norm': FLAGS.clip_grad_norm,
         }
-    else:
+    else:  # Simply used the configuration in training_schedules.py (e.g.: Slong, Sfine, etc.)
         train_params_dict = None
 
     # Add max_steps if the user wishes to overwrite the config in training_schedules.py
