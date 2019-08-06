@@ -33,10 +33,10 @@ class FlowNetS_interp(Net):
                 concat_inputs = tf.concat([inputs['input_a'],
                                            inputs['sparse_flow'] * 0.05,  # normalised as predicted flow (makes sense)
                                            inputs['matches_a']], axis=3)
-                print("tf.shape(inputs['input_a']): {}".format(tf.shape(inputs['input_a'])))
-                print("tf.shape(inputs['sparse_flow']): {}".format(tf.shape(inputs['sparse_flow'])))
-                print("tf.shape(inputs['matches_a']): {}".format(tf.shape(inputs['matches_a'])))
-                print("tf.shape(concat_inputs): {}".format(tf.shape(concat_inputs)))
+                print("tf.shape(inputs['input_a']): {}".format(inputs['input_a'].shape))
+                print("tf.shape(inputs['sparse_flow']): {}".format(inputs['sparse_flow'].shape))
+                print("tf.shape(inputs['matches_a']): {}".format(inputs['matches_a'].shape))
+                print("tf.shape(concat_inputs): {}".format(concat_inputs.get_shape().as_list()))
             with slim.arg_scope([slim.conv2d, slim.conv2d_transpose],
                                 # Only backprop this network if trainable
                                 trainable=trainable,
