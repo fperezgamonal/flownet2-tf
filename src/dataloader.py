@@ -374,16 +374,11 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             else:
                 image_b = image_b / 255.0
 
-        if dataset_config_str.lower() == 'fc_sintel' or dataset_config_str.lower() == 'ft3d_sintel':
-            if split_name == 'train':
-                crop = [dataset_config['PREPROCESS']['crop_height'][0],
-                        dataset_config['PREPROCESS']['crop_width'][0]]
-            elif split_name == 'valid':
-                crop = [dataset_config['PREPROCESS']['crop_height'][1],
-                        dataset_config['PREPROCESS']['crop_width'][1]]
-            else:
-                raise ValueError("FATAL: unexpected 'split_name'. Must be either 'train' or 'valid'")
-        # config_a = config_to_arrays(dataset_config['PREPROCESS']['image_a'])
+        if data_augmentation and split_name == 'train':
+            crop = [dataset_config['PREPROCESS']['crop_height'],
+                        dataset_config['PREPROCESS']['crop_width']]
+
+        # config_a = config_to_arrays(dataset_config['PREPROCESS']['image_a']) ==> config for broken D.A.
         # config_b = config_to_arrays(dataset_config['PREPROCESS']['image_b'])
         # Data Augmentation
         if input_type == 'image_matches':

@@ -1078,8 +1078,8 @@ FC_TRAIN_SINTEL_VAL_DATASET_CONFIG = {
     },
     'PREPROCESS': {
         'scale': False,
-        'crop_height': [384, 384],
-        'crop_width': [448, 768],
+        'crop_height': 384,
+        'crop_width': 448,
         'image_a': {
             'translate': {
                 'rand_type': "uniform_bernoulli",
@@ -1201,8 +1201,8 @@ FC_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG = {
     },
     'PREPROCESS': {
         'scale': False,
-        'crop_height': [384, 384],
-        'crop_width': [448, 768],
+        'crop_height': 384,
+        'crop_width': 448,
         'image_a': {
             'translate': {
                 'rand_type': "uniform_bernoulli",
@@ -1326,8 +1326,8 @@ FT3D_TRAIN_SINTEL_VAL_DATASET_CONFIG = {
     },
     'PREPROCESS': {
         'scale': False,
-        'crop_height': [384, 384],
-        'crop_width': [768, 768],
+        'crop_height': 384,
+        'crop_width': 768,
         'image_a': {
             'translate': {
                 'rand_type': "uniform_bernoulli",
@@ -1448,8 +1448,8 @@ FT3D_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG = {
     },
     'PREPROCESS': {
         'scale': False,
-        'crop_height': [384, 384],
-        'crop_width': [768, 768],
+        'crop_height': 384,
+        'crop_width': 768,
         'image_a': {
             'translate': {
                 'rand_type': "uniform_bernoulli",
