@@ -219,9 +219,9 @@ if __name__ == '__main__':
         type=str2bool,
         nargs='?',
         required=False,
-        help="Whether or not to 'remove' the biases from the deconv. layers (OG code did it). By default ALL layers "
+        help="Whether or not to 'remove' the biases from the deconv. layers (OG paper does it). By default ALL layers "
              "have biases",
-        default=False,
+        default=True,
     )
     parser.add_argument(
         '--dataset_config',

@@ -419,7 +419,6 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
         if input_type == 'image_matches':
             if data_augmentation and split_name == 'train':
                 print("(image_matches) Applying data augmentation...")  # temporally to debug
-                print("only on training images with shape: {}".format(image_a.shape))
                 image_a, matches_a, sparse_flow, edges_a, flow = augment_all_interp(
                     image_a, matches_a, sparse_flow, edges_a, flow, crop_h=crop[0], crop_w=crop[1],
                     add_summary=add_summary, fast_mode=False)
