@@ -196,8 +196,8 @@ class Net(object):
         return dataset_name
 
     # TODO: complete formatting for all methods
-    def get_training_event_name(self, dataset_name, train_params_dict, training_schedule_str, date_string, ckpt_path,
-                                add_hfem, maximum_iters):
+    def get_training_event_name(self, dataset_name, train_params_dict, training_schedule, training_schedule_str,
+                                date_string, ckpt_path, add_hfem, maximum_iters):
         """
             Define a unique event name for the logging file (but also adding actual parameter information)
             This helps to avoid mixing up experiments when running several in parallel!
@@ -246,15 +246,11 @@ class Net(object):
                                                                                 train_params_dict['end_lr'], add_hfem,
                                                                                 date_string)
         elif 'long' in training_schedule_str.lower():
-            event_string = 'Slong_{0}_{1}_it={2}_opt_{3}_wd={4}HFEM_{5}_{6}'.format(dataset_name, ckpt_str, step_number,
-                                                                                    train_params_dict['optimizer'],
-                                                                                    train_params_dict['weight_decay'],
-                                                                                    add_hfem, date_string)
+            event_string = 'Slong_{0}_{1}_it={2}_opt_Adam_wd={3}HFEM_{4}_{5}'.format(
+                dataset_name, ckpt_str, step_number, training_schedule['l2_regularization'], add_hfem, date_string)
         elif 'fine' in training_schedule_str.lower():  # format it a little better, FT3D for FlyingThings3D
-            event_string = 'Sfine_{0}_{1}_it={2}_opt_{3}_wd={4}HFEM_{5}_{6}'.format(dataset_name, ckpt_str, step_number,
-                                                                                    train_params_dict['optimizer'],
-                                                                                    train_params_dict['weight_decay'],
-                                                                                    add_hfem, date_string)
+            event_string = 'Sfine_{0}_{1}_it={2}_opt_Adam_wd={3}HFEM_{4}_{5}'.format(
+                dataset_name, ckpt_str, step_number, training_schedule['l2_regularization'], add_hfem, date_string)
 
         else:
             event_string = '{0}'.format(date_string)
@@ -1195,25 +1191,13 @@ class Net(object):
             summary_loss = tf.summary.scalar('train/loss', train_loss)
             # Show the generated flow in TensorBoard
             if 'flow' in predictions:
-                print("predictions['flow'].shape: {}".format(predictions['flow'].shape))
                 pred_flow_0 = predictions['flow'][0, :, :, :]
-                pred_flow_0 = tf.py_func(flow_to_image, [pred_flow_0], tf.uint8)
-                # pred_flow_0 = tf.py_function(func=flow_to_image, inp=[pred_flow_0], Tout=tf.uint8)
-                pred_flow_1 = predictions['flow'][1, :, :, :]
-                pred_flow_1 = tf.py_func(flow_to_image, [pred_flow_1], tf.uint8)
-                # pred_flow_1 = tf.py_function(func=flow_to_image, inp=[pred_flow_1], Tout=tf.uint8)
-                pred_flow_img = tf.stack([pred_flow_0, pred_flow_1], 0)
+                pred_flow_img = tf.py_func(flow_to_image, [pred_flow_0], tf.uint8)
                 tf.summary.image('train/pred_flow', pred_flow_img, max_outputs=1)
 
             # Add ground truth flow (TRAIN)
-            print("gt_flow.shape: {}".format(gt_flow.shape))
             true_flow_0 = gt_flow[0, :, :, :]
-            true_flow_0 = tf.py_func(flow_to_image, [true_flow_0], tf.uint8)
-            # true_flow_0 = tf.py_function(func=flow_to_image, inp=[true_flow_0], Tout=tf.uint8)
-            true_flow_1 = gt_flow[1, :, :, :]
-            true_flow_1 = tf.py_func(flow_to_image, [true_flow_1], tf.uint8)
-            # true_flow_1 = tf.py_function(func=flow_to_image, inp=[true_flow_1], Tout=tf.uint8)
-            true_flow_img = tf.stack([true_flow_0, true_flow_1], 0)
+            true_flow_img = tf.py_func(flow_to_image, [true_flow_0], tf.uint8)
             tf.summary.image('train/true_flow', true_flow_img, max_outputs=1)
 
             # Validation
@@ -1227,22 +1211,12 @@ class Net(object):
                 # Show the generated flow in TensorBoard
                 if 'flow' in val_predictions:
                     val_pred_flow_0 = val_predictions['flow'][0, :, :, :]
-                    val_pred_flow_0 = tf.py_func(flow_to_image, [val_pred_flow_0], tf.uint8)
-                    # val_pred_flow_0 = tf.py_function(func=flow_to_image, inp=[val_pred_flow_0], Tout=tf.uint8)
-                    val_pred_flow_1 = val_predictions['flow'][1, :, :, :]
-                    val_pred_flow_1 = tf.py_func(flow_to_image, [val_pred_flow_1], tf.uint8)
-                    # val_pred_flow_1 = tf.py_function(func=flow_to_image, inp=[val_pred_flow_1], Tout=tf.uint8)
-                    val_pred_flow_img = tf.stack([val_pred_flow_0, val_pred_flow_1], 0)
+                    val_pred_flow_img = tf.py_func(flow_to_image, [val_pred_flow_0], tf.uint8)
                     tf.summary.image('valid/pred_flow', val_pred_flow_img, max_outputs=1)
 
                 # Add ground truth flow (VALIDATION)
                 val_true_flow_0 = val_gt_flow[0, :, :, :]
-                val_true_flow_0 = tf.py_func(flow_to_image, [val_true_flow_0], tf.uint8)
-                # val_true_flow_0 = tf.py_function(func=flow_to_image, inp=[val_true_flow_0], Tout=tf.uint8)
-                val_true_flow_1 = val_gt_flow[1, :, :, :]
-                val_true_flow_1 = tf.py_func(flow_to_image, [val_true_flow_1], tf.uint8)
-                # val_true_flow_1 = tf.py_function(func=flow_to_image, inp=[val_true_flow_1], Tout=tf.uint8)
-                val_true_flow_img = tf.stack([val_true_flow_0, val_true_flow_1], 0)
+                val_true_flow_img = tf.py_func(flow_to_image, [val_true_flow_0], tf.uint8)
                 tf.summary.image('valid/true_flow', val_true_flow_img, max_outputs=1)
 
         # Log smoothed loss (EMA, see '_add_loss_summaries' for more details)
@@ -1361,8 +1335,9 @@ class Net(object):
         now = datetime.datetime.now()
         date_now = now.strftime('%d-%m-%y_%H-%M-%S')
         training_schedule_event_name = self.get_training_event_name(dataset_config_str, train_params_dict,
-                                                                    training_schedule_str, date_now, checkpoints,
-                                                                    add_hfem, training_schedule['max_iters'])
+                                                                    training_schedule, training_schedule_str, date_now,
+                                                                    checkpoints, add_hfem,
+                                                                    training_schedule['max_iters'])
         training_schedule_fld = self.get_training_schedule_folder_string(training_schedule_str)
 
         log_dir = os.path.join(log_dir, training_schedule_fld, training_schedule_event_name)
