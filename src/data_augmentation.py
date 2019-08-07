@@ -167,6 +167,22 @@ def random_channel_swap(img_list):
     return img_list
 
 
+def random_channel_swap_single(image):
+    channel_permutation = tf.constant([[0, 1, 2],
+                                       [0, 2, 1],
+                                       [1, 0, 2],
+                                       [1, 2, 0],
+                                       [2, 0, 1],
+                                       [2, 1, 0]])
+    rand_i = tf.random_uniform([], minval=0, maxval=6, dtype=tf.int32)
+    permutation = channel_permutation[rand_i]
+    channel_1 = image[:, :, permutation[0]]
+    channel_2 = image[:, :, permutation[1]]
+    channel_3 = image[:, :, permutation[2]]
+    image = tf.stack([channel_1, channel_2, channel_3], axis=-1)
+    return image
+
+
 def flow_resize(flow, out_size, is_scale=True, method=0):
     """
         method: 0 mean bilinear, 1 means nearest, 2 bicubic and 3 area
