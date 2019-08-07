@@ -36,7 +36,7 @@ def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop
     image = random_channel_swap_single(image)
 
     # Random colour distortions (only for RGB images)
-    # There are 1 or 4 ways to do it. (1 == only brigthness and contrast, 4 hue and saturation)
+    # There are 1 or 4 ways to do it. (1 == only brightness and contrast, 4 hue and saturation)
     num_distort_cases = 1 if fast_mode else 4
     image = apply_with_random_selector(image, lambda x, ordering: distort_color(x, ordering, fast_mode),
                                        num_cases=num_distort_cases)
@@ -49,7 +49,7 @@ def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop
                          tf.expand_dims(edges, 0))
         # Flow to RGB representation
         gt_flow_img = tf.py_func(flow_to_image, [gt_flow], tf.uint8)
-        tf.summary.image('data_augmentation/true_flow', gt_flow_img, max_outputs=1)
+        tf.summary.image('data_augmentation/true_flow', tf.expand_dims(gt_flow_img, 0), max_outputs=1)
 
     return image, matches, sparse_flow, edges, gt_flow
 
@@ -60,7 +60,7 @@ def augment_all_estimation(image1, image2, gt_flow, crop_h, crop_w, add_summary=
     image1, image2 = random_channel_swap([image1, image2])  # only for 'image-like' inputs (not flow)
 
     # Random colour distortions (only for RGB images)
-    # There are 1 or 4 ways to do it. (1 == only brigthness and contrast, 4 hue and saturation)
+    # There are 1 or 4 ways to do it. (1 == only brightness and contrast, 4 hue and saturation)
     num_distort_cases = 1 if fast_mode else 4
     image1 = apply_with_random_selector(image1, lambda x, ordering: distort_color(x, ordering, fast_mode),
                                         num_cases=num_distort_cases)
@@ -73,13 +73,9 @@ def augment_all_estimation(image1, image2, gt_flow, crop_h, crop_w, add_summary=
                          tf.expand_dims(image2, 0))
         # Flow to RGB representation
         true_flow_0 = gt_flow[0, :, :, :]
-        true_flow_0 = tf.py_func(flow_to_image, [true_flow_0], tf.uint8)
-        # true_flow_0 = tf.py_function(func=flow_to_image, inp=[true_flow_0], Tout=tf.uint8)
-        true_flow_1 = gt_flow[1, :, :, :]
-        true_flow_1 = tf.py_func(flow_to_image, [true_flow_1], tf.uint8)
-        # true_flow_1 = tf.py_function(func=flow_to_image, inp=[true_flow_1], Tout=tf.uint8)
-        true_flow_img = tf.stack([true_flow_0, true_flow_1], 0)
-        tf.summary.image('data_augmentation/true_flow', true_flow_img, max_outputs=1)
+        true_flow_img = tf.py_func(flow_to_image, [true_flow_0], tf.uint8)
+
+        tf.summary.image('data_augmentation/true_flow', tf.expand_dims(true_flow_img, 0), max_outputs=1)
     return image1, image2, gt_flow
 
 
