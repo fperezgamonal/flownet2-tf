@@ -148,7 +148,9 @@ def random_channel_swap(img_list):
                                        [2, 1, 0]])
     rand_i = tf.random_uniform([], minval=0, maxval=6, dtype=tf.int32)
     perm = channel_permutation[rand_i]
-    for i, img in enumerate(img_list):
+    # for i, img in enumerate(img_list):
+    for i in range(len(img_list)):
+        img = img_list[i]
         channel_1 = img[:, :, perm[0]]
         channel_2 = img[:, :, perm[1]]
         channel_3 = img[:, :, perm[2]]
