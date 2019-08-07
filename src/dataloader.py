@@ -48,7 +48,7 @@ def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop
         tf.summary.image('data_augmentation/distorted_edges',
                          tf.expand_dims(edges, 0))
         # Flow to RGB representation
-        print("gt_flow.shape".format(gt_flow.shape))
+        print("gt_flow.shape: {}".format(gt_flow.shape))
         gt_flow = tf.expand_dims(gt_flow, 0)
         true_flow_0 = gt_flow[0, :, :, :]
         true_flow_0 = tf.py_func(flow_to_image, [true_flow_0], tf.uint8)
