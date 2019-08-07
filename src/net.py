@@ -1193,12 +1193,12 @@ class Net(object):
             if 'flow' in predictions:
                 pred_flow_0 = predictions['flow'][0, :, :, :]
                 pred_flow_img = tf.py_func(flow_to_image, [pred_flow_0], tf.uint8)
-                tf.summary.image('train/pred_flow', pred_flow_img, max_outputs=1)
+                tf.summary.image('train/pred_flow', tf.expand_dims(pred_flow_img, 0), max_outputs=1)
 
             # Add ground truth flow (TRAIN)
             true_flow_0 = gt_flow[0, :, :, :]
             true_flow_img = tf.py_func(flow_to_image, [true_flow_0], tf.uint8)
-            tf.summary.image('train/true_flow', true_flow_img, max_outputs=1)
+            tf.summary.image('train/true_flow', tf.expand_dims(true_flow_img, 0), max_outputs=1)
 
             # Validation
             if valid_iters > 0:
@@ -1212,12 +1212,12 @@ class Net(object):
                 if 'flow' in val_predictions:
                     val_pred_flow_0 = val_predictions['flow'][0, :, :, :]
                     val_pred_flow_img = tf.py_func(flow_to_image, [val_pred_flow_0], tf.uint8)
-                    tf.summary.image('valid/pred_flow', val_pred_flow_img, max_outputs=1)
+                    tf.summary.image('valid/pred_flow', tf.expand_dims(val_pred_flow_img, 0), max_outputs=1)
 
                 # Add ground truth flow (VALIDATION)
                 val_true_flow_0 = val_gt_flow[0, :, :, :]
                 val_true_flow_img = tf.py_func(flow_to_image, [val_true_flow_0], tf.uint8)
-                tf.summary.image('valid/true_flow', val_true_flow_img, max_outputs=1)
+                tf.summary.image('valid/true_flow', tf.expand_dims(val_true_flow_img, 0), max_outputs=1)
 
         # Log smoothed loss (EMA, see '_add_loss_summaries' for more details)
         if log_smoothed_loss:
