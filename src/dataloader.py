@@ -10,6 +10,7 @@ from .dataset_configs import FLYING_CHAIRS_ALL_DATASET_CONFIG, SINTEL_FINAL_ALL_
     FC_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG, FLYING_THINGS_3D_MINI_DATASET_CONFIG, SINTEL_MINI_DATASET_CONFIG, \
     ALLEY_MINI_DATASET_CONFIG
 from src.data_augmentation import *
+from src.flowlib import flow_to_image
 
 _preprocessing_ops = tf.load_op_library(
     tf.resource_loader.get_path_to_datafile("./ops/build/preprocessing.so"))
@@ -25,19 +26,66 @@ def augment_image_pair(img1, img2, crop_h, crop_w):
 
 
 # TODO: Add augment_all to transform matches, sparse flow and gt_flow accordingly (unsupervised ==> supervised)
-def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop_w):
-    image, matches, sparse_flow, edges, gt_flow = random_crop([image, matches, sparse_flow, edges, gt_flow], crop_h,
-                                                              crop_w)
+def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop_w, add_summary=False, fast_mode=False):
+    # image, matches, sparse_flow, edges, gt_flow = random_crop([image, matches, sparse_flow, edges, gt_flow], crop_h,
+    #                                                           crop_w)
+    # Random flip of images and flow
     [image, matches, edges], [sparse_flow, gt_flow] = random_flip_with_flow([image, matches, edges], [sparse_flow,
                                                                                                       gt_flow])
-    image, matches, edges = random_channel_swap([image, matches, edges])  # only for 'image-like' inputs (not flow)
+    # Random channel swap (only for RGB images)
+    image = random_channel_swap(image)
+
+    # Random colour distortions (only for RGB images)
+    # There are 1 or 4 ways to do it. (1 == only brigthness and contrast, 4 hue and saturation)
+    num_distort_cases = 1 if fast_mode else 4
+    image = apply_with_random_selector(image, lambda x, ordering: distort_color(x, ordering, fast_mode),
+                                       num_cases=num_distort_cases)
+    if add_summary:
+        tf.summary.image('data_augmentation/distorted_image',
+                         tf.expand_dims(image, 0))
+        tf.summary.image('data_augmentation/distorted_matches',
+                         tf.expand_dims(matches, 0))
+        tf.summary.image('data_augmentation/distorted_edges',
+                         tf.expand_dims(edges, 0))
+        # Flow to RGB representation
+        true_flow_0 = gt_flow[0, :, :, :]
+        true_flow_0 = tf.py_func(flow_to_image, [true_flow_0], tf.uint8)
+        # true_flow_0 = tf.py_function(func=flow_to_image, inp=[true_flow_0], Tout=tf.uint8)
+        true_flow_1 = gt_flow[1, :, :, :]
+        true_flow_1 = tf.py_func(flow_to_image, [true_flow_1], tf.uint8)
+        # true_flow_1 = tf.py_function(func=flow_to_image, inp=[true_flow_1], Tout=tf.uint8)
+        true_flow_img = tf.stack([true_flow_0, true_flow_1], 0)
+        tf.summary.image('data_augmentation/true_flow', true_flow_img, max_outputs=1)
+
     return image, matches, sparse_flow, edges, gt_flow
 
 
-def augment_all_estimation(image1, image2, gt_flow, crop_h, crop_w):
-    image, image2, gt_flow = random_crop([image1, image2, gt_flow], crop_h, crop_w)
+def augment_all_estimation(image1, image2, gt_flow, crop_h, crop_w, add_summary=False, fast_mode=False):
+    # image, image2, gt_flow = random_crop([image1, image2, gt_flow], crop_h, crop_w)
     [image1, image2], gt_flow = random_flip_with_flow([image1, image2], gt_flow)
     image1, image2 = random_channel_swap([image1, image2])  # only for 'image-like' inputs (not flow)
+
+    # Random colour distortions (only for RGB images)
+    # There are 1 or 4 ways to do it. (1 == only brigthness and contrast, 4 hue and saturation)
+    num_distort_cases = 1 if fast_mode else 4
+    image1 = apply_with_random_selector(image1, lambda x, ordering: distort_color(x, ordering, fast_mode),
+                                        num_cases=num_distort_cases)
+    image2 = apply_with_random_selector(image2, lambda x, ordering: distort_color(x, ordering, fast_mode),
+                                        num_cases=num_distort_cases)
+    if add_summary:
+        tf.summary.image('data_augmentation/distorted_image1',
+                         tf.expand_dims(image1, 0))
+        tf.summary.image('data_augmentation/distorted_image2',
+                         tf.expand_dims(image2, 0))
+        # Flow to RGB representation
+        true_flow_0 = gt_flow[0, :, :, :]
+        true_flow_0 = tf.py_func(flow_to_image, [true_flow_0], tf.uint8)
+        # true_flow_0 = tf.py_function(func=flow_to_image, inp=[true_flow_0], Tout=tf.uint8)
+        true_flow_1 = gt_flow[1, :, :, :]
+        true_flow_1 = tf.py_func(flow_to_image, [true_flow_1], tf.uint8)
+        # true_flow_1 = tf.py_function(func=flow_to_image, inp=[true_flow_1], Tout=tf.uint8)
+        true_flow_img = tf.stack([true_flow_0, true_flow_1], 0)
+        tf.summary.image('data_augmentation/true_flow', true_flow_img, max_outputs=1)
     return image1, image2, gt_flow
 
 
@@ -311,7 +359,7 @@ def _generate_coeff(param, discount_coeff=tf.constant(1.0), default_value=tf.con
 # TODO: fix bug with data augmentation
 def load_batch(dataset_config_str, split_name, global_step=None, input_type='image_pairs', common_queue_capacity=64,
                common_queue_min=32, capacity_in_batches_train=4, capacity_in_batches_val=1, num_threads=8,
-               batch_size=None, data_augmentation=True):
+               batch_size=None, data_augmentation=True, add_summary=True):
 
     if dataset_config_str.lower() == 'flying_things3d':
         dataset_config = FLYING_THINGS_3D_ALL_DATASET_CONFIG
@@ -383,7 +431,8 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                 print("(image_matches) Applying data augmentation...")  # temporally to debug
                 print("only on training images with shape: {}".format(image_a.shape))
                 image_a, matches_a, sparse_flow, edges_a, flow = augment_all_interp(
-                    image_a, matches_a, sparse_flow, edges_a, flow, crop_h=crop[0], crop_w=crop[1])
+                    image_a, matches_a, sparse_flow, edges_a, flow, crop_h=crop[0], crop_w=crop[1],
+                    add_summary=add_summary, fast_mode=False)
 
             # Add extra 'batching' dimension
             image_bs = None
@@ -393,7 +442,8 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
         else:
             if data_augmentation and split_name == 'train':
                 print("(image_pairs) Applying data augmentation...")  # temporally to debug
-                image_a, image_b, flow = augment_all_estimation(image_a, image_b, flow, crop_h=crop[0], crop_w=crop[1])
+                image_a, image_b, flow = augment_all_estimation(image_a, image_b, flow, crop_h=crop[0], crop_w=crop[1],
+                                                                add_summary=add_summary, fast_mode=False)
             matches_as = None
             sparse_flows = None
             edges_as = None

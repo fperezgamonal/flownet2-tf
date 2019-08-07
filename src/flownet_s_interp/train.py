@@ -86,7 +86,9 @@ def main():
             num_threads=FLAGS.num_threads,
             capacity_in_batches_train=FLAGS.capacity_in_batches_train,
             capacity_in_batches_val=FLAGS.capacity_in_batches_val,
-            batch_size=FLAGS.batch_size,)
+            batch_size=FLAGS.batch_size,
+            data_augmentation=FLAGS.data_augmentation,
+            add_summary=FLAGS.log_tensorboard,)
 
         # Validation
         if FLAGS.val_iters > 0:
@@ -98,7 +100,8 @@ def main():
                 num_threads=FLAGS.num_threads,
                 capacity_in_batches_train=FLAGS.capacity_in_batches_train,
                 capacity_in_batches_val=FLAGS.capacity_in_batches_val,
-                batch_size=FLAGS.batch_size,)
+                batch_size=FLAGS.batch_size,
+                data_augmentation=False,)  # just in case as we already filter by split_name
 
         else:
             val_input_a = None
@@ -134,8 +137,7 @@ def main():
             add_hfem=FLAGS.add_hard_flow_example_mining,
             lambda_w=FLAGS.hfem_lambda_w,
             hfem_perc=FLAGS.hfem_perc_hard,
-            dataset_config_str=FLAGS.dataset_config,
-        )
+            dataset_config_str=FLAGS.dataset_config,)
     else:
         print("Input_type: 'image_pairs'")
         # Train
@@ -146,7 +148,10 @@ def main():
             num_threads=FLAGS.num_threads,
             capacity_in_batches_train=FLAGS.capacity_in_batches_train,
             capacity_in_batches_val=FLAGS.capacity_in_batches_val,
-            batch_size=FLAGS.batch_size,)
+            batch_size=FLAGS.batch_size,
+            data_augmentation=FLAGS.data_augmentation,
+            add_summary=FLAGS.log_tensorboard,)
+
         # Validation
         if FLAGS.val_iters > 0:
             val_input_a, val_input_b, val_flow = load_batch(
@@ -156,7 +161,9 @@ def main():
                 num_threads=FLAGS.num_threads,
                 capacity_in_batches_train=FLAGS.capacity_in_batches_train,
                 capacity_in_batches_val=FLAGS.capacity_in_batches_val,
-                batch_size=FLAGS.batch_size,)
+                batch_size=FLAGS.batch_size,
+                data_augmentation=False,)  # just in case as we already filter by split_name
+
         else:
             val_input_a = None
             val_input_b = None
