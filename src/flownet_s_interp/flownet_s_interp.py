@@ -53,18 +53,18 @@ class FlowNetS_interp(Net):
                         # Must set reuse for the first convolution to None so we can take different-sizes images for
                         # validation and training (data augmentation) ==> several changes (add to TODO)
                         # Source: https://www.researchgate.net/post/In_tensorflow_how_to_make_a_two-stream_neural_network_share_the_same_weights_in_several_layers
-                        conv_1 = slim.conv2d(pad(concat_inputs, 3), 64, 7, scope='conv1', reuse=False)
-                        conv_2 = slim.conv2d(pad(conv_1, 2), 128, 5, scope='conv2', reuse=tf.AUTO_REUSE)
-                        conv_3 = slim.conv2d(pad(conv_2, 2), 256, 5, scope='conv3', reuse=tf.AUTO_REUSE)
+                        conv_1 = slim.conv2d(pad(concat_inputs, 3), 64, 7, scope='conv1')
+                        conv_2 = slim.conv2d(pad(conv_1, 2), 128, 5, scope='conv2')
+                        conv_3 = slim.conv2d(pad(conv_2, 2), 256, 5, scope='conv3')
 
-                    conv3_1 = slim.conv2d(pad(conv_3), 256, 3, scope='conv3_1', reuse=tf.AUTO_REUSE)
-                    with slim.arg_scope([slim.conv2d], num_outputs=512, kernel_size=3, reuse=tf.AUTO_REUSE):
+                    conv3_1 = slim.conv2d(pad(conv_3), 256, 3, scope='conv3_1')
+                    with slim.arg_scope([slim.conv2d], num_outputs=512, kernel_size=3):
                         conv4 = slim.conv2d(pad(conv3_1), stride=2, scope='conv4')
                         conv4_1 = slim.conv2d(pad(conv4), scope='conv4_1')
                         conv5 = slim.conv2d(pad(conv4_1), stride=2, scope='conv5')
                         conv5_1 = slim.conv2d(pad(conv5), scope='conv5_1')
-                    conv6 = slim.conv2d(pad(conv5_1), 1024, 3, stride=2, scope='conv6', reuse=tf.AUTO_REUSE)
-                    conv6_1 = slim.conv2d(pad(conv6), 1024, 3, scope='conv6_1', reuse=tf.AUTO_REUSE)
+                    conv6 = slim.conv2d(pad(conv5_1), 1024, 3, stride=2, scope='conv6')
+                    conv6_1 = slim.conv2d(pad(conv6), 1024, 3, scope='conv6_1')
 
                     """ START: Refinement Network """
                     if self.no_deconv_biases:
@@ -74,8 +74,7 @@ class FlowNetS_interp(Net):
                         # Add biases to deconv layers (zero initialised)
                         biases_initializer = tf.zeros_initializer()
 
-                    with slim.arg_scope([slim.conv2d_transpose], biases_initializer=biases_initializer,
-                                        reuse=tf.AUTO_REUSE):
+                    with slim.arg_scope([slim.conv2d_transpose], biases_initializer=biases_initializer,):
                         predict_flow6 = slim.conv2d(pad(conv6_1), 2, 3,
                                                     scope='predict_flow6',
                                                     activation_fn=None)
