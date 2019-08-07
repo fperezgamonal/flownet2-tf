@@ -1197,6 +1197,7 @@ class Net(object):
             summary_loss = tf.summary.scalar('train/loss', train_loss)
             # Show the generated flow in TensorBoard
             if 'flow' in predictions:
+                print("predictions['flow'].shape: {}".format(predictions['flow'].shape))
                 pred_flow_0 = predictions['flow'][0, :, :, :]
                 pred_flow_0 = tf.py_func(flow_to_image, [pred_flow_0], tf.uint8)
                 # pred_flow_0 = tf.py_function(func=flow_to_image, inp=[pred_flow_0], Tout=tf.uint8)
@@ -1207,6 +1208,7 @@ class Net(object):
                 tf.summary.image('train/pred_flow', pred_flow_img, max_outputs=1)
 
             # Add ground truth flow (TRAIN)
+            print("gt_flow.shape: {}".format(gt_flow.shape))
             true_flow_0 = gt_flow[0, :, :, :]
             true_flow_0 = tf.py_func(flow_to_image, [true_flow_0], tf.uint8)
             # true_flow_0 = tf.py_function(func=flow_to_image, inp=[true_flow_0], Tout=tf.uint8)
