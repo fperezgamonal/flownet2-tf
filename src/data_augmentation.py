@@ -158,7 +158,7 @@ def random_channel_swap(img_list):
     #
     # img_list = tf.map_fn(lambda x: channel_swap_once(x, permutation), img_list)
     # for i, img in enumerate(img_list):
-    for i in range(img_list.shape[0]):
+    for i in range(len(img_list)):
         img = img_list[i]
         channel_1 = img[:, :, permutation[0]]
         channel_2 = img[:, :, permutation[1]]
