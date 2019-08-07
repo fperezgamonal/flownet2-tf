@@ -147,13 +147,22 @@ def random_channel_swap(img_list):
                                        [2, 0, 1],
                                        [2, 1, 0]])
     rand_i = tf.random_uniform([], minval=0, maxval=6, dtype=tf.int32)
-    perm = channel_permutation[rand_i]
+    permutation = channel_permutation[rand_i]
+
+    # def channel_swap_once(image, perm):
+    #     channel_1 = image[:, :, perm[0]]
+    #     channel_2 = image[:, :, perm[1]]
+    #     channel_3 = image[:, :, perm[2]]
+    #     image = tf.stack([channel_1, channel_2, channel_3], axis=-1)
+    #     return image
+    #
+    # img_list = tf.map_fn(lambda x: channel_swap_once(x, permutation), img_list)
     # for i, img in enumerate(img_list):
-    for i in range(len(img_list)):
+    for i in range(img_list.shape[0]):
         img = img_list[i]
-        channel_1 = img[:, :, perm[0]]
-        channel_2 = img[:, :, perm[1]]
-        channel_3 = img[:, :, perm[2]]
+        channel_1 = img[:, :, permutation[0]]
+        channel_2 = img[:, :, permutation[1]]
+        channel_3 = img[:, :, permutation[2]]
         img_list[i] = tf.stack([channel_1, channel_2, channel_3], axis=-1)
     return img_list
 

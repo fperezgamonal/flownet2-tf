@@ -33,7 +33,7 @@ def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop
     [image, matches, edges], [sparse_flow, gt_flow] = random_flip_with_flow([image, matches, edges], [sparse_flow,
                                                                                                       gt_flow])
     # Random channel swap (only for RGB images)
-    image = random_channel_swap(image)
+    image = random_channel_swap([image])
 
     # Random colour distortions (only for RGB images)
     # There are 1 or 4 ways to do it. (1 == only brigthness and contrast, 4 hue and saturation)
