@@ -542,7 +542,7 @@ class Net(object):
             if save_image:  # save normalised and unormalised versions (awful results may be clipped to some colour)
                 flow_img = flow_to_image(pred_flow)
                 flow_img_norm = flow_to_image(pred_flow, maxflow=max_flow)
-                full_out_path = os.path.join(pred_flow, unique_name + '_viz.png')
+                full_out_path = os.path.join(out_path, unique_name + '_viz.png')
                 imsave(full_out_path, flow_img)
                 imsave(full_out_path.replace('.png', '_norm_gt_max_motion.png'), flow_img_norm)
 
