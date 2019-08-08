@@ -88,7 +88,7 @@ def main():
             capacity_in_batches_val=FLAGS.capacity_in_batches_val,
             batch_size=FLAGS.batch_size,
             data_augmentation=FLAGS.data_augmentation,
-            add_summary=FLAGS.log_tensorboard,)
+            add_summary_augmentation=FLAGS.log_tensorboard,)
 
         # Validation
         if FLAGS.val_iters > 0:
@@ -150,8 +150,7 @@ def main():
             capacity_in_batches_val=FLAGS.capacity_in_batches_val,
             batch_size=FLAGS.batch_size,
             data_augmentation=FLAGS.data_augmentation,
-            add_summary=FLAGS.log_tensorboard,)
-
+            add_summary_augmentation=FLAGS.log_tensorboard, )
         # Validation
         if FLAGS.val_iters > 0:
             val_input_a, val_input_b, val_flow = load_batch(
