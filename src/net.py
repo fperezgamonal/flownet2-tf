@@ -903,8 +903,8 @@ class Net(object):
             tf.logging.set_verbosity(tf.logging.DEBUG)
 
         training_schedule = self.get_training_schedule(training_schedule_str)
-        if log_tensorboard:
-            tf.summary.image("train/image_a", input_a, max_outputs=1)
+        if log_tensorboard:  # log first image of batch by default (to log more set max_outputs=X + pass entire input_a
+            tf.summary.image("train/image_a", input_a[0, :, :, :], max_outputs=1)
             # Temporal to check we properly shuffle training and validation batches
             if log_verbosity > 2:
                 tf.summary.scalar('debug/image_a_mean', tf.reduce_mean(input_a))
@@ -913,7 +913,7 @@ class Net(object):
                 tf.summary.scalar('debug/edges_a_mean', tf.reduce_mean(edges_a))
                 tf.summary.scalar('debug/gtflow_a_mean', tf.reduce_mean(gt_flow))
             if valid_iters > 0:
-                tf.summary.image("valid/image_a", val_input_a, max_outputs=1)
+                tf.summary.image("valid/image_a", val_input_a[0, :, :, :], max_outputs=1)
 
                 if log_verbosity > 2:
                     tf.summary.scalar('debug/val_image_a_mean', tf.reduce_mean(val_input_a))
@@ -927,15 +927,19 @@ class Net(object):
                 sparse_flow_0 = sparse_flow[0, :, :, :]
                 sparse_flow_img = tf.py_func(flow_to_image, [sparse_flow_0], tf.uint8)
                 tf.summary.image('train/sparse_flow', tf.expand_dims(sparse_flow_img, 0), max_outputs=1)
+                if edges_a is not None and add_hfem == 'edges':
+                    tf.summary.image("train/edges_a", edges_a[0, :, :, :], max_outputs=1)
                 if valid_iters > 0:
                     tf.summary.image("valid/matches_a", val_matches_a, max_outputs=1)
                     val_sparse_flow_0 = val_sparse_flow[0, :, :, :]
                     val_sparse_flow_img = tf.py_func(flow_to_image, [val_sparse_flow_0], tf.uint8)
                     tf.summary.image('valid/sparse_flow', tf.expand_dims(val_sparse_flow_img, 0), max_outputs=1)
+                    if val_edges_a is not None and add_hfem == 'edges':
+                        tf.summary.image("valid/edges_a", val_edges_a[0, :, :, :], max_outputs=1)
             else:
-                tf.summary.image("train/image_b", input_b, max_outputs=1)
+                tf.summary.image("train/image_b", input_b[0, :, :, :], max_outputs=1)
                 if valid_iters > 0:
-                    tf.summary.image("valid/image_b", val_input_b, max_outputs=1)
+                    tf.summary.image("valid/image_b", val_input_b[0, :, :, :], max_outputs=1)
 
         # Initialise global step by parsing checkpoint filename to define learning rate (restoring is done afterwards)
         if checkpoints is not None:

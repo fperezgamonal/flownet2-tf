@@ -25,7 +25,9 @@ def augment_image_pair(img1, img2, crop_h, crop_w):
     return img1, img2
 
 
-# TODO: Add augment_all to transform matches, sparse flow and gt_flow accordingly (unsupervised ==> supervised)
+# add_summary shows images when they are being augmented (that is, several images from the same batch)
+# This might be too verbose once we known the augmentations work as expected since the train/image_a, etc. are augmented
+# already and shown in TB by default
 def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop_w, add_summary=False, fast_mode=False):
     # image, matches, sparse_flow, edges, gt_flow = random_crop([image, matches, sparse_flow, edges, gt_flow], crop_h,
     #                                                           crop_w)
@@ -349,7 +351,7 @@ def _generate_coeff(param, discount_coeff=tf.constant(1.0), default_value=tf.con
 # TODO: fix bug with data augmentation
 def load_batch(dataset_config_str, split_name, global_step=None, input_type='image_pairs', common_queue_capacity=64,
                common_queue_min=32, capacity_in_batches_train=4, capacity_in_batches_val=1, num_threads=8,
-               batch_size=None, data_augmentation=True, add_summary=True):
+               batch_size=None, data_augmentation=True, add_summary_augmentation=False):
 
     if dataset_config_str.lower() == 'flying_things3d':
         dataset_config = FLYING_THINGS_3D_ALL_DATASET_CONFIG
@@ -421,7 +423,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                 print("(image_matches) Applying data augmentation...")  # temporally to debug
                 image_a, matches_a, sparse_flow, edges_a, flow = augment_all_interp(
                     image_a, matches_a, sparse_flow, edges_a, flow, crop_h=crop[0], crop_w=crop[1],
-                    add_summary=add_summary, fast_mode=False)
+                    add_summary=add_summary_augmentation, fast_mode=False)
 
             # Add extra 'batching' dimension
             image_bs = None
@@ -432,7 +434,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             if data_augmentation and split_name == 'train':
                 print("(image_pairs) Applying data augmentation...")  # temporally to debug
                 image_a, image_b, flow = augment_all_estimation(image_a, image_b, flow, crop_h=crop[0], crop_w=crop[1],
-                                                                add_summary=add_summary, fast_mode=False)
+                                                                add_summary=add_summary_augmentation, fast_mode=False)
             matches_as = None
             sparse_flows = None
             edges_as = None
