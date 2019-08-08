@@ -252,6 +252,21 @@ class Net(object):
             event_string = 'Sfine_{0}_{1}_it={2}_opt_Adam_wd={3}HFEM_{4}_{5}'.format(
                 dataset_name, ckpt_str, step_number, training_schedule['l2_regularization'], add_hfem, date_string)
 
+        elif 'lr_range_test' in training_schedule_str.lower():
+            if train_params_dict['lr_range_mode'] == 'linear':
+                total_iters = train_params_dict['lr_range_niters']
+            else:  # exponential
+                total_iters = train_params_dict['max_steps']
+
+            if train_params_dict['optimizer'] == 'momentum':
+                event_string = 'lr_range_test_{0}_minlr{1}_maxlr{2}_it={3}_opt{4}_wd={5}_CM{6}-{7}_{8}'.format(
+                    train_params_dict['lr_range_mode'], train_params_dict['start_lr'], train_params_dict['end_lr'],
+                    total_iters, 'momentum', train_params_dict['weight_decay'], train_params_dict['min_momentum'],
+                    train_params_dict['max_momentum'], date_string)
+            else:  # adam, adamwd or others that do not use cyclical momentum
+                event_string = 'lr_range_test_{0}_minlr{1}_maxlr{2}_it={3}_opt{4}_wd={5}_{6}'.format(
+                    train_params_dict['lr_range_mode'], train_params_dict['start_lr'], train_params_dict['end_lr'],
+                    total_iters, train_params_dict['optimizer'], train_params_dict['weight_decay'], date_string)
         else:
             event_string = '{0}'.format(date_string)
 
@@ -1302,13 +1317,13 @@ class Net(object):
 
                 # Get checkpoint state from checkpoint_path (used to restore vars)
                 ckpt = tf.train.get_checkpoint_state(os.path.dirname(checkpoint_path))
-                if log_verbosity > 1:
+                if log_verbosity > 2:
                     # print("last_ckpt_name: '{}'".format(last_ckpt_name))
                     print("ckpt.model_checkpoint_path: '{}'".format(ckpt.model_checkpoint_path))
                     print("reset_global_step: {}".format(reset_global_step))
 
                 vars2restore = optimistic_restore_vars(ckpt.model_checkpoint_path, reset_global_step=reset_global_step)
-                if log_verbosity > 1:
+                if log_verbosity > 2:
                     print("Path from which checkpoint state is computed: '{}'".format(os.path.dirname(checkpoint_path)))
                     print("Listing variables that will be restored(optimistic_restore_vars), total: {}:".format(
                         len(vars2restore)))
