@@ -79,7 +79,7 @@ def main():
     if FLAGS.input_type == 'image_matches':
         print("Input_type: 'image_matches'")
         # Train
-        input_a, matches_a, sparse_flow, edges_a, flow, eff_batch_size = load_batch(
+        input_a, matches_a, sparse_flow, edges_a, flow = load_batch(
             FLAGS.dataset_config, 'train', input_type=FLAGS.input_type,
             common_queue_capacity=FLAGS.common_queue_capacity,
             common_queue_min=FLAGS.common_queue_min,
@@ -89,7 +89,7 @@ def main():
             batch_size=FLAGS.batch_size,
             data_augmentation=FLAGS.data_augmentation,
             add_summary_augmentation=FLAGS.log_tensorboard,)
-        train_params_dict['eff_batch_size'] = eff_batch_size
+        train_params_dict['eff_batch_size'] = FLAGS.batch_size
 
         # Validation
         if FLAGS.val_iters > 0:
@@ -142,7 +142,7 @@ def main():
     else:
         print("Input_type: 'image_pairs'")
         # Train
-        input_a, input_b, flow, eff_batch_size = load_batch(
+        input_a, input_b, flow = load_batch(
             FLAGS.dataset_config, 'train', input_type=FLAGS.input_type,
             common_queue_capacity=FLAGS.common_queue_capacity,
             common_queue_min=FLAGS.common_queue_min,
@@ -152,7 +152,7 @@ def main():
             batch_size=FLAGS.batch_size,
             data_augmentation=FLAGS.data_augmentation,
             add_summary_augmentation=FLAGS.log_tensorboard, )
-        train_params_dict['eff_batch_size'] = eff_batch_size
+        train_params_dict['eff_batch_size'] = FLAGS.batch_size
 
         # Validation
         if FLAGS.val_iters > 0:

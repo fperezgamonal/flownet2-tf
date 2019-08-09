@@ -205,6 +205,17 @@ class Net(object):
             ${DATASETSTR}_${SCRACTH/CKPT}_it=${CKPT_ITER}_${TRAIN_SCHEDULE}_${TSCHEDparams}_${date_string}
 
         """
+        if train_params_dict['eff_batch_size'] is not None and train_params_dict['eff_batch_size'] > 0:
+            eff_batch_size = train_params_dict['eff_batch_size']
+        else:
+            if dataset_name.lower() == 'flying_things3d' or dataset_name.lower() == 'ft3d_sintel' or \
+                    dataset_name.lower() == 'sintel_final' or dataset_name.lower() == 'sintel_all':
+                eff_batch_size = 4
+            elif dataset_name.lower() == 'fc_sintel':
+                eff_batch_size = 8
+            else:
+                eff_batch_size = 8
+
         # Check for values
         if ckpt_path is not None:
             ckpt_str = 'ckpt'
@@ -221,42 +232,39 @@ class Net(object):
         elif 'clr' in training_schedule_str.lower():  # make it all caps for readability
             event_string = '{0}_from_{1}_it_{2}_trainSch_CLR_BS_{3}_opt_{4}_wd_{5:.1e}_minlr_{6:.1e}_maxlr_{7:.1e}_' \
                            'stepsize_{8}_{9}cycles_HFEM_{10}_{11}'.format(
-                dataset_name, ckpt_str, step_number, train_params_dict['eff_batch_size'],
-                train_params_dict['optimizer'], train_params_dict['weight_decay'],
-                train_params_dict['clr_min_lr'], train_params_dict['clr_max_lr'],
+                dataset_name, ckpt_str, step_number, eff_batch_size, train_params_dict['optimizer'],
+                train_params_dict['weight_decay'], train_params_dict['clr_min_lr'], train_params_dict['clr_max_lr'],
                 train_params_dict['clr_stepsize'], train_params_dict['clr_num_cycles'], add_hfem, date_string)
 
         elif 'one_cycle' in training_schedule_str.lower():
             if train_params_dict['optimizer'].lower() == 'momentum':
                 event_string = '{0}_from_{1}_it_{2}_trainSch_1cycle_BS_{3}_opt_{4}_CM_{5}-{6}_wd_{7:.1e}_' \
                                'minlr_{8:.1e}_maxlr_{9:.1e}_stepsize_{10}_{11}iters_HFEM_{12}_{13}'.format(
-                    dataset_name, ckpt_str, step_number, train_params_dict['eff_batch_size'],
-                    train_params_dict['optimizer'], train_params_dict['min_momentum'], train_params_dict['max_momentum'],
-                    train_params_dict['weight_decay'], train_params_dict['clr_min_lr'],
-                    train_params_dict['clr_max_lr'], train_params_dict['clr_stepsize'], maximum_iters, add_hfem,
-                    date_string)
+                    dataset_name, ckpt_str, step_number, 'eff_batch_size', train_params_dict['optimizer'],
+                    train_params_dict['min_momentum'], train_params_dict['max_momentum'],
+                    train_params_dict['weight_decay'], train_params_dict['clr_min_lr'], train_params_dict['clr_max_lr'],
+                    train_params_dict['clr_stepsize'], maximum_iters, add_hfem, date_string)
             else:
                 event_string = '{0}_from_{1}_it_{2}_trainSch_1cycle_BS_{3}_opt_{4}_wd_{5:.1e}_minlr_{6:.1e}_' \
                                'maxlr_{7:.1e}_stepsize_{8}_{9}iters_HFEM_{10}_{11}'.format(
-                    dataset_name, ckpt_str, step_number, train_params_dict['eff_batch_size'],
-                    train_params_dict['optimizer'], train_params_dict['weight_decay'], train_params_dict['clr_min_lr'],
-                    train_params_dict['clr_max_lr'], train_params_dict['clr_stepsize'], maximum_iters, add_hfem,
-                    date_string)
+                    dataset_name, ckpt_str, step_number, eff_batch_size, train_params_dict['optimizer'],
+                    train_params_dict['weight_decay'], train_params_dict['clr_min_lr'], train_params_dict['clr_max_lr'],
+                    train_params_dict['clr_stepsize'], maximum_iters, add_hfem, date_string)
 
         elif 'exp_decr' in training_schedule_str.lower():
             event_string = '{0}_from_{1}_it_{2}_trainSch_expDecr_BS{3}_opt_{4}_wd_{5:.1e}_startlr_{6:.1e}_endlr_' \
                            '{7:.1e}_HFEM_{8}_{9}'.format(
-                dataset_name, ckpt_str, step_number, train_params_dict['eff_batch_size'], train_params_dict['optimizer'],
+                dataset_name, ckpt_str, step_number, eff_batch_size, train_params_dict['optimizer'],
                 train_params_dict['weight_decay'], train_params_dict['start_lr'], train_params_dict['end_lr'], add_hfem,
                 date_string)
         elif 'long' in training_schedule_str.lower():
             event_string = 'Slong_{0}_{1}_it={2}_BS{3}_opt_Adam_wd={4:.1e}HFEM_{5}_{6}'.format(
-                dataset_name, ckpt_str, step_number, train_params_dict['eff_batch_size'],
+                dataset_name, ckpt_str, step_number, eff_batch_size,
                 training_schedule['l2_regularization'], add_hfem, date_string)
         elif 'fine' in training_schedule_str.lower():  # format it a little better, FT3D for FlyingThings3D
             event_string = 'Sfine_{0}_{1}_it={2}_BS{3}_opt_Adam_wd={4:.1e}HFEM_{5}_{6}'.format(
-                dataset_name, ckpt_str, step_number, train_params_dict['eff_batch_size'],
-                training_schedule['l2_regularization'], add_hfem, date_string)
+                dataset_name, ckpt_str, step_number, eff_batch_size, training_schedule['l2_regularization'], add_hfem,
+                date_string)
 
         elif 'lr_range_test' in training_schedule_str.lower():
             if train_params_dict['lr_range_mode'] == 'linear':
@@ -268,14 +276,13 @@ class Net(object):
                 event_string = 'lr_range_test_{0}_minlr{1:.1e}_maxlr{2:.1e}_it={3}_BS{4}_opt{5}_wd={6:.1e}_CM{7}-{8}_' \
                                '{9}'.format(
                     train_params_dict['lr_range_mode'], train_params_dict['start_lr'], train_params_dict['end_lr'],
-                    total_iters, train_params_dict['eff_batch_size'], 'momentum', train_params_dict['weight_decay'],
-                    train_params_dict['min_momentum'],
-                    train_params_dict['max_momentum'], date_string)
+                    total_iters, eff_batch_size, 'momentum', train_params_dict['weight_decay'],
+                    train_params_dict['min_momentum'], train_params_dict['max_momentum'], date_string)
             else:  # adam, adamwd or others that do not use cyclical momentum
                 event_string = 'lr_range_test_{0}_minlr{1:.1e}_maxlr{2:.1e}_it={3}_BS{4}_opt{5}_wd={6:.1e}_{7}'.format(
                     train_params_dict['lr_range_mode'], train_params_dict['start_lr'], train_params_dict['end_lr'],
-                    total_iters, train_params_dict['eff_batch_size'], train_params_dict['optimizer'],
-                    train_params_dict['weight_decay'], date_string)
+                    total_iters, eff_batch_size, train_params_dict['optimizer'], train_params_dict['weight_decay'],
+                    date_string)
         else:
             event_string = '{0}'.format(date_string)
 
