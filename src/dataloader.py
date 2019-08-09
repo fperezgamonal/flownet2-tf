@@ -538,7 +538,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                                       batch_size=batch_size,
                                       capacity=batch_size * capacity_in_batches_train,
                                       allow_smaller_final_batch=False,
-                                      num_threads=num_threads)
+                                      num_threads=num_threads), batch_size
         else:
             print("(dataloader.py): input_type is 'image_pairs'; split is '{}'".format(split_name))
             if split_name == 'valid':
@@ -554,4 +554,4 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                                       batch_size=batch_size,
                                       capacity=batch_size * capacity_in_batches_train,
                                       allow_smaller_final_batch=False,
-                                      num_threads=num_threads)
+                                      num_threads=num_threads), batch_size
