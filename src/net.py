@@ -205,7 +205,8 @@ class Net(object):
             ${DATASETSTR}_${SCRACTH/CKPT}_it=${CKPT_ITER}_${TRAIN_SCHEDULE}_${TSCHEDparams}_${date_string}
 
         """
-        if train_params_dict['eff_batch_size'] is not None and train_params_dict['eff_batch_size'] > 0:
+        if train_params_dict is not None and train_params_dict and train_params_dict['eff_batch_size'] is not None and\
+                train_params_dict['eff_batch_size'] > 0:
             eff_batch_size = train_params_dict['eff_batch_size']
         else:
             if dataset_name.lower() == 'flying_things3d' or dataset_name.lower() == 'ft3d_sintel' or \
@@ -1008,7 +1009,7 @@ class Net(object):
 
         # TODO: simplify (if possible) how we separate the step-wise policies (train_params_dict is None) vs the rest
         # max_steps overrides max_iter which is configured in training_schedules.py
-        if train_params_dict is not None:
+        if train_params_dict is not None and train_params_dict:  # not None or empty
             if 'max_steps' in train_params_dict:
                 if train_params_dict['max_steps'] > 0:
                     training_schedule['max_iters'] = train_params_dict['max_steps']
@@ -1016,7 +1017,7 @@ class Net(object):
                         training_schedule['max_iters'], train_params_dict['max_steps']))
 
         # learning rate range test to bound max/min optimal learning rate (2015, Leslie N. Smith)
-        if lr_range_test and train_params_dict is not None:
+        if lr_range_test and train_params_dict is not None and train_params_dict:
             if lr_range_test is not None:  # use the input params
                 start_lr = train_params_dict['start_lr']
                 end_lr = train_params_dict['end_lr']
@@ -1045,7 +1046,7 @@ class Net(object):
                                            step_size=lr_range_niters, mode='triangular')
 
         elif isinstance(training_schedule['learning_rates'], str) and not lr_range_test and \
-                train_params_dict is not None:
+                train_params_dict is not None and train_params_dict:
             if training_schedule['learning_rates'].lower() == 'clr' and training_schedule_str == 'clr':
                 if log_verbosity > 1:
                     print("Learning rate policy is CLR (Cyclical Learning Rate)")
@@ -1086,7 +1087,7 @@ class Net(object):
                                                         [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
                                                         training_schedule['learning_rates'])
         # TODO: define common variables outside of individual if-statements to keep it as short as possible
-        if train_params_dict is not None:
+        if train_params_dict is not None and train_params_dict:
             if train_params_dict['optimizer'] is not None:
                 # Stochastic Gradient Descent (SGD)
                 if train_params_dict['optimizer'].lower() == 'sgd':
@@ -1451,4 +1452,5 @@ class Net(object):
                         saver=saver,
                         # summary_writer=train_writer,
                     )
+
             print("Finished training, last batch loss: {:^15.4f}".format(final_loss))

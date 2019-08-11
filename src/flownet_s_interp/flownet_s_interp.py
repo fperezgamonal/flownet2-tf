@@ -132,6 +132,7 @@ class FlowNetS_interp(Net):
                     flow = predict_flow2 * 20.0
                     # TODO: Look at Accum (train) or Resample (deploy) to see if we need to do something different
                     # TODO: should use TF2.0 compat version as this has a bug
+                    # Or alternatively use keras.layers.upsample2D()
                     # bug: asymmetrical padding ==> see:
                     # https://stackoverflow.com/questions/50591669/tf-image-resize-bilinear-vs-cv2-resize/50611485#50611485
                     # Not too bad if we add the flag: half_pixel_centers=True

@@ -89,7 +89,8 @@ def main():
             batch_size=FLAGS.batch_size,
             data_augmentation=FLAGS.data_augmentation,
             add_summary_augmentation=FLAGS.log_tensorboard,)
-        train_params_dict['eff_batch_size'] = FLAGS.batch_size
+        if train_params_dict is not None:
+            train_params_dict['eff_batch_size'] = FLAGS.batch_size
 
         # Validation
         if FLAGS.val_iters > 0:
@@ -152,7 +153,8 @@ def main():
             batch_size=FLAGS.batch_size,
             data_augmentation=FLAGS.data_augmentation,
             add_summary_augmentation=FLAGS.log_tensorboard, )
-        train_params_dict['eff_batch_size'] = FLAGS.batch_size
+        if train_params_dict is not None:
+            train_params_dict['eff_batch_size'] = FLAGS.batch_size
 
         # Validation
         if FLAGS.val_iters > 0:
