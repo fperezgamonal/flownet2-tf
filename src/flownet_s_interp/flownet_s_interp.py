@@ -40,8 +40,16 @@ class FlowNetS_interp(Net):
                                 # Only backprop this network if trainable
                                 trainable=trainable,
                                 # He (aka MSRA) weight initialization
-                                weights_initializer=tf.contrib.layers.variance_scaling_initializer(
-                                    factor=2.0, mode='FAN_IN', uniform=False, seed=None, dtype=tf.float32),
+                                # weights_initializer=tf.contrib.layers.variance_scaling_initializer(
+                                #     factor=2.0, mode='FAN_IN', uniform=False, seed=None, dtype=tf.float32),
+                                # or simply use default values ==> He
+                                weights_initializer=tf.contrib.layers.variance_scaling_initializer(),
+                                # Xavier (aka Glorot Uniform) weight initialization
+                                # weights_initializer=tf.contrib.layers.xavier_initializer(),
+                                # Biases initialization
+                                # biases_initializer=tf.random_uniform_initializer(),  # uniform
+                                # Zeros (og caffe implementation)
+                                biases_initializer=tf.zeros_initializer(),
                                 # LeakyReLU, changed custom to TF's built-in
                                 activation_fn=lambda x: tf.nn.leaky_relu(x, alpha=0.1),
                                 # We will do our own padding to match the original Caffe code
@@ -57,7 +65,7 @@ class FlowNetS_interp(Net):
                         conv_2 = slim.conv2d(pad(conv_1, 2), 128, 5, scope='conv2')
                         conv_3 = slim.conv2d(pad(conv_2, 2), 256, 5, scope='conv3')
 
-                    conv3_1 = slim.conv2d(pad(conv_3), 256, 3, scope='conv3_1')
+                    conv3_1 = slim.conv2d(pad(conv_3), 256, 3, scope='conv3_1', stride=1)  # stride=2 was wrong!
                     with slim.arg_scope([slim.conv2d], num_outputs=512, kernel_size=3):
                         conv4 = slim.conv2d(pad(conv3_1), stride=2, scope='conv4')
                         conv4_1 = slim.conv2d(pad(conv4), scope='conv4_1')
@@ -69,96 +77,102 @@ class FlowNetS_interp(Net):
                     """ START: Refinement Network """
                     if self.no_deconv_biases:
                         # Do not define biases for deconvolutional layers (like in the og code)
+                        # NOTE: upsampled_flow... layers DO NOT have biases
                         biases_initializer = None
                     else:
                         # Add biases to deconv layers (zero initialised)
                         biases_initializer = tf.zeros_initializer()
-
-                    with slim.arg_scope([slim.conv2d_transpose], biases_initializer=biases_initializer,):
-                        predict_flow6 = slim.conv2d(pad(conv6_1), 2, 3,
-                                                    scope='predict_flow6',
-                                                    activation_fn=None)
-                        deconv5 = antipad(slim.conv2d_transpose(conv6_1, 512, 4,
-                                                                stride=2,
-                                                                scope='deconv5'))
-                        upsample_flow6to5 = antipad(slim.conv2d_transpose(predict_flow6, 2, 4,
-                                                                          stride=2,
+                        # biases_initializer = tf.random_uniform_initializer()
+                    with slim.arg_scope([slim.conv2d_transpose],):
+                        predict_flow6 = slim.conv2d(pad(conv6_1), 2, 3, scope='predict_flow6', activation_fn=None,
+                                                    biases_initializer=biases_initializer)
+                        deconv5 = antipad(slim.conv2d_transpose(conv6_1, 512, 4, stride=2, scope='deconv5',
+                                                                biases_initializer=biases_initializer))
+                        upsample_flow6to5 = antipad(slim.conv2d_transpose(predict_flow6, 2, 4, stride=2,
                                                                           scope='upsample_flow6to5',
-                                                                          activation_fn=None))
+                                                                          activation_fn=None,
+                                                                          biases_initializer=None))
                         concat5 = tf.concat([conv5_1, deconv5, upsample_flow6to5], axis=3)
 
-                        predict_flow5 = slim.conv2d(pad(concat5), 2, 3,
-                                                    scope='predict_flow5',
-                                                    activation_fn=None)
-                        deconv4 = antipad(slim.conv2d_transpose(concat5, 256, 4,
-                                                                stride=2,
-                                                                scope='deconv4'))
-                        upsample_flow5to4 = antipad(slim.conv2d_transpose(predict_flow5, 2, 4,
-                                                                          stride=2,
-                                                                          scope='upsample_flow5to4',
-                                                                          activation_fn=None))
+                        predict_flow5 = slim.conv2d(pad(concat5), 2, 3, scope='predict_flow5', activation_fn=None,
+                                                    biases_initializer=biases_initializer)
+                        deconv4 = antipad(slim.conv2d_transpose(concat5, 256, 4, stride=2, scope='deconv4',
+                                                                biases_initializer=biases_initializer))
+                        upsample_flow5to4 = antipad(slim.conv2d_transpose(predict_flow5, 2, 4, stride=2,
+                                                                          scope='upsample_flow5to4', activation_fn=None,
+                                                                          biases_initializer=None))
                         concat4 = tf.concat([conv4_1, deconv4, upsample_flow5to4], axis=3)
 
-                        predict_flow4 = slim.conv2d(pad(concat4), 2, 3,
-                                                    scope='predict_flow4',
-                                                    activation_fn=None)
-                        deconv3 = antipad(slim.conv2d_transpose(concat4, 128, 4,
-                                                                stride=2,
-                                                                scope='deconv3'))
-                        upsample_flow4to3 = antipad(slim.conv2d_transpose(predict_flow4, 2, 4,
-                                                                          stride=2,
-                                                                          scope='upsample_flow4to3',
-                                                                          activation_fn=None))
+                        predict_flow4 = slim.conv2d(pad(concat4), 2, 3, scope='predict_flow4', activation_fn=None,
+                                                    biases_initializer=biases_initializer)
+                        deconv3 = antipad(slim.conv2d_transpose(concat4, 128, 4, stride=2, scope='deconv3',
+                                                                biases_initializer=biases_initializer))
+                        upsample_flow4to3 = antipad(slim.conv2d_transpose(predict_flow4, 2, 4, stride=2,
+                                                                          scope='upsample_flow4to3', activation_fn=None,
+                                                                          biases_initializer=None))
 
                         concat3 = tf.concat([conv3_1, deconv3, upsample_flow4to3], axis=3)
 
-                        predict_flow3 = slim.conv2d(pad(concat3), 2, 3,
-                                                    scope='predict_flow3',
-                                                    activation_fn=None)
-                        deconv2 = antipad(slim.conv2d_transpose(concat3, 64, 4,
-                                                                stride=2,
-                                                                scope='deconv2'))
-                        upsample_flow3to2 = antipad(slim.conv2d_transpose(predict_flow3, 2, 4,
-                                                                          stride=2,
+                        predict_flow3 = slim.conv2d(pad(concat3), 2, 3, scope='predict_flow3', activation_fn=None,
+                                                    biases_initializer=biases_initializer)
+                        deconv2 = antipad(slim.conv2d_transpose(concat3, 64, 4, stride=2, scope='deconv2',
+                                                                biases_initializer=biases_initializer))
+                        upsample_flow3to2 = antipad(slim.conv2d_transpose(predict_flow3, 2, 4, stride=2,
                                                                           scope='upsample_flow3to2',
-                                                                          activation_fn=None))
+                                                                          activation_fn=None, biases_initializer=None))
                         concat2 = tf.concat([conv_2, deconv2, upsample_flow3to2], axis=3)
 
-                        predict_flow2 = slim.conv2d(pad(concat2), 2, 3,
-                                                    scope='predict_flow2',
-                                                    activation_fn=None)
+                        predict_flow2 = slim.conv2d(pad(concat2), 2, 3, scope='predict_flow2', activation_fn=None,
+                                                    biases_initializer=biases_initializer)
                     """ END: Refinement Network """
 
-                    flow = predict_flow2 * 20.0
-                    # TODO: Look at Accum (train) or Resample (deploy) to see if we need to do something different
-                    # TODO: should use TF2.0 compat version as this has a bug
-                    # Or alternatively use keras.layers.upsample2D()
-                    # bug: asymmetrical padding ==> see:
-                    # https://stackoverflow.com/questions/50591669/tf-image-resize-bilinear-vs-cv2-resize/50611485#50611485
-                    # Not too bad if we add the flag: half_pixel_centers=True
-                    flow = tf.image.resize_bilinear(flow, tf.stack([height, width]), align_corners=True,)
-                    # half_pixel_centers=True) ==> cluster version 1.12 does not have it (added on TF 1.13)
+                    # During training, return only predict_flow6 through predict_flow2 not upscaled flow
+                    if trainable:
+                        return {
+                            'predict_flow6': predict_flow6,
+                            'predict_flow5': predict_flow5,
+                            'predict_flow4': predict_flow4,
+                            'predict_flow3': predict_flow3,
+                            'predict_flow2': predict_flow2,
+                        }
+                    else:
 
-                    return {
-                        'predict_flow6': predict_flow6,
-                        'predict_flow5': predict_flow5,
-                        'predict_flow4': predict_flow4,
-                        'predict_flow3': predict_flow3,
-                        'predict_flow2': predict_flow2,
-                        'flow': flow,
-                    }
+                        # Otherwise, in inference, return upsampled predicted_flow2
+                        predict_flow = predict_flow2 * 20.0
+                        # TODO: Look at Accum (train) or Resample (deploy) to see if we need to do something different
+                        # TODO: should use TF2.0 compat version as this has a bug
+                        # Or alternatively use keras.layers.upsample2D()
+                        # bug: asymmetrical padding ==> see:
+                        # https://stackoverflow.com/questions/50591669/tf-image-resize-bilinear-vs-cv2-resize/50611485#50611485
+                        # Not too bad with align_corners=True (despite Pytorch default is False :S)
+                        predict_flow = tf.image.resize_bilinear(predict_flow, tf.stack([height, width]),
+                                                                align_corners=True,)
+                        # half_pixel_centers=True) ==> cluster version 1.12 does not have it (added on TF 1.13)
+                        # It seems tf.keras.layers.UpSampling2D has a similar bug:
+                        # source : https://github.com/tensorflow/tensorflow/issues/29856#issue-456708679
+                        # predict_flow = tf.keras.layers.UpSampling2D(predict_flow, size=4, interpolation='bilinear')
+
+                        return {'flow': predict_flow, }
 
     # Computes the AEPE or AEPE + HFEM loss for all model scales
-    def loss(self, flow, predictions, add_hard_flow_mining='', lambda_weight=2., hard_examples_perc=50, edges=None):
-        flow = flow * 0.05  # i.e.: flow / 20
+    def loss(self, targets, predictions, add_hard_flow_mining='', lambda_weight=2., hard_examples_perc=50, edges=None):
+        """
+        :param targets: ground truth optical flow (one batch)
+        :param predictions: predicted flows (one batch)
+        :param add_hard_flow_mining: whether to add HFEM by penalising more the worst-performing regions or edges
+        :param lambda_weight: penalising weight (loss_scale = EPE + EPE * edges/HFEM mask)
+        :param hard_examples_perc: when using HFEM, the percentage of worst-performing pixels considered
+        :param edges: if using edges, the reference edges
+        :return:
+        """
+        targets = targets * 0.05  # i.e.: targets / 20
         losses = []
-        INPUT_HEIGHT, INPUT_WIDTH = float(flow.shape[1].value), float(flow.shape[2].value)
-        predictions['flow'].get_shape().assert_is_compatible_with(flow.get_shape())
+        # INPUT_HEIGHT, INPUT_WIDTH = float(targets.shape[1].value), float(targets.shape[2].value)
 
         # L2 loss between predict_flow6, blob23 (weighted w/ 0.32)
         predict_flow6 = predictions['predict_flow6']
         size = [predict_flow6.shape[1], predict_flow6.shape[2]]
-        downsampled_flow6 = downsample(flow, size)
+        downsampled_flow6 = downsample(targets, size)
         if edges is not None and add_hard_flow_mining:
             # Must downsample edges image so we can compute weighted loss at each scale
             downsampled_edges6 = downsample(edges, size)
@@ -172,7 +186,7 @@ class FlowNetS_interp(Net):
         # L2 loss between predict_flow5, blob28 (weighted w/ 0.08)
         predict_flow5 = predictions['predict_flow5']
         size = [predict_flow5.shape[1], predict_flow5.shape[2]]
-        downsampled_flow5 = downsample(flow, size)
+        downsampled_flow5 = downsample(targets, size)
         if edges is not None and add_hard_flow_mining:
             # Must downsample edges image so we can compute weighted loss at each scale
             downsampled_edges5 = downsample(edges, size)
@@ -186,7 +200,7 @@ class FlowNetS_interp(Net):
         # L2 loss between predict_flow4, blob33 (weighted w/ 0.02)
         predict_flow4 = predictions['predict_flow4']
         size = [predict_flow4.shape[1], predict_flow4.shape[2]]
-        downsampled_flow4 = downsample(flow, size)
+        downsampled_flow4 = downsample(targets, size)
         if edges is not None and add_hard_flow_mining:
             # Must downsample edges image so we can compute weighted loss at each scale
             downsampled_edges4 = downsample(edges, size)
@@ -200,7 +214,7 @@ class FlowNetS_interp(Net):
         # L2 loss between predict_flow3, blob38 (weighted w/ 0.01)
         predict_flow3 = predictions['predict_flow3']
         size = [predict_flow3.shape[1], predict_flow3.shape[2]]
-        downsampled_flow3 = downsample(flow, size)
+        downsampled_flow3 = downsample(targets, size)
         if edges is not None and add_hard_flow_mining:
             # Must downsample edges image so we can compute weighted loss at each scale
             downsampled_edges3 = downsample(edges, size)
@@ -214,7 +228,7 @@ class FlowNetS_interp(Net):
         # L2 loss between predict_flow2, blob43 (weighted w/ 0.005)
         predict_flow2 = predictions['predict_flow2']
         size = [predict_flow2.shape[1], predict_flow2.shape[2]]
-        downsampled_flow2 = downsample(flow, size)
+        downsampled_flow2 = downsample(targets, size)
         if edges is not None and add_hard_flow_mining:
             # Must downsample edges image so we can compute weighted loss at each scale
             downsampled_edges2 = downsample(edges, size)

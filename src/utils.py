@@ -244,7 +244,7 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
     # 0. Convert all variables that are not tensors into tensors
     lambda_w = tf.convert_to_tensor(lambda_w, name='lambda')
     perc_hfem = tf.convert_to_tensor(perc_hfem, name='perc_hardflows')
-    batch_size = tf.to_float(tf.shape(predictions)[0])
+    batch_size = predictions.shape.as_list()[0]
 
     # 1. Compute "standard AEPE"
     predictions = tf.to_float(predictions)
@@ -261,7 +261,6 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
     # 2. Compute HFEM loss
     if add_hfem:  # add_hfem not empty
         if add_hfem.lower() == 'hard':
-            print("Adding Hard Examples to weighted loss function...")
             # 2.0.1 Average epe error 'images' over all batch (so we penalise top-k pixels w. largest MEAN error)
             epe_average_batch = epe  # tf.reduce_mean(epe, 0, keep_dims=True)
             # 2.0.2 Flatten EPE matrix to make finding idxs etc. easier
@@ -284,31 +283,28 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
             # epe_flatten_filtered = epe_flatten[HM_mask == 1]
             epe_flatten_filtered = tf.cast(tf.boolean_mask(epe_flatten, HM_mask), dtype=tf.float32)
             # aepe_hfem = lambda * sum(EPE[hard_flows]) / len(hard_flows)
-            sum_epe_flatten_filtered = tf.reduce_sum(epe_flatten_filtered)
-            b1 = tf.multiply(lambda_w, sum_epe_flatten_filtered)
-            b2 = tf.cast(tf.size(epe_flatten_filtered), tf.float32)
-            aepe_hfem = tf.divide(b1, b2)
+            # sum_epe_flatten_filtered = tf.reduce_sum(epe_flatten_filtered)
+            # Adding extra cost is like instead of multiplying epe * 1 we multiply it by (1+lambda) ONLY for hard pixels
+            # epe_and_hfem = epe_flatten_filtered + lambda * epe_flatten_filtered = (1 + lambda) * epe_flatten_filtered
+            epe_and_hfem = tf.multiply(1 + lambda_w, epe_flatten_filtered)
+            num_hard_pixels = tf.cast(tf.size(epe_flatten_filtered), tf.float32)
+            epe_and_hfem_sum = tf.reduce_sum(epe_and_hfem)
+            aepe_with_hfem = tf.divide(epe_and_hfem_sum, num_hard_pixels)
 
-            # Add both losses together
-            # aepe + aepe_fem
-            aepe_with_hfem = tf.add(aepe, aepe_hfem)
             return aepe_with_hfem
         elif add_hfem.lower() == 'edges' and edges is not None:
-            print("Adding edges to weighted loss function...")
             # Reshape into height x width (was batch x height x width x 1 to be fed to the network)
             # aepe_hfem_edges = lambda * edges_img * epe_img
             epe_times_edges = tf.multiply(epe, edges)  # both have shape: (batch, height, width, 1)
-            # Sum all error and divide by num_samples (batch_size)
-            aepe_edges = tf.reduce_mean(epe_times_edges)
-            lambda_edges = tf.multiply(lambda_w, aepe_edges)
+            # Sum epe weighted by the edges and 'standard' epe and THEN sum and divide over batch size
+            epe_and_edges = tf.add(epe, tf.multiply(lambda_w, epe_times_edges))
 
-            # Add both losses together
-            # aepe + aepe_edges
-            aepe_with_edges = tf.add(aepe, lambda_edges)
+            # Sum and divide by batch size
+            epe_edges_sum = tf.reduce_sum(epe_and_edges)
+            aepe_with_edges = epe_edges_sum / batch_size
             return aepe_with_edges
         else:
             # Return Average EPE
-            print("Standard AEPE")
             return aepe
     else:
         return aepe
