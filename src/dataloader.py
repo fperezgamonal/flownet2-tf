@@ -29,6 +29,8 @@ def augment_image_pair(img1, img2, crop_h, crop_w):
 # This might be too verbose once we known the augmentations work as expected since the train/image_a, etc. are augmented
 # already and shown in TB by default
 def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop_w, add_summary=False, fast_mode=False):
+    # Check if we can get global step value without explicitly passing it in which broke restoration from checkpoint
+    print("global_step.eval()".format(tf.train.get_global_step(graph=None).eval()))
     # image, matches, sparse_flow, edges, gt_flow = random_crop([image, matches, sparse_flow, edges, gt_flow], crop_h,
     #                                                           crop_w)
     # Random flip of images and flow
@@ -392,7 +394,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             common_queue_capacity=common_queue_capacity,  # this also broke training, we lowered it (og. value = 2048)
             common_queue_min=common_queue_min,  # this also broke training, we lowered it (og. value = 1024)
             reader_kwargs=reader_kwargs,
-            shuffle=True,)
+            shuffle=True if split_name == 'train' else False,)
 
         if input_type == 'image_matches':
             image_b = None
