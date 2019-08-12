@@ -1392,7 +1392,7 @@ class Net(object):
                 save_interval_secs = 10000  # effectively deactivates saving checkpoints when doing LR range tests
             else:
                 save_summaries_secs = 60
-                save_interval_secs = 180  # Save one checkpoint once every 3 minutes
+                save_interval_secs = 300  # Save one checkpoint once every 5 minutes
 
             if checkpoints is not None:
                 if valid_iters > 0:
