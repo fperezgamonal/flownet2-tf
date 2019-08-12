@@ -9,7 +9,7 @@ slim = tf.contrib.slim
 # Modified FlowNetS: same architecture BUT different input: first image + matches location + sparse flow
 class FlowNetS_interp(Net):
 
-    def __init__(self, mode=Mode.TRAIN, debug=False, no_deconv_biases=False):
+    def __init__(self, mode=Mode.TRAIN, debug=False, no_deconv_biases=True):
         super(FlowNetS_interp, self).__init__(mode=mode, debug=debug)
         self.no_deconv_biases = no_deconv_biases
 
