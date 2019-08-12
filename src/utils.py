@@ -240,6 +240,12 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
     According to the config: https://github.com/nbei/Deep-Flow-Guided-Video-Inpainting/tree/master/tools
     Lambda_w = 2 in training from scratch, 1 in later fine-tuning (for 'hard' only, for 'edges', experiment a bit)
     In the original approach, they did not use edges because they were doing inpainting (in this case we try it too)
+
+    We base the multi-scale loss formulation on Clement Pinard PyTorch re-implementation which was based off original
+    source: https://github.com/ClementPinard/FlowNetPytorch/issues/17
+    Notice that NVIDIA FlowNet2 implementation computes the mean of EPE maps so the weighting is inversely proportional
+    Like Sampepose's and Pychard's: https://github.com/ClementPinard/FlowNetPytorch/blob/master/multiscaleloss.py#L16,
+     NVIDIA's: https://github.com/NVIDIA/flownet2-pytorch/blob/master/losses.py#L12
     """
     # 0. Convert all variables that are not tensors into tensors
     lambda_w = tf.convert_to_tensor(lambda_w, name='lambda')

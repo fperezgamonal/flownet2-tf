@@ -239,7 +239,12 @@ class FlowNetS_interp(Net):
                                                   lambda_w=lambda_weight, perc_hfem=hard_examples_perc,
                                                   edges=downsampled_edges2))
 
-        loss = tf.losses.compute_weighted_loss(losses, [0.32, 0.08, 0.02, 0.01, 0.005])
+        # Important,: regarding the weighting of each scale, as we sum EPE maps, the coarser scales will have smaller
+        # value than the finer, higher resolution scales. That is why the coefficients are inversely proportional to
+        # those used if we took the mean (which would give higher EPE for coarser scales)
+        # See: https://github.com/ClementPinard/FlowNetPytorch/issues/54#issuecomment-452634159
+        loss = tf.losses.compute_weighted_loss(losses,
+                                               [0.32, 0.08, 0.02, 0.01, 0.005])  # flow6, flow5, flow4, flow3, flow2
         # Make sure loss is present in the final collection:
         # Default collection is tf.GraphKeys.LOSSES (used for training, another one for validation)
         tf.losses.add_loss(loss)  # without this it worked despite TF strongly recommending this for custom losses
