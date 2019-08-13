@@ -209,6 +209,7 @@ def sample_gt_flow_to_sparse(gt_flow, target_density=75, target_distribution='un
       sampling_mask = np.random.choice([0, 255], size=gt_flow.shape[:-1], p=[1 - p_fill, p_fill]).astype(
                     np.uint8)
       random_mask = sampling_mask == 255
+      tf.print(gt_flow.shape)
       random_mask_rep = np.repeat(random_mask[:, :, :, np.newaxis], 2, axis=-1)
       #tf.print(sampling_mask)
 #       sampling_mask_logical = sampling_mask == 1
