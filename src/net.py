@@ -241,7 +241,7 @@ class Net(object):
             if train_params_dict['optimizer'].lower() == 'momentum':
                 event_string = '{0}_from_{1}_it_{2}_trainSch_1cycle_BS_{3}_opt_{4}_CM_{5}-{6}_wd_{7:.1e}_' \
                                'minlr_{8:.1e}_maxlr_{9:.1e}_stepsize_{10}_{11}iters_HFEM_{12}_{13}'.format(
-                    dataset_name, ckpt_str, step_number, 'eff_batch_size', train_params_dict['optimizer'],
+                    dataset_name, ckpt_str, step_number, eff_batch_size, train_params_dict['optimizer'],
                     train_params_dict['min_momentum'], train_params_dict['max_momentum'],
                     train_params_dict['weight_decay'], train_params_dict['clr_min_lr'], train_params_dict['clr_max_lr'],
                     train_params_dict['clr_stepsize'], maximum_iters, add_hfem, date_string)
