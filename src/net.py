@@ -1307,7 +1307,7 @@ class Net(object):
                         var.op.name.split(new_scope + '/')[1]: var
                         for var in variables_to_restore
                     }
-                    if log_verbosity > 1:
+                    if log_verbosity > 2:
                         print("Restoring the following variables from checkpoint:")
                         for var in renamed_variables:
                             print(var)
