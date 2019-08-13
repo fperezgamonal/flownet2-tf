@@ -148,10 +148,10 @@ class FlowNetS_interp(Net):
                             'predict_flow4': predict_flow4,
                             'predict_flow3': predict_flow3,
                             'predict_flow2': predict_flow2,
-                            'flow': predict_flow,
+                            'flow': predict_flow,  # not used to compute the loss but useful to babysit training
                         }
                     else:
-                        return {'flow': predict_flow, }
+                        return {'flow': predict_flow, }  # for inference, we only want the upsampled flow
 
     # Computes the AEPE or AEPE + HFEM loss for all model scales
     def loss(self, targets, predictions, add_hard_flow_mining='', lambda_weight=2., hard_examples_perc=50, edges=None):
