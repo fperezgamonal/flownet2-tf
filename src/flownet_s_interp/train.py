@@ -2,12 +2,15 @@ from ..dataloader import load_batch
 from .flownet_s_interp import FlowNetS_interp
 import argparse
 from ..utils import str2bool
+import tensorflow as tf
 
 
 # TODO: update traning scripts for all other architectures with latest changes
 def main():
     # Create a new network
     net = FlowNetS_interp(no_deconv_biases=FLAGS.no_deconv_biases)
+    # Create global step here so we can track it from load_batch AND train
+    global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64)
     if FLAGS.checkpoint is not None and FLAGS.checkpoint:  # the second checks if the string is NOT empty
         print("Checkpoint path is NOT empty, parsing it...")
         print("ckpt_path: {}".format(FLAGS.checkpoint))
@@ -88,7 +91,8 @@ def main():
             capacity_in_batches_val=FLAGS.capacity_in_batches_val,
             batch_size=FLAGS.batch_size,
             data_augmentation=FLAGS.data_augmentation,
-            add_summary_augmentation=FLAGS.log_tensorboard,)
+            add_summary_augmentation=FLAGS.log_tensorboard,
+            global_step=global_step_tensor,)
         if train_params_dict is not None:
             train_params_dict['eff_batch_size'] = FLAGS.batch_size
 
@@ -139,7 +143,8 @@ def main():
             add_hfem=FLAGS.add_hard_flow_example_mining,
             lambda_w=FLAGS.hfem_lambda_w,
             hfem_perc=FLAGS.hfem_perc_hard,
-            dataset_config_str=FLAGS.dataset_config,)
+            dataset_config_str=FLAGS.dataset_config,
+            global_step_tensor=global_step_tensor,)
     else:
         print("Input_type: 'image_pairs'")
         # Train
@@ -152,7 +157,8 @@ def main():
             capacity_in_batches_val=FLAGS.capacity_in_batches_val,
             batch_size=FLAGS.batch_size,
             data_augmentation=FLAGS.data_augmentation,
-            add_summary_augmentation=FLAGS.log_tensorboard, )
+            add_summary_augmentation=FLAGS.log_tensorboard,
+            global_step=global_step_tensor,)
         if train_params_dict is not None:
             train_params_dict['eff_batch_size'] = FLAGS.batch_size
 
@@ -166,7 +172,8 @@ def main():
                 capacity_in_batches_train=FLAGS.capacity_in_batches_train,
                 capacity_in_batches_val=FLAGS.capacity_in_batches_val,
                 batch_size=FLAGS.batch_size,
-                data_augmentation=False,)  # just in case as we already filter by split_name
+                data_augmentation=False,
+                global_step=global_step_tensor,)  # just in case as we already filter by split_name
 
         else:
             val_input_a = None
@@ -197,7 +204,7 @@ def main():
             lambda_w=FLAGS.hfem_lambda_w,
             hfem_perc=FLAGS.hfem_perc_hard,
             dataset_config_str=FLAGS.dataset_config,
-        )
+            global_step_tensor=global_step_tensor,)
 
 
 # TODO: think a better way to generate the dictionaries of training parameters (not fixed, step-wise policies)

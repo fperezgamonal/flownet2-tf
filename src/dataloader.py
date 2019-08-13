@@ -28,9 +28,12 @@ def augment_image_pair(img1, img2, crop_h, crop_w):
 # add_summary shows images when they are being augmented (that is, several images from the same batch)
 # This might be too verbose once we known the augmentations work as expected since the train/image_a, etc. are augmented
 # already and shown in TB by default
-def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop_w, add_summary=False, fast_mode=False):
+def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop_w, add_summary=False, fast_mode=False,
+                       global_step=None):
+    print_out = tf.cond(tf.equal(global_step, tf.constant(0)), lambda: tf.print(global_step), lambda: print("Not 0"))
     # Check if we can get global step value without explicitly passing it in which broke restoration from checkpoint
     # print("global_step.eval()".format(tf.train.get_global_step(graph=None).eval()))
+    sparse_flow = sample_gt_flow_to_sparse(gt_flow)
     # image, matches, sparse_flow, edges, gt_flow = random_crop([image, matches, sparse_flow, edges, gt_flow], crop_h,
     #                                                           crop_w)
     # Random flip of images and flow
@@ -425,7 +428,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                 print("(image_matches) Applying data augmentation...")  # temporally to debug
                 image_a, matches_a, sparse_flow, edges_a, flow = augment_all_interp(
                     image_a, matches_a, sparse_flow, edges_a, flow, crop_h=crop[0], crop_w=crop[1],
-                    add_summary=add_summary_augmentation, fast_mode=False)
+                    add_summary=add_summary_augmentation, fast_mode=False, global_step=global_step)
 
             # Add extra 'batching' dimension
             image_bs = None

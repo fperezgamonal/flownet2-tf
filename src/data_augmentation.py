@@ -195,3 +195,32 @@ def flow_resize(flow, out_size, is_scale=True, method=0):
         scale = tf.stack([scale[1], scale[0]])
         flow = tf.multiply(flow, scale)
     return flow
+
+
+# Functions to sample ground truth flow with different density and probability distribution
+def sample_gt_flow_to_sparse(gt_flow, target_density=75, target_distribution='uniform'):
+    gt_flow_size = tf.cast(tf.shape(gt_flow)[1:-1], tf.int32)  # height and width only
+    # sparse_flow = tf.zeros(tf.shape(gt_flow), dtype=tf.float32)
+    sparse_flow = np.zeros(gt_flow.shape).astype(np.float32)
+    p_fill = target_density / 100  # target_density expressed in %
+    if target_distribution.lower() == 'uniform':
+      sampling_mask = np.random.choice([0, 255], size=gt_flow.shape[:-1], p=[1 - p_fill, p_fill]).astype(
+                    np.uint8)
+      random_mask = sampling_mask == 255
+      random_mask_rep = np.repeat(random_mask[:, :, np.newaxis], 2, axis=2)
+      #tf.print(sampling_mask)
+#       sampling_mask_logical = sampling_mask == 1
+#       pixel_idxs = np.where(sampling_mask == 1)
+      # sampling_mask = tf.convert_to_tensor(sampling_mask_logical, name='sampling_mask')
+        # sampling_mask = tf.random_uniform(gt_flow.shape, minval=0, maxval=1, dtype=tf.int32)
+
+    # conditioned_pixels = tf.equal(sampling_mask, tf.constant(1))
+    # pixel_idxs = tf.where(conditioned_pixels)
+#     pixel_idxs = tf.convert_to_tensor(pixel_idxs, name='pixel_idxs')
+#     sampling_mask_logical = tf.convert_to_tensor(sampling_mask_logical, name='sampling_mask_logical')
+    # gt_flow_pixel_idxs = tf.cast(tf.boolean_mask(gt_flow, sampling_mask_logical), dtype=tf.float32)
+    sparse_flow[random_mask_rep] = gt_flow[random_mask_rep]
+    sparse_flow = tf.convert_to_tensor(sparse_flow, name='sparse_flow')
+    # sparse_flow = tf.scatter_update(sparse_flow, pixel_idxs, gt_flow_pixel_idxs)
+
+    return sparse_flow
