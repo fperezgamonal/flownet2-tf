@@ -226,6 +226,7 @@ def sample_gt_flow_to_sparse(gt_flow, target_density=75, target_distribution='un
     # gt_flow_pixel_idxs = tf.cast(tf.boolean_mask(gt_flow, sampling_mask_logical), dtype=tf.float32)
     print(sparse_flow.shape)
     print(gt_flow.shape)
+    print("gt_flow/spars_flow [masked]")
     print(gt_flow[random_mask_rep].shape)
     print(sparse_flow[random_mask_rep].shape)
     sparse_flow[random_mask_rep] = gt_flow[random_mask_rep]
