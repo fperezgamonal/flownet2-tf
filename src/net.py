@@ -527,7 +527,7 @@ class Net(object):
                 'matches_a': tf.constant(matches_a, dtype=tf.float32),
                 'sparse_flow': tf.constant(sparse_flow, dtype=tf.float32),
             }
-        predictions = self.model(inputs, training_schedule, trainable=False)
+        predictions = self.model(inputs, training_schedule, trainable=False, is_training=False)
         pred_flow = predictions['flow']
 
         saver = tf.train.Saver()
@@ -623,7 +623,7 @@ class Net(object):
             }
 
         training_schedule = LONG_SCHEDULE  # any would suffice, as it is not used (??)
-        predictions = self.model(inputs, training_schedule, trainable=False)
+        predictions = self.model(inputs, training_schedule, trainable=False, is_training=False)
         pred_flow = predictions['flow']
 
         saver = tf.train.Saver()
