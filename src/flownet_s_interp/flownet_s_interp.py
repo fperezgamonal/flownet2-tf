@@ -125,6 +125,20 @@ class FlowNetS_interp(Net):
                         predict_flow2 = slim.conv2d(pad(concat2), 2, 3, scope='predict_flow2', activation_fn=None,
                                                     biases_initializer=biases_initializer)
                     """ END: Refinement Network """
+                    # Otherwise, in inference, return upsampled predicted_flow2
+                    predict_flow = predict_flow2 * 20.0
+                    # TODO: Look at Accum (train) or Resample (deploy) to see if we need to do something different
+                    # TODO: should use TF2.0 compat version as this has a bug
+                    # Or alternatively use keras.layers.upsample2D()
+                    # bug: asymmetrical padding ==> see:
+                    # https://stackoverflow.com/questions/50591669/tf-image-resize-bilinear-vs-cv2-resize/50611485#50611485
+                    # Not too bad with align_corners=True (despite Pytorch default is False :S)
+                    predict_flow = tf.image.resize_bilinear(predict_flow, tf.stack([height, width]),
+                                                            align_corners=True, )
+                    # half_pixel_centers=True) ==> cluster version 1.12 does not have it (added on TF 1.13)
+                    # It seems tf.keras.layers.UpSampling2D has a similar bug:
+                    # source : https://github.com/tensorflow/tensorflow/issues/29856#issue-456708679
+                    # predict_flow = tf.keras.layers.UpSampling2D(predict_flow, size=4, interpolation='bilinear')
 
                     # During training, return only predict_flow6 through predict_flow2 not upscaled flow
                     if is_training:
@@ -134,24 +148,9 @@ class FlowNetS_interp(Net):
                             'predict_flow4': predict_flow4,
                             'predict_flow3': predict_flow3,
                             'predict_flow2': predict_flow2,
+                            'flow': predict_flow,
                         }
                     else:
-
-                        # Otherwise, in inference, return upsampled predicted_flow2
-                        predict_flow = predict_flow2 * 20.0
-                        # TODO: Look at Accum (train) or Resample (deploy) to see if we need to do something different
-                        # TODO: should use TF2.0 compat version as this has a bug
-                        # Or alternatively use keras.layers.upsample2D()
-                        # bug: asymmetrical padding ==> see:
-                        # https://stackoverflow.com/questions/50591669/tf-image-resize-bilinear-vs-cv2-resize/50611485#50611485
-                        # Not too bad with align_corners=True (despite Pytorch default is False :S)
-                        predict_flow = tf.image.resize_bilinear(predict_flow, tf.stack([height, width]),
-                                                                align_corners=True,)
-                        # half_pixel_centers=True) ==> cluster version 1.12 does not have it (added on TF 1.13)
-                        # It seems tf.keras.layers.UpSampling2D has a similar bug:
-                        # source : https://github.com/tensorflow/tensorflow/issues/29856#issue-456708679
-                        # predict_flow = tf.keras.layers.UpSampling2D(predict_flow, size=4, interpolation='bilinear')
-
                         return {'flow': predict_flow, }
 
     # Computes the AEPE or AEPE + HFEM loss for all model scales

@@ -1203,7 +1203,7 @@ class Net(object):
         # Compute losses (optionally add hard flow mining)
         train_loss = self.loss(gt_flow, predictions, add_hard_flow_mining=add_hfem, lambda_weight=lambda_w,
                                hard_examples_perc=hfem_perc, edges=edges_a)
-        if log_verbosity > 1:
+        if log_verbosity > 2:
             print("\n >>> train_loss=", train_loss)
         if valid_iters > 0:
             # Despite not using HFEM to backpropagate and update weights, it is key to compare losses at the same scale
