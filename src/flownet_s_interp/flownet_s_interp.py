@@ -18,7 +18,7 @@ class FlowNetS_interp(Net):
     # TODO: take "hints" from PWC-Net as it is has more or less the same nº of weights
     # TODO: migrate everything we can from tf.slim to tf 2.0-like sintaxis
     # Follow:
-    def model(self, inputs, training_schedule, trainable=True):
+    def model(self, inputs, training_schedule, trainable=True, is_training=True):
         _, height, width, _ = inputs['input_a'].shape.as_list()
         stacked = False
         with tf.variable_scope('FlowNetS'):  # MUST NOT change the scope, otherwise the checkpoint won't load!
@@ -127,7 +127,7 @@ class FlowNetS_interp(Net):
                     """ END: Refinement Network """
 
                     # During training, return only predict_flow6 through predict_flow2 not upscaled flow
-                    if trainable:
+                    if is_training:
                         return {
                             'predict_flow6': predict_flow6,
                             'predict_flow5': predict_flow5,

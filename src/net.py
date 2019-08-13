@@ -1195,10 +1195,10 @@ class Net(object):
         # Define model operations (graph) to compute loss (TRAIN)
         if log_verbosity > 1:
             print("l2 regularization: {}".format(training_schedule['l2_regularization']))
-        predictions = self.model(inputs, training_schedule)  # define it for all nets
+        predictions = self.model(inputs, training_schedule, trainable=True, is_training=True)  # define it for all nets
         if valid_iters > 0:
             # Define model operations (graph) to compute loss (VALIDATION)
-            val_predictions = self.model(val_inputs, training_schedule, trainable=False)
+            val_predictions = self.model(val_inputs, training_schedule, trainable=False, is_training=True)
 
         # Compute losses (optionally add hard flow mining)
         train_loss = self.loss(gt_flow, predictions, add_hard_flow_mining=add_hfem, lambda_weight=lambda_w,
