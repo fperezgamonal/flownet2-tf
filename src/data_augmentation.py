@@ -210,7 +210,7 @@ def sample_gt_flow_to_sparse(gt_flow, target_density=75, target_distribution='un
             np.uint8)
         random_mask = sampling_mask == 255
         random_mask_rep = np.repeat(random_mask[:, :, :, np.newaxis], 2, axis=-1)
-        tf.print(random_mask_rep.shape)
+        print(random_mask_rep.shape)
         #tf.print(sampling_mask)
     #       sampling_mask_logical = sampling_mask == 1
     #       pixel_idxs = np.where(sampling_mask == 1)
@@ -222,8 +222,8 @@ def sample_gt_flow_to_sparse(gt_flow, target_density=75, target_distribution='un
     #     pixel_idxs = tf.convert_to_tensor(pixel_idxs, name='pixel_idxs')
     #     sampling_mask_logical = tf.convert_to_tensor(sampling_mask_logical, name='sampling_mask_logical')
     # gt_flow_pixel_idxs = tf.cast(tf.boolean_mask(gt_flow, sampling_mask_logical), dtype=tf.float32)
-    tf.print(sparse_flow.shape)
-    tf.print(gt_flow.shape)
+    print(sparse_flow.shape)
+    print(gt_flow.shape)
     sparse_flow[random_mask_rep] = gt_flow[random_mask_rep]
     sparse_flow = tf.convert_to_tensor(sparse_flow, name='sparse_flow')
     # sparse_flow = tf.scatter_update(sparse_flow, pixel_idxs, gt_flow_pixel_idxs)
