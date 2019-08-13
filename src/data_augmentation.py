@@ -201,6 +201,8 @@ def flow_resize(flow, out_size, is_scale=True, method=0):
 def sample_gt_flow_to_sparse(gt_flow, target_density=75, target_distribution='uniform'):
     gt_flow_size = tf.cast(tf.shape(gt_flow)[1:-1], tf.int32)  # height and width only
     # sparse_flow = tf.zeros(tf.shape(gt_flow), dtype=tf.float32)
+    sess = tf.Session()
+    sess.run(tf.constant(gt_flow))
     sparse_flow = np.zeros(gt_flow.shape).astype(np.float32)
     p_fill = target_density / 100  # target_density expressed in %
     if target_distribution.lower() == 'uniform':
@@ -222,5 +224,6 @@ def sample_gt_flow_to_sparse(gt_flow, target_density=75, target_distribution='un
     sparse_flow[random_mask_rep] = gt_flow[random_mask_rep]
     sparse_flow = tf.convert_to_tensor(sparse_flow, name='sparse_flow')
     # sparse_flow = tf.scatter_update(sparse_flow, pixel_idxs, gt_flow_pixel_idxs)
+    gt_flow = tf.convert_to_tensor(gt_flow, name='gt_flow')
 
-    return sparse_flow
+    return sparse_flow, gt_flow
