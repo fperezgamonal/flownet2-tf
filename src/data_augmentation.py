@@ -203,13 +203,13 @@ def sample_gt_flow_to_sparse(gt_flow, target_density=75, target_distribution='un
     # sparse_flow = tf.zeros(tf.shape(gt_flow), dtype=tf.float32)
     # sess = tf.Session()
     # sess.run(tf.constant(gt_flow))
-    sparse_flow = np.expand_dims(np.zeros(gt_flow.shape).astype(np.float32), axis=0)
+    sparse_flow = np.zeros(gt_flow.shape).astype(np.float32)
     p_fill = target_density / 100  # target_density expressed in %
     if target_distribution.lower() == 'uniform':
       sampling_mask = np.random.choice([0, 255], size=gt_flow.shape[:-1], p=[1 - p_fill, p_fill]).astype(
                     np.uint8)
       random_mask = sampling_mask == 255
-      random_mask_rep = np.expand_dims(np.repeat(random_mask[:, :, np.newaxis], 2, axis=2), axis=0)
+      random_mask_rep = np.repeat(random_mask[:, :, :, np.newaxis], 2, axis=-1)
       #tf.print(sampling_mask)
 #       sampling_mask_logical = sampling_mask == 1
 #       pixel_idxs = np.where(sampling_mask == 1)
