@@ -200,6 +200,8 @@ def flow_resize(flow, out_size, is_scale=True, method=0):
 # Functions to sample ground truth flow with different density and probability distribution
 def sample_gt_flow_to_sparse(gt_flow, target_density=75, target_distribution='uniform'):
     """
+    Samples the provided gt flow with the target density and distribution. It also returns the updated matches mask
+    which has 1s where the samples lay and 0 elsewhere.
     :param gt_flow: tensor containing ground truth optical flow (before batching ==> shape: (h, w, 2) )
     :param target_density:
     :param target_distribution:
@@ -208,15 +210,16 @@ def sample_gt_flow_to_sparse(gt_flow, target_density=75, target_distribution='un
     sparse_flow = tf.Variable(tf.zeros(gt_flow.shape, dtype=tf.float32), trainable=False)
     p_fill = target_density / 100  # target_density expressed in %
     if target_distribution.lower() == 'uniform':
-        sampling_mask = np.random.choice([0, 1], size=gt_flow.shape[:-1], p=[1 - p_fill, p_fill]).astype(
+        sampling_mask = np.random.choice([0, 255], size=gt_flow.shape[:-1], p=[1 - p_fill, p_fill]).astype(
             np.int32)
+        matches = tf.cast(tf.expand_dims(255 * sampling_mask, 0), dtype=tf.uint8)  # convert to (h, w, 1)
         sampling_mask_rep = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
         sampling_mask_flatten = np.reshape(sampling_mask_rep, [-1])
-        sampling_mask_flatten = np.where(sampling_mask_flatten == 1)
+        sampling_mask_flatten = np.where(sampling_mask_flatten == 255)
 
     gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask_rep)
     sparse_flow = tf.Variable(tf.reshape(sparse_flow, [-1]), trainable=False)
     sparse_flow = tf.scatter_update(sparse_flow, sampling_mask_flatten[0], gt_flow_sampling_mask)
     sparse_flow = tf.reshape(sparse_flow, gt_flow.shape)
 
-    return sparse_flow, gt_flow
+    return sparse_flow, matches
