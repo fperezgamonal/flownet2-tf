@@ -35,7 +35,7 @@ def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop
     tf.print("global_step: {}".format(global_step))
     # Check if we can get global step value without explicitly passing it in which broke restoration from checkpoint
     # print("global_step.eval()".format(tf.train.get_global_step(graph=None).eval()))
-    sparse_flow, matches = sample_gt_flow_to_sparse(gt_flow)
+    # sparse_flow, matches = sample_gt_flow_to_sparse(gt_flow)
     # image, matches, sparse_flow, edges, gt_flow = random_crop([image, matches, sparse_flow, edges, gt_flow], crop_h,
     #                                                           crop_w)
     # Random flip of images and flow
