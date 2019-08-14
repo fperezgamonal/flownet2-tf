@@ -199,12 +199,18 @@ def flow_resize(flow, out_size, is_scale=True, method=0):
 
 # Functions to sample ground truth flow with different density and probability distribution
 def sample_gt_flow_to_sparse(gt_flow, target_density=75, target_distribution='uniform'):
+    """
+    :param gt_flow: tensor containing ground truth optical flow (before batching ==> shape: (h, w, 2) )
+    :param target_density:
+    :param target_distribution:
+    :return:
+    """
     sparse_flow = tf.Variable(tf.zeros(gt_flow.shape, dtype=tf.float32), trainable=False)
     p_fill = target_density / 100  # target_density expressed in %
     if target_distribution.lower() == 'uniform':
         sampling_mask = np.random.choice([0, 1], size=gt_flow.shape[:-1], p=[1 - p_fill, p_fill]).astype(
             np.int32)
-        sampling_mask = np.repeat(sampling_mask[:, :, :, np.newaxis], 2, axis=-1)
+        sampling_mask = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
         sampling_mask = np.reshape(sampling_mask, [-1])
         sampling_mask = np.where(sampling_mask == 1)
 
