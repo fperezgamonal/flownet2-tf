@@ -30,8 +30,8 @@ def augment_image_pair(img1, img2, crop_h, crop_w):
 # already and shown in TB by default
 def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop_w, add_summary=False, fast_mode=False,
                        global_step=None):
-    print_out = tf.cond(tf.equal(global_step, tf.cast(tf.constant(0), tf.int64)), lambda: tf.print(global_step),
-                        lambda: tf.print("Not 0"))
+    print_out = tf.cond(tf.equal(global_step, tf.cast(tf.constant(0), tf.int64)),
+                        lambda: tf.print("global_step: {}".format(global_step)), lambda: tf.print("Not 0"))
     # Check if we can get global step value without explicitly passing it in which broke restoration from checkpoint
     # print("global_step.eval()".format(tf.train.get_global_step(graph=None).eval()))
     sparse_flow, gt_flow = sample_gt_flow_to_sparse(gt_flow)

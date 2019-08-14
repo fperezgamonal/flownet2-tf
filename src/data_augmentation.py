@@ -199,39 +199,18 @@ def flow_resize(flow, out_size, is_scale=True, method=0):
 
 # Functions to sample ground truth flow with different density and probability distribution
 def sample_gt_flow_to_sparse(gt_flow, target_density=75, target_distribution='uniform'):
-    gt_flow_size = tf.cast(tf.shape(gt_flow)[1:-1], tf.int32)  # height and width only
-    # sparse_flow = tf.zeros(tf.shape(gt_flow), dtype=tf.float32)
-    # sess = tf.Session()
-    # sess.run(tf.constant(gt_flow))
-    sparse_flow = np.zeros(gt_flow.shape).astype(np.float32)
-    print(sparse_flow.shape)
-
+    sparse_flow = tf.Variable(tf.zeros(gt_flow.shape, dtype=tf.float32), trainable=False)
     p_fill = target_density / 100  # target_density expressed in %
     if target_distribution.lower() == 'uniform':
-        sampling_mask = np.random.choice([0, 255], size=gt_flow.shape[:-1], p=[1 - p_fill, p_fill]).astype(
-            np.uint8)
-        random_mask = sampling_mask == 255
-        random_mask_rep = np.repeat(random_mask[:, :, np.newaxis], 2, axis=-1)
-        print(random_mask_rep.shape)
-        #tf.print(sampling_mask)
-    #       sampling_mask_logical = sampling_mask == 1
-    #       pixel_idxs = np.where(sampling_mask == 1)
-    # sampling_mask = tf.convert_to_tensor(sampling_mask_logical, name='sampling_mask')
-    # sampling_mask = tf.random_uniform(gt_flow.shape, minval=0, maxval=1, dtype=tf.int32)
+        sampling_mask = np.random.choice([0, 1], size=gt_flow.shape[:-1], p=[1 - p_fill, p_fill]).astype(
+            np.int32)
+        sampling_mask = np.repeat(sampling_mask[:, :, :, np.newaxis], 2, axis=-1)
+        sampling_mask = np.reshape(sampling_mask, [-1])
+        sampling_mask = np.where(sampling_mask == 1)
 
-    # conditioned_pixels = tf.equal(sampling_mask, tf.constant(1))
-    # pixel_idxs = tf.where(conditioned_pixels)
-    #     pixel_idxs = tf.convert_to_tensor(pixel_idxs, name='pixel_idxs')
-    #     sampling_mask_logical = tf.convert_to_tensor(sampling_mask_logical, name='sampling_mask_logical')
-    # gt_flow_pixel_idxs = tf.cast(tf.boolean_mask(gt_flow, sampling_mask_logical), dtype=tf.float32)
-    print(sparse_flow.shape)
-    print(gt_flow.shape)
-    print("gt_flow/spars_flow [masked]")
-    print(gt_flow[random_mask_rep].shape)
-    print(sparse_flow[random_mask_rep].shape)
-    sparse_flow[random_mask_rep] = gt_flow[random_mask_rep]
-    sparse_flow = tf.convert_to_tensor(sparse_flow, name='sparse_flow')
-    # sparse_flow = tf.scatter_update(sparse_flow, pixel_idxs, gt_flow_pixel_idxs)
-    gt_flow = tf.convert_to_tensor(gt_flow, name='gt_flow')
+    gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask)
+    sparse_flow = tf.Variable(tf.reshape(sparse_flow, [-1]), trainable=False)
+    sparse_flow = tf.scatter_update(sparse_flow, sampling_mask[0], gt_flow_sampling_mask)
+    sparse_flow = tf.reshape(sparse_flow, gt_flow.shape)
 
     return sparse_flow, gt_flow
