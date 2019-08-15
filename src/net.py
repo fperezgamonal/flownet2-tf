@@ -266,7 +266,14 @@ class Net(object):
             event_string = 'Sfine_{0}_{1}_it={2}_BS{3}_opt_Adam_wd={4:.1e}HFEM_{5}_{6}'.format(
                 dataset_name, ckpt_str, step_number, eff_batch_size, training_schedule['l2_regularization'], add_hfem,
                 date_string)
-
+        elif 'sintel_s' in training_schedule_str.lower():  # LR disruptions from PWC-Net+ for MPI-Sintel
+            event_string = '{0}_{1}_it={2}_BS{3}_opt_Adam_wd={4:.1e}HFEM_{5}_{6}'.format(
+                training_schedule_str.lower(), ckpt_str, step_number, eff_batch_size,
+                training_schedule['l2_regularization'], add_hfem, date_string)
+        elif 'kitti_s' in training_schedule_str.lower():  # LR disruptions from PWC-Net+ for KITTI
+            event_string = '{0}_{1}_it={2}_BS{3}_opt_Adam_wd={4:.1e}HFEM_{5}_{6}'.format(
+                training_schedule_str.lower(), ckpt_str, step_number, eff_batch_size,
+                training_schedule['l2_regularization'], add_hfem, date_string)
         elif 'lr_range_test' in training_schedule_str.lower():
             if train_params_dict['lr_range_mode'] == 'linear':
                 total_iters = train_params_dict['lr_range_niters']
