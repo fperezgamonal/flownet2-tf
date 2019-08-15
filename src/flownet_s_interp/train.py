@@ -9,8 +9,7 @@ import tensorflow as tf
 def main():
     # Create a new network
     net = FlowNetS_interp(no_deconv_biases=FLAGS.no_deconv_biases)
-    # Create global step here so we can track it from load_batch AND train
-    global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64)
+
     if FLAGS.checkpoint is not None and FLAGS.checkpoint:  # the second checks if the string is NOT empty
         print("Checkpoint path is NOT empty, parsing it...")
         print("ckpt_path: {}".format(FLAGS.checkpoint))
@@ -18,6 +17,12 @@ def main():
     else:
         print("Checkpoint IS empty, will train from scratch!")
         checkpoints = None  # double-check None
+    # Create global step here so we can track it from load_batch AND train
+    if FLAGS.reset_global_step:
+        global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64)
+    else:
+        step_number = int(checkpoints.split('-')[-1])
+        global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step', dtype=tf.int64)
 
     # initialise range test values (exponentially/linearly increasing lr to be tested)
     if FLAGS.lr_range_test and FLAGS.training_schedule.lower() == 'lr_range_test':
