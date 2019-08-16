@@ -1216,14 +1216,14 @@ class Net(object):
             val_predictions = self.model(val_inputs, training_schedule, trainable=False, is_training=True)
 
         # Compute losses (optionally add hard flow mining)
-        train_loss = self.loss(gt_flow, predictions, add_hard_flow_mining=add_hfem, lambda_weight=lambda_w,
-                               hard_examples_perc=hfem_perc, edges=edges_a)
+        train_loss, AEPE = self.loss(gt_flow, predictions, add_hard_flow_mining=add_hfem, lambda_weight=lambda_w,
+                                     hard_examples_perc=hfem_perc, edges=edges_a)
         if log_verbosity > 2:
             print("\n >>> train_loss=", train_loss)
         if valid_iters > 0:
             # Despite not using HFEM to backpropagate and update weights, it is key to compare losses at the same scale
-            val_loss = self.loss(val_gt_flow, val_predictions, add_hard_flow_mining=add_hfem, lambda_weight=lambda_w,
-                                 hard_examples_perc=hfem_perc, edges=val_edges_a)
+            val_loss, val_AEPE = self.loss(val_gt_flow, val_predictions, add_hard_flow_mining=add_hfem,
+                                           lambda_weight=lambda_w, hard_examples_perc=hfem_perc, edges=val_edges_a)
             # Add validation loss to a different collection to avoid adding it to the train one when calling get_loss()
             # By default, all losses are added to the same collection (tf.GraphKeys.LOSSES)
             tf.losses.add_loss(val_loss, loss_collection='validation_losses')
@@ -1235,6 +1235,8 @@ class Net(object):
                 pred_flow_0 = predictions['flow'][0, :, :, :]
                 pred_flow_img = tf.py_func(flow_to_image, [pred_flow_0], tf.uint8)
                 tf.summary.image('train/pred_flow', tf.expand_dims(pred_flow_img, 0), max_outputs=1)
+                # Add AEPE at original scale
+                tf.summary.scalar('train/AEPE', AEPE)
 
             # Add ground truth flow (TRAIN)
             true_flow_0 = gt_flow[0, :, :, :]
@@ -1254,6 +1256,8 @@ class Net(object):
                     val_pred_flow_0 = val_predictions['flow'][0, :, :, :]
                     val_pred_flow_img = tf.py_func(flow_to_image, [val_pred_flow_0], tf.uint8)
                     tf.summary.image('valid/pred_flow', tf.expand_dims(val_pred_flow_img, 0), max_outputs=1)
+                    # Add AEPE at original scale
+                    tf.summary.scalar('valid/AEPE', val_AEPE)
 
                 # Add ground truth flow (VALIDATION)
                 val_true_flow_0 = val_gt_flow[0, :, :, :]
@@ -1304,7 +1308,7 @@ class Net(object):
             # calc training losses
             total_loss, should_stop = slim.learning.train_step(sess, train_op, global_step, train_step_kwargs)
 
-            # validate on interval (added condition to avoid evaluating on first step)
+            # validate on interval
             if valid_iters > 0 and (train_step_fn.step % valid_iters == 0) and train_step_fn.step > 0:
                 valid_loss, valid_delta = sess.run([val_loss, summary_validation_delta])
                 print(">>> global step= {:<5d} | train={:^15.4f} | validation={:^15.4f} | delta={:^15.4f} <<<".format(

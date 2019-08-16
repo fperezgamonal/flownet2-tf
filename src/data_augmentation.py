@@ -198,24 +198,40 @@ def flow_resize(flow, out_size, is_scale=True, method=0):
 
 
 # Functions to sample ground truth flow with different density and probability distribution
-def sample_gt_flow_to_sparse(gt_flow, target_density=75, target_distribution='uniform'):
+def sample_sparse_invalid_like(gt_flow, target_density=75):
     """
-    Samples the provided gt flow with the target density and distribution. It also returns the updated matches mask
-    which has 1s where the samples lay and 0 elsewhere.
-    :param gt_flow: tensor containing ground truth optical flow (before batching ==> shape: (h, w, 2) )
+
+    :param gt_flow:
     :param target_density:
-    :param target_distribution:
     :return:
     """
     sparse_flow = tf.Variable(tf.zeros(gt_flow.shape, dtype=tf.float32), trainable=False)
     p_fill = target_density / 100  # target_density expressed in %
-    if target_distribution.lower() == 'uniform':
-        sampling_mask = np.random.choice([0, 255], size=gt_flow.shape[:-1], p=[1 - p_fill, p_fill]).astype(
-            np.int32)
-        matches = tf.cast(tf.expand_dims(255 * sampling_mask, 0), dtype=tf.float32)  # convert to (h, w, 1)
-        sampling_mask_rep = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
-        sampling_mask_flatten = np.reshape(sampling_mask_rep, [-1])
-        sampling_mask_flatten = np.where(sampling_mask_flatten == 255)
+    bbox_area = p_fill * np.prod(gt_flow.shape[:-1])
+    aspect_ratios = [16/9, 4/3, 3/2, 3/1, 4/5]
+    aspect_id = np.random.choice(range(len(aspect_ratios)))
+    aspect_ratio = aspect_ratios[aspect_id]
+    # Compute width and height based of random aspect ratio and bbox area
+    # bbox = w * h, AR = w/h
+    crop_w = int(np.round(np.sqrt(bbox_area * aspect_ratio)))
+    crop_h = int(np.round(crop_w / aspect_ratio))
+
+    # Check crop dimensions are plausible, otherwise reduce to make them plausible
+    if crop_h > gt_flow.shape[0] or crop_w > gt_flow.shape[1]:
+        crop_h = gt_flow.shape[0]-1 if crop_h > gt_flow.shape[0] else crop_h
+        crop_w = gt_flow.shape[1]-1 if crop_w > gt_flow.shape[1] else crop_w
+
+    rand_offset_h = tf.random_uniform([], 0, gt_flow.shape[0] - crop_h + 1, dtype=tf.int32)
+    rand_offset_w = tf.random_uniform([], 0, gt_flow.shape[1] - crop_w + 1, dtype=tf.int32)
+
+    # Define matches as 0 inside the random bbox, 1s elsewhere
+    matches = np.zeros(gt_flow.shape[:-1], dtype=np.float32)
+    matches[rand_offset_h:rand_offset_h + crop_h, rand_offset_w: rand_offset_w + crop_w] = 255
+    sampling_mask = matches
+    matches = tf.expand_dims(matches, 0)  # convert to (h, w, 1)
+    sampling_mask_rep = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
+    sampling_mask_flatten = np.reshape(sampling_mask_rep, [-1])
+    sampling_mask_flatten = np.where(sampling_mask_flatten == 255)
 
     gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask_rep)
     sparse_flow = tf.Variable(tf.reshape(sparse_flow, [-1]), trainable=False)
@@ -223,3 +239,74 @@ def sample_gt_flow_to_sparse(gt_flow, target_density=75, target_distribution='un
     sparse_flow = tf.reshape(sparse_flow, gt_flow.shape)
 
     return sparse_flow, matches
+
+
+def sample_sparse_uniform(gt_flow, target_density=75):
+    """
+
+    Samples the provided gt flow with the target density and distribution. It also returns the updated matches mask
+    which has 1s where the samples lay and 0 elsewhere.
+    :param gt_flow: tensor containing ground truth optical flow (before batching ==> shape: (h, w, 2) )
+    :param target_density:
+    :return:
+    """
+    sparse_flow = tf.Variable(tf.zeros(gt_flow.shape, dtype=tf.float32), trainable=False)
+    p_fill = target_density / 100  # target_density expressed in %
+    sampling_mask = np.random.choice([0, 255], size=gt_flow.shape[:-1], p=[1 - p_fill, p_fill]).astype(
+        np.int32)
+    matches = tf.cast(tf.expand_dims(255 * sampling_mask, 0), dtype=tf.float32)  # convert to (h, w, 1)
+    sampling_mask_rep = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
+    sampling_mask_flatten = np.reshape(sampling_mask_rep, [-1])
+    sampling_mask_flatten = np.where(sampling_mask_flatten == 255)
+
+    gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask_rep)
+    sparse_flow = tf.Variable(tf.reshape(sparse_flow, [-1]), trainable=False)
+    sparse_flow = tf.scatter_update(sparse_flow, sampling_mask_flatten[0], gt_flow_sampling_mask)
+    sparse_flow = tf.reshape(sparse_flow, gt_flow.shape)
+
+    return sparse_flow, matches
+
+
+def sample_from_distribution(distrib_id, density, dm_matches, gt_flow):
+
+    if distrib_id == 0:
+        num_samples = (density / 100)  * np.prod(dm_matches.shape)  # grid-like (DM) with holes
+
+    elif distrib_id == 1:
+        sparse_flow, matches = sample_sparse_uniform(gt_flow, target_density=density)
+
+    elif distrib_id == 2:
+        return 0  # invalid like
+    else:
+        raise ValueError("FATAL: id should have been an integer within (0-5) but instead was {}".format(distrib_id))
+
+
+def sample_sparse_flow(dm_matches, gt_flow, num_ranges=6, num_distrib=3):
+    """
+
+    :param dm_matches:
+    :param gt_flow:
+    :return:
+    """
+    # Sample a id which selects a "subrange" of density
+    density_id = tf.random_uniform([], maxval=num_ranges, dtype=tf.int32)
+    if density_id == 0:  # very sparse matches (from 0.001 to 1% of the image area)
+        density = tf.random_uniform([], minval=0.01, maxval=1., dtype=tf.float32)
+    elif density_id == 1:  # quite sparse matches (from 1 to 10% of the image area)
+        density = tf.random_uniform([], minval=1., maxval=10., dtype=tf.float32)
+    elif density_id == 2:  # semi-sparse matches (from 10 to 25% of the image area)
+        density = tf.random_uniform([], minval=10., maxval=25., dtype=tf.float32)
+    elif density_id == 3:  # semi-dense matches (from 25 to 50% of the image area)
+        density = tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32)
+    elif density_id == 4:  # quite dense matches (from 50 to 75% of the image area)
+        density = tf.random_uniform([], minval=50., maxval=75., dtype=tf.float32)
+    elif density_id == 5:  # very dense matches (from 75 to 90% of the image area)
+        density = tf.random_uniform([], minval=75., maxval=90., dtype=tf.float32)
+    else:
+        raise ValueError("FATAL: id should have been an integer within (0-5) but instead was {}".format(density_id))
+
+    # Select a distribution (random uniform, invalid like or grid like with holes
+    distrib_id = np.random.choice(range(num_distrib+1))  # tf.random_uniform([], maxval=num_distrib, dtype=tf.int32)
+    matches, sparse_flow = sample_from_distribution(distrib_id, density, dm_matches, gt_flow)
+
+    return matches, sparse_flow

@@ -316,6 +316,18 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
         return aepe
 
 
+def average_endpoint_error(gt_flow, pred_flow):
+    """
+    Computes the mean average endpoint error (L2 norm) between a ground truth and a predicted flow
+    :param gt_flow:
+    :param pred_flow:
+    :return:
+    """
+    EPE = tf.norm(gt_flow - pred_flow, axis=-1, keepdims=True)
+    AEPE = tf.reduce_mean(EPE)
+    return AEPE
+
+
 # Losses from SelFlow, the top performing OF estimation method on Sintel (at the time of writing this)
 # They do an unsupervised training + supervised fine-tuning only on Sintel (no need to use FC or FT3D!)
 # The authors made their code available at: https://github.com/ppliuboy/SelFlow
