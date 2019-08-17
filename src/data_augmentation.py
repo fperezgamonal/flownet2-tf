@@ -370,9 +370,11 @@ def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=6, num_distrib=3
         density = np.random.uniform(low=75., high=90.)  # tf.random_uniform([], minval=75., maxval=90., dtype=tf.float32)
     else:
         raise ValueError("FATAL: id should have been an integer within (0-5) but instead was {}".format(density_id))
+    print("density_id: {}\ndensity: {:.2f}%")
 
     # Select a distribution (random uniform, invalid like or grid like with holes
     distrib_id = np.random.choice(range(num_distrib+1))  # tf.random_uniform([], maxval=num_distrib, dtype=tf.int32)
+    print("distribution_id: {}")
     matches, sparse_flow = sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow)
 
     return matches, sparse_flow
