@@ -250,7 +250,7 @@ def sample_sparse_invalid_like(gt_flow, target_density=75):
     sparse_flow = tf.scatter_update(sparse_flow, sampling_mask_flatten[0], gt_flow_sampling_mask)
     sparse_flow = tf.reshape(sparse_flow, gt_flow.shape)
 
-    return sparse_flow, matches
+    return matches, sparse_flow
 
 
 def sample_sparse_uniform(gt_flow, target_density=75):
@@ -276,7 +276,7 @@ def sample_sparse_uniform(gt_flow, target_density=75):
     sparse_flow = tf.scatter_update(sparse_flow, sampling_mask_flatten[0], gt_flow_sampling_mask)
     sparse_flow = tf.reshape(sparse_flow, gt_flow.shape)
 
-    return sparse_flow, matches
+    return matches, sparse_flow
 
 
 def sample_sparse_grid_like(gt_flow, target_density=75):
@@ -323,7 +323,7 @@ def sample_sparse_grid_like(gt_flow, target_density=75):
     sparse_flow = tf.scatter_update(sparse_flow, sampling_mask_flatten[0], gt_flow_sampling_mask)
     sparse_flow = tf.reshape(sparse_flow, gt_flow.shape)
 
-    return sparse_flow, matches
+    return matches, sparse_flow
 
 
 def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
@@ -333,17 +333,17 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
             sparse_flow = dm_flow
             matches = dm_matches
         else:
-            sparse_flow, matches = sample_sparse_grid_like(gt_flow, target_density=density)
+            matches, sparse_flow = sample_sparse_grid_like(gt_flow, target_density=density)
 
     elif distrib_id == 1:
-        sparse_flow, matches = sample_sparse_uniform(gt_flow, target_density=density)
+        matches, sparse_flow = sample_sparse_uniform(gt_flow, target_density=density)
 
     elif distrib_id == 2:  # invalid-like (either 100% dense in known areas or 0% in unknown ones (holes))
-        sparse_flow, matches = sample_sparse_invalid_like(gt_flow, target_density=density)
+        matches, sparse_flow = sample_sparse_invalid_like(gt_flow, target_density=density)
     else:
         raise ValueError("FATAL: id should have been an integer within (0-5) but instead was {}".format(distrib_id))
 
-    return sparse_flow, matches
+    return matches, sparse_flow
 
 
 def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=6, num_distrib=3):
