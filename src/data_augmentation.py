@@ -354,19 +354,19 @@ def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=6, num_distrib=3
     :return:
     """
     # Sample a id which selects a "subrange" of density
-    density_id = tf.random_uniform([], maxval=num_ranges, dtype=tf.int32)
+    density_id = np.random.choice(range(num_ranges))  # tf.random_uniform([], maxval=num_ranges, dtype=tf.int32)
     if density_id == 0:  # very sparse matches (from 0.001 to 1% of the image area)
-        density = tf.random_uniform([], minval=0.01, maxval=1., dtype=tf.float32)
+        density = np.random.uniform(low=0.01, high=1.)  # tf.random_uniform([], minval=0.01, maxval=1., dtype=tf.float32)
     elif density_id == 1:  # quite sparse matches (from 1 to 10% of the image area)
-        density = tf.random_uniform([], minval=1., maxval=10., dtype=tf.float32)
+        density = np.random.uniform(low=1., high=10.)  # tf.random_uniform([], minval=1., maxval=10., dtype=tf.float32)
     elif density_id == 2:  # semi-sparse matches (from 10 to 25% of the image area)
-        density = tf.random_uniform([], minval=10., maxval=25., dtype=tf.float32)
+        density = np.random.uniform(low=10., high=25.)  # tf.random_uniform([], minval=10., maxval=25., dtype=tf.float32)
     elif density_id == 3:  # semi-dense matches (from 25 to 50% of the image area)
-        density = tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32)
+        density = np.random.uniform(low=25., high=50.)  # tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32)
     elif density_id == 4:  # quite dense matches (from 50 to 75% of the image area)
-        density = tf.random_uniform([], minval=50., maxval=75., dtype=tf.float32)
+        density = np.random.uniform(low=50., high=75.)  # tf.random_uniform([], minval=50., maxval=75., dtype=tf.float32)
     elif density_id == 5:  # very dense matches (from 75 to 90% of the image area)
-        density = tf.random_uniform([], minval=75., maxval=90., dtype=tf.float32)
+        density = np.random.uniform(low=75., high=90.)  # tf.random_uniform([], minval=75., maxval=90., dtype=tf.float32)
     else:
         raise ValueError("FATAL: id should have been an integer within (0-5) but instead was {}".format(density_id))
 
