@@ -287,19 +287,20 @@ def sample_sparse_grid_like(gt_flow, target_density=75):
     :return:
     """
     sparse_flow = tf.Variable(tf.zeros(gt_flow.shape, dtype=tf.float32), trainable=False)
-    num_samples = (target_density / 100) * np.prod(gt_flow.shape[:-1])
-    aspect_ratio = gt_flow.shape[1] / gt_flow.shape[0]
+    height, width, n_ch = gt_flow.get_shape().as_list()
+    num_samples = (target_density / 100) * height * width
+    aspect_ratio = gt_flow.shape[1] / height
     # Compute as in invalid_like for a random box to know the number of samples in horizontal and vertical
     num_samples_w = int(np.round(np.sqrt(num_samples * aspect_ratio)))
     num_samples_h = int(np.round(num_samples_w / aspect_ratio))
 
     # Check crop dimensions are plausible, otherwise crop them to fit (this alters the density we were sampling at)
-    if num_samples_h > gt_flow.shape[0] or num_samples_w > gt_flow.shape[1]:
-        num_samples_h = gt_flow.shape[0] if num_samples_h > gt_flow.shape[0] else num_samples_h
-        num_samples_w = gt_flow.shape[1] if num_samples_w > gt_flow.shape[1] else num_samples_w
+    if num_samples_h > height or num_samples_w > width:
+        num_samples_h = height if num_samples_h > height else num_samples_h
+        num_samples_w = width if num_samples_w > width else num_samples_w
 
-    sample_points_h = np.linspace(0, gt_flow.shape[0] - 1, num_samples_h, dtype=np.int32)
-    sample_points_w = np.linspace(0, gt_flow.shape[1] - 1, num_samples_w, dtype=np.int32)
+    sample_points_h = np.linspace(0, height - 1, num_samples_h, dtype=np.int32)
+    sample_points_w = np.linspace(0, width - 1, num_samples_w, dtype=np.int32)
     # Create meshgrid of all combinations (i.e.: coordinates to sample at)
     matches = np.zeros(gt_flow.shape[:-1], dtype=np.uint8)
     xx, yy = np.meshgrid(sample_points_w, sample_points_h)
