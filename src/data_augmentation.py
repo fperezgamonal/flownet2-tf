@@ -226,7 +226,7 @@ def get_random_offset_and_crop(image_shape, density):
 
 
 # Functions to sample ground truth flow with different density and probability distribution
-def sample_sparse_invalid_like(gt_flow, target_density=75):
+def sample_sparse_invalid_like(gt_flow, target_density=75, height=384, width=512):
     """
 
     :param gt_flow:
@@ -237,7 +237,7 @@ def sample_sparse_invalid_like(gt_flow, target_density=75):
     rand_offset_h, rand_offset_w, crop_h, crop_w = get_random_offset_and_crop(gt_flow.shape[:-1], target_density)
 
     # Define matches as 0 inside the random bbox, 255s elsewhere (at training time the mask is normalised to [0,1])
-    matches = 255 * np.ones(gt_flow.shape[:-1], dtype=np.int32)  # (h, w)
+    matches = 255 * np.ones((height, width), dtype=np.int32)  # (h, w)
     matches[rand_offset_h:rand_offset_h + crop_h, rand_offset_w: rand_offset_w + crop_w] = 0
     sampling_mask = matches
     matches = tf.cast(tf.expand_dims(matches, -1), dtype=tf.float32)  # convert to (h, w, 1)
@@ -253,7 +253,7 @@ def sample_sparse_invalid_like(gt_flow, target_density=75):
     return matches, sparse_flow
 
 
-def sample_sparse_uniform(gt_flow, target_density=75):
+def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
     """
 
     Samples the provided gt flow with the target density and distribution. It also returns the updated matches mask
@@ -262,9 +262,9 @@ def sample_sparse_uniform(gt_flow, target_density=75):
     :param target_density:
     :return:
     """
-    sparse_flow = tf.Variable(tf.zeros(gt_flow.shape, dtype=tf.float32), trainable=False)
+    sparse_flow = tf.Variable(tf.zeros((height, width), dtype=tf.float32), trainable=False)
     p_fill = target_density / 100  # target_density expressed in %
-    sampling_mask = np.random.choice([0, 255], size=gt_flow.shape[:-1], p=[1 - p_fill, p_fill]).astype(
+    sampling_mask = np.random.choice([0, 255], size=(height, width), p=[1 - p_fill, p_fill]).astype(
         np.int32)  # sampling_mask.shape: (h, w)
     matches = tf.cast(tf.expand_dims(255 * sampling_mask, -1), dtype=tf.float32)  # convert to (h, w, 1)
     sampling_mask_rep = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
@@ -279,15 +279,14 @@ def sample_sparse_uniform(gt_flow, target_density=75):
     return matches, sparse_flow
 
 
-def sample_sparse_grid_like(gt_flow, target_density=75):
+def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     """
 
     :param gt_flow:
     :param target_density:
     :return:
     """
-    sparse_flow = tf.Variable(tf.zeros(gt_flow.shape, dtype=tf.float32), trainable=False)
-    height, width, n_ch = gt_flow.get_shape().as_list()
+    sparse_flow = tf.Variable(tf.zeros((height, width), dtype=tf.float32), trainable=False)
     num_samples = (target_density / 100) * height * width
     aspect_ratio = gt_flow.shape[1] / height
     # Compute as in invalid_like for a random box to know the number of samples in horizontal and vertical
@@ -310,7 +309,7 @@ def sample_sparse_grid_like(gt_flow, target_density=75):
 
     # Randomly subtract a part with a random rectangle (superpixels in the future)
     if np.random.choice([0, 1]) == 0:
-        rand_offset_h, rand_offset_w, crop_h, crop_w = get_random_offset_and_crop(gt_flow.shape[:-1], target_density)
+        rand_offset_h, rand_offset_w, crop_h, crop_w = get_random_offset_and_crop((height, width), target_density)
         matches[rand_offset_h:rand_offset_h + crop_h, rand_offset_w: rand_offset_w + crop_w] = 0
     sampling_mask = matches  # sampling_mask of size (h, w)
     matches = tf.cast(tf.expand_dims(matches, -1), dtype=tf.float32)  # convert to (h, w, 1)
@@ -328,19 +327,19 @@ def sample_sparse_grid_like(gt_flow, target_density=75):
 
 
 def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
-
-    if distrib_id == 0:
+    height, width, _ = gt_flow.get_shape().as_list()
+    if distrib_id == 0:  # grid-like + random holes
         if density <= 1 and np.random.choice([0, 1]) == 0:  # use 'raw' DeepMatches
             sparse_flow = dm_flow
             matches = dm_matches
         else:
-            matches, sparse_flow = sample_sparse_grid_like(gt_flow, target_density=density)
+            matches, sparse_flow = sample_sparse_grid_like(gt_flow, target_density=density, height=height, width=width)
 
-    elif distrib_id == 1:
-        matches, sparse_flow = sample_sparse_uniform(gt_flow, target_density=density)
+    elif distrib_id == 1:  # random uniform
+        matches, sparse_flow = sample_sparse_uniform(gt_flow, target_density=density, height=height, width=width)
 
     elif distrib_id == 2:  # invalid-like (either 100% dense in known areas or 0% in unknown ones (holes))
-        matches, sparse_flow = sample_sparse_invalid_like(gt_flow, target_density=density)
+        matches, sparse_flow = sample_sparse_invalid_like(gt_flow, target_density=density, height=height, width=width)
     else:
         raise ValueError("FATAL: id should have been an integer within (0-5) but instead was {}".format(distrib_id))
 
