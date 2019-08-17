@@ -21,8 +21,11 @@ def main():
     if FLAGS.reset_global_step:
         global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64)
     else:
-        step_number = int(checkpoints.split('-')[-1])
-        global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step', dtype=tf.int64)
+        if FLAGS.checkpoint is not None and FLAGS.checkpoint:
+            step_number = int(checkpoints.split('-')[-1])
+            global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step', dtype=tf.int64)
+        else:
+            global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64)
 
     # initialise range test values (exponentially/linearly increasing lr to be tested)
     if FLAGS.lr_range_test and FLAGS.training_schedule.lower() == 'lr_range_test':
