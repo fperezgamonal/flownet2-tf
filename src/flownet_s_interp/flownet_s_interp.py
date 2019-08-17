@@ -1,5 +1,5 @@
 from ..net import Net, Mode
-from ..utils import LeakyReLU, average_endpoint_error_hfem, average_endpoint_error, pad, antipad
+from ..utils import LeakyReLU, average_endpoint_error_hfem, mean_endpoint_error, pad, antipad
 from ..downsample import downsample
 import math
 import tensorflow as tf
@@ -250,5 +250,5 @@ class FlowNetS_interp(Net):
         # Return the 'total' loss: loss fns + regularization terms defined in the model
 
         # Compute AEPE after upsampling to get an analytical estimation of the final results
-        AEPE = average_endpoint_error(targets, predictions['flow'])
+        AEPE = mean_endpoint_error(targets, predictions['flow'])
         return tf.losses.get_total_loss(), AEPE
