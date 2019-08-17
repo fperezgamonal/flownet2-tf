@@ -233,7 +233,7 @@ def sample_sparse_invalid_like(gt_flow, target_density=75, height=384, width=512
     :param target_density:
     :return:
     """
-    sparse_flow = tf.Variable(tf.zeros((height, width), dtype=tf.float32), trainable=False)
+    sparse_flow = tf.Variable(tf.zeros(gt_flow.shape, dtype=tf.float32), trainable=False)
     rand_offset_h, rand_offset_w, crop_h, crop_w = get_random_offset_and_crop((height, width), target_density)
 
     # Define matches as 0 inside the random bbox, 255s elsewhere (at training time the mask is normalised to [0,1])
@@ -262,7 +262,7 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
     :param target_density:
     :return:
     """
-    sparse_flow = tf.Variable(tf.zeros((height, width), dtype=tf.float32), trainable=False)
+    sparse_flow = tf.Variable(tf.zeros(gt_flow.shape, dtype=tf.float32), trainable=False)
     p_fill = target_density / 100  # target_density expressed in %
     sampling_mask = np.random.choice([0, 255], size=(height, width), p=[1 - p_fill, p_fill]).astype(
         np.int32)  # sampling_mask.shape: (h, w)
@@ -286,7 +286,7 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     :param target_density:
     :return:
     """
-    sparse_flow = tf.Variable(tf.zeros((height, width), dtype=tf.float32), trainable=False)
+    sparse_flow = tf.Variable(tf.zeros(gt_flow.shape, dtype=tf.float32), trainable=False)
     num_samples = (target_density / 100) * height * width
     aspect_ratio = width / height
     # Compute as in invalid_like for a random box to know the number of samples in horizontal and vertical
@@ -301,7 +301,7 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     sample_points_h = np.linspace(0, height - 1, num_samples_h, dtype=np.int32)
     sample_points_w = np.linspace(0, width - 1, num_samples_w, dtype=np.int32)
     # Create meshgrid of all combinations (i.e.: coordinates to sample at)
-    matches = np.zeros((height, width), dtype=np.uint8)
+    matches = np.zeros((height, width), dtype=np.int32)
     xx, yy = np.meshgrid(sample_points_w, sample_points_h)
     xx_flatten = xx.flatten()
     yy_flatten = yy.flatten()
