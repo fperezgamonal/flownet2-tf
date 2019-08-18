@@ -229,7 +229,7 @@ def get_random_offset_and_crop(image_shape, density):
     # aspect_ratios = [16 / 9, 4 / 3, 3 / 2, 3 / 1, 4 / 5]
     num_aspect_ratios = 5
     aspect_ratios = tf.constant([16 / 9, 4 / 3, 3 / 2, 3 / 1, 4 / 5])
-    aspect_id = tf.random_uniform([], maxval=aspect_ratios+1, dtype=tf.int32)  # np.random.choice(range(len(aspect_ratios)))
+    aspect_id = tf.random_uniform([], maxval=num_aspect_ratios+1, dtype=tf.int32)  # np.random.choice(range(len(aspect_ratios)))
     aspect_ratio = aspect_ratios[aspect_id]
     # Compute width and height based of random aspect ratio and bbox area
     # bbox = w * h, AR = w/h
