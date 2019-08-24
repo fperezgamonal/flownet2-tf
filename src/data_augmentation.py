@@ -369,8 +369,8 @@ def return_identity(x, y):
 
 def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
     height, width, _ = gt_flow.get_shape().as_list()
-    sample_dm = tf.cond(tf.logical_and(tf.random_uniform([], maxval=2, dtype=tf.int32)),  # 0 or 1
-                        tf.less_equal(density, tf.constant(1)), lambda: tf.constant(True), lambda: tf.constant(False))
+    sample_dm = tf.cond(tf.logical_and(tf.random_uniform([], maxval=2, dtype=tf.int32),  # 0 or 1
+                        tf.less_equal(density, tf.constant(1))), lambda: tf.constant(True), lambda: tf.constant(False))
     # sample_dm = tf.cond(True if (np.random.choice([0, 1]) > 0 and density <= 1) else False  # tf.random_uniform([], maxval=2, dtype=tf.int32)  # 0 or 1
     tf.print("sample_dm: {}".format(sample_dm))
     tf.print("distrib_id: {}".format(distrib_id))
