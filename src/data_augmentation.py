@@ -369,8 +369,9 @@ def return_identity(x, y):
 
 def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
     height, width, _ = gt_flow.get_shape().as_list()
-
-    sample_dm = True if (np.random.choice([0, 1]) > 0 and density <= 1) else False  # tf.random_uniform([], maxval=2, dtype=tf.int32)  # 0 or 1
+    sample_dm = tf.cond(tf.logical_and(tf.random_uniform([], maxval=2, dtype=tf.int32)),  # 0 or 1
+                        tf.less_equal(density, tf.constant(1)), lambda: tf.constant(True), lambda: tf.constant(False))
+    # sample_dm = tf.cond(True if (np.random.choice([0, 1]) > 0 and density <= 1) else False  # tf.random_uniform([], maxval=2, dtype=tf.int32)  # 0 or 1
     tf.print("sample_dm: {}".format(sample_dm))
     tf.print("distrib_id: {}".format(distrib_id))
     matches, sparse_flow = tf.case(
@@ -385,21 +386,6 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
                                                                           width=width)},
         default=sample_sparse_uniform(gt_flow, target_density=density, height=height, width=width), exclusive=True)
 
-    # if distrib_id == 0:  # grid-like + random holes
-    #     if density <= 1 and np.random.choice([0, 1]) == 0:  # use 'raw' DeepMatches
-    #         sparse_flow = dm_flow
-    #         matches = dm_matches
-    #     else:
-    #         matches, sparse_flow = sample_sparse_grid_like(gt_flow, target_density=density, height=height, width=width)
-    #
-    # elif distrib_id == 1:  # random uniform
-    #     matches, sparse_flow = sample_sparse_uniform(gt_flow, target_density=density, height=height, width=width)
-    #
-    # elif distrib_id == 2:  # invalid-like (either 100% dense in known areas or 0% in unknown ones (holes))
-    #     matches, sparse_flow = sample_sparse_invalid_like(gt_flow, target_density=density, height=height, width=width)
-    # else:
-    #     raise ValueError("FATAL: id should have been an integer within (0-5) but instead was {}".format(distrib_id))
-
     return matches, sparse_flow
 
 
@@ -413,23 +399,6 @@ def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=6, num_distrib=3
     density = tf.zeros([], dtype=tf.float32)
     density = apply_with_random_selector(density, lambda x, ordering: get_sampling_density(x, ordering, fast_mode),
                                          num_cases=num_ranges)
-    # # Sample a id which selects a "subrange" of density
-    # density_id = np.random.choice(range(num_ranges))  # tf.random_uniform([], maxval=num_ranges, dtype=tf.int32)
-    # if density_id == 0:  # very sparse matches (from 0.001 to 1% of the image area)
-    #     density = np.random.uniform(low=0.01, high=1.)  # tf.random_uniform([], minval=0.01, maxval=1., dtype=tf.float32)
-    # elif density_id == 1:  # quite sparse matches (from 1 to 10% of the image area)
-    #     density = np.random.uniform(low=1., high=10.)  # tf.random_uniform([], minval=1., maxval=10., dtype=tf.float32)
-    # elif density_id == 2:  # semi-sparse matches (from 10 to 25% of the image area)
-    #     density = np.random.uniform(low=10., high=25.)  # tf.random_uniform([], minval=10., maxval=25., dtype=tf.float32)
-    # elif density_id == 3:  # semi-dense matches (from 25 to 50% of the image area)
-    #     density = np.random.uniform(low=25., high=50.)  # tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32)
-    # elif density_id == 4:  # quite dense matches (from 50 to 75% of the image area)
-    #     density = np.random.uniform(low=50., high=75.)  # tf.random_uniform([], minval=50., maxval=75., dtype=tf.float32)
-    # elif density_id == 5:  # very dense matches (from 75 to 90% of the image area)
-    #     density = np.random.uniform(low=75., high=90.)  # tf.random_uniform([], minval=75., maxval=90., dtype=tf.float32)
-    # else:
-    #     raise ValueError("FATAL: id should have been an integer within (0-5) but instead was {}".format(density_id))
-    # print("density_id: {}\ndensity: {:.2f}%".format(density_id, density))
 
     # Select a distribution (random uniform, invalid like or grid like with holes
     distrib_id = tf.random_uniform([], maxval=num_distrib, dtype=tf.int32)  # np.random.choice(range(num_distrib))
