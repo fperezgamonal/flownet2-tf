@@ -323,7 +323,7 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     :return:
     """
     sparse_flow = tf.Variable(tf.zeros(gt_flow.shape, dtype=tf.float32), trainable=False)
-    num_samples = tf.multiply(tf.multiply(tf.divide(target_density, 100, height)), width)
+    num_samples = tf.multiply(tf.multiply(tf.divide(target_density, 100), height), width)
     # num_samples = (target_density / 100) * height * width
     aspect_ratio = tf.divide(width, height)
     # Compute as in invalid_like for a random box to know the number of samples in horizontal and vertical
