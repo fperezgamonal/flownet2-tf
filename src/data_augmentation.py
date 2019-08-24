@@ -335,16 +335,20 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     # num_samples_h = int(np.round(num_samples_w / aspect_ratio))
 
     # Check crop dimensions are plausible, otherwise crop them to fit (this alters the density we were sampling at)
-    num_samples_h = tf.cond(tf.greater(num_samples_h, tf.constant(height)), lambda: tf.constant(height - 1),
-                            lambda: num_samples_h)
-    num_samples_w = tf.cond(tf.greater(num_samples_w, tf.constant(width)), lambda: tf.constant(width - 1),
-                            lambda: num_samples_w)
+    num_samples_h = tf.cond(
+        tf.greater(num_samples_h, tf.constant(height)), lambda: tf.constant(height - 1, dtype=tf.int32),
+        lambda: num_samples_h)
+    num_samples_w = tf.cond(
+        tf.greater(num_samples_w, tf.constant(width)), lambda: tf.constant(width - 1, dtype=tf.int32),
+        lambda: num_samples_w)
     # if num_samples_h > height or num_samples_w > width:
     #     num_samples_h = height if num_samples_h > height else num_samples_h
     #     num_samples_w = width if num_samples_w > width else num_samples_w
-    sample_points_h = tf.linspace(0, height - 1, num_samples_h, dtype=tf.int32)
+    sample_points_h = tf.linspace(tf.constant(0, dtype=tf.int32), tf.constant(height - 1, dtype=tf.int32),
+                                  num_samples_h)
     # sample_points_h = np.linspace(0, height - 1, num_samples_h, dtype=np.int32)
-    sample_points_w = tf.linspace(0, width - 1, num_samples_w, dtype=tf.int32)
+    sample_points_w = tf.linspace(tf.constant(0, dtype=tf.int32), tf.constant(width - 1, dtype=tf.int32),
+                                  num_samples_w)
     # sample_points_w = np.linspace(0, width - 1, num_samples_w, dtype=np.int32)
     # Create meshgrid of all combinations (i.e.: coordinates to sample at)
     # matches = tf.zeros((height, width), dtype=tf.int32)
