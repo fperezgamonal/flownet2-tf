@@ -330,7 +330,7 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     num_samples_w = tf.cast(tf.round(tf.sqrt(tf.multiply(num_samples, aspect_ratio))),
                             dtype=tf.int32)
     # num_samples_w = int(np.round(np.sqrt(num_samples * aspect_ratio)))
-    num_samples_h = tf.cast(tf.round(tf.sqrt(tf.divide(num_samples_w, aspect_ratio))),
+    num_samples_h = tf.cast(tf.round(tf.sqrt(tf.divide(tf.cast(num_samples_w, dtype=tf.float32), aspect_ratio))),
                             dtype=tf.int32)
     # num_samples_h = int(np.round(num_samples_w / aspect_ratio))
 
