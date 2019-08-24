@@ -229,18 +229,28 @@ def get_random_offset_and_crop(image_shape, density):
     # aspect_ratios = [16 / 9, 4 / 3, 3 / 2, 3 / 1, 4 / 5]
     num_aspect_ratios = 5
     aspect_ratios = tf.constant([16 / 9, 4 / 3, 3 / 2, 3 / 1, 4 / 5])
-    aspect_id = tf.random_uniform([], maxval=num_aspect_ratios+1, dtype=tf.int32)  # np.random.choice(range(len(aspect_ratios)))
+    aspect_id = tf.random_uniform([], maxval=num_aspect_ratios, dtype=tf.int32)  # np.random.choice(range(len(aspect_ratios)))
     aspect_ratio = aspect_ratios[aspect_id]
     # Compute width and height based of random aspect ratio and bbox area
     # bbox = w * h, AR = w/h
-    # crop_w = tf.cast(tf.round(tf.sqrt(bbox_area * aspect_ratio)), dtype=tf.int32)
-    # crop_h = tf.cast(tf.round(tf.sqrt(crop_w / aspect_ratio)), dtype=tf.int32)
-    crop_w = int(np.round(np.sqrt(bbox_area * aspect_ratio)))
-    crop_h = int(np.round(crop_w / aspect_ratio))
 
     # Check crop dimensions are plausible, otherwise crop them to fit (this alters the density we were sampling at)
-    # crop_h = tf.cond(tf.greater(crop_h, tf.constant(image_shape[0])), lambda: tf.constant(image_shape[0]-1),
-    # lambda: crop_h)
+    crop_w = tf.cast(tf.round(tf.sqrt(tf.multiply(tf.cast(bbox_area, dtype=tf.float32), aspect_ratio))), dtype=tf.int32)
+    crop_h = tf.cast(tf.round(tf.sqrt(tf.divide(tf.cast(crop_w, dtype=tf.float32), aspect_ratio))), dtype=tf.int32)
+    # crop_w = int(np.round(np.sqrt(bbox_area * aspect_ratio)))
+    # crop_h = int(np.round(crop_w / aspect_ratio))
+
+    tf.print("crop_w: {}".format(crop_w))
+    tf.print("crop_h: {}".format(crop_h))
+    #     tf.print("aspect_ratio.dtype: {}".format(aspect_ratio.dtype))
+    #     tf.print("type(bbox_area): {}".format(type(bbox_area)))
+    #     tf.print("bbox_area.dtype: {}".format(bbox_area.dtype))
+
+    # Check crop dimensions are plausible, otherwise crop them to fit (this alters the density we were sampling at)
+    crop_h = tf.cond(tf.greater(crop_h, tf.constant(image_shape[0])),
+                     lambda: tf.constant(image_shape[0] - 1), lambda: crop_h)
+    crop_w = tf.cond(tf.greater(crop_w, tf.constant(image_shape[1])),
+                     lambda: tf.constant(image_shape[1] - 1), lambda: crop_w)
     if crop_h > image_shape[0] or crop_w > image_shape[1]:
         crop_h = image_shape[0] - 1 if crop_h > image_shape[0] else crop_h
         crop_w = image_shape[1] - 1 if crop_w > image_shape[1] else crop_w
@@ -360,19 +370,20 @@ def return_identity(x, y):
 def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
     height, width, _ = gt_flow.get_shape().as_list()
 
-    sample_dm = True if (np.random.choice([0, 1]) > 0 and density >= 1) else False  # tf.random_uniform([], maxval=2, dtype=tf.int32)  # 0 or 1
+    sample_dm = True if (np.random.choice([0, 1]) > 0 and density <= 1) else False  # tf.random_uniform([], maxval=2, dtype=tf.int32)  # 0 or 1
+    tf.print("sample_dm: {}".format(sample_dm))
+    tf.print("distrib_id: {}".format(distrib_id))
     matches, sparse_flow = tf.case(
-        pred_fn_pairs=[
-            tf.logical_and(tf.equal(distrib_id, tf.constant(0)), tf.equal(sample_dm, tf.constant(True))),
-            lambda: sample_sparse_grid_like(gt_flow, target_density=density, height=height, width=width),
-            tf.logical_and(tf.equal(distrib_id, tf.constant(0)), tf.equal(sample_dm, tf.constant(False))),
-            lambda: return_identity(dm_matches, dm_flow),
-            tf.equal(distrib_id, tf.constant(1)), lambda: sample_sparse_uniform(gt_flow, target_density=density,
-                                                                                height=height, width=width),
-            tf.equal(distrib_id, tf.constant(2)), lambda: sample_sparse_invalid_like(gt_flow, target_density=density,
-                                                                                     height=height, width=width)],
-        default=lambda: sample_sparse_uniform(gt_flow, target_density=density, height=height, width=width),
-        exclusive=True)
+        {tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
+                        tf.equal(sample_dm, tf.constant(True))): sample_sparse_grid_like(gt_flow, target_density=density,
+                                                                                         height=height, width=width),
+         tf.logical_and(tf.equal(distrib_id, tf.constant(0)), tf.equal(sample_dm, tf.constant(False))): return_identity(
+             dm_matches, dm_flow),
+         tf.equal(distrib_id, tf.constant(1)): sample_sparse_uniform(gt_flow, target_density=density, height=height,
+                                                                     width=width),
+         tf.equal(distrib_id, tf.constant(2)): sample_sparse_invalid_like(gt_flow, target_density=density, height=height,
+                                                                          width=width)},
+        default=sample_sparse_uniform(gt_flow, target_density=density, height=height, width=width), exclusive=True)
 
     # if distrib_id == 0:  # grid-like + random holes
     #     if density <= 1 and np.random.choice([0, 1]) == 0:  # use 'raw' DeepMatches
