@@ -224,8 +224,8 @@ def get_random_offset_and_crop(image_shape, density):
     :param density:
     :return:
     """
-    p_fill = density / 100  # target_density expressed in %
-    bbox_area = p_fill * np.prod(image_shape)
+    p_fill = tf.divide(density, 100.0)  # target_density expressed in %
+    bbox_area = tf.multiply(p_fill, tf.reduce_prod(tf.shape(image_shape)))
     # aspect_ratios = [16 / 9, 4 / 3, 3 / 2, 3 / 1, 4 / 5]
     num_aspect_ratios = 5
     aspect_ratios = tf.constant([16 / 9, 4 / 3, 3 / 2, 3 / 1, 4 / 5])
@@ -251,9 +251,9 @@ def get_random_offset_and_crop(image_shape, density):
                      lambda: tf.constant(image_shape[0] - 1), lambda: crop_h)
     crop_w = tf.cond(tf.greater(crop_w, tf.constant(image_shape[1])),
                      lambda: tf.constant(image_shape[1] - 1), lambda: crop_w)
-    if crop_h > image_shape[0] or crop_w > image_shape[1]:
-        crop_h = image_shape[0] - 1 if crop_h > image_shape[0] else crop_h
-        crop_w = image_shape[1] - 1 if crop_w > image_shape[1] else crop_w
+    # if crop_h > image_shape[0] or crop_w > image_shape[1]:
+    #     crop_h = image_shape[0] - 1 if crop_h > image_shape[0] else crop_h
+    #     crop_w = image_shape[1] - 1 if crop_w > image_shape[1] else crop_w
 
     rand_offset_h = tf.random_uniform([], 0, image_shape[0] - crop_h + 1, dtype=tf.int32)
     rand_offset_w = tf.random_uniform([], 0, image_shape[1] - crop_w + 1, dtype=tf.int32)
@@ -323,31 +323,46 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     :return:
     """
     sparse_flow = tf.Variable(tf.zeros(gt_flow.shape, dtype=tf.float32), trainable=False)
-    num_samples = (target_density / 100) * height * width
-    aspect_ratio = width / height
+    num_samples = tf.multiply(tf.multiply(tf.divide(target_density, 100, height)), width)
+    # num_samples = (target_density / 100) * height * width
+    aspect_ratio = tf.divide(width, height)
     # Compute as in invalid_like for a random box to know the number of samples in horizontal and vertical
-    num_samples_w = int(np.round(np.sqrt(num_samples * aspect_ratio)))
-    num_samples_h = int(np.round(num_samples_w / aspect_ratio))
+    num_samples_w = tf.cast(tf.round(tf.sqrt(tf.multiply(num_samples, aspect_ratio))),
+                            dtype=tf.int32)
+    # num_samples_w = int(np.round(np.sqrt(num_samples * aspect_ratio)))
+    num_samples_h = tf.cast(tf.round(tf.sqrt(tf.divide(num_samples_w, aspect_ratio))),
+                            dtype=tf.int32)
+    # num_samples_h = int(np.round(num_samples_w / aspect_ratio))
 
     # Check crop dimensions are plausible, otherwise crop them to fit (this alters the density we were sampling at)
-    if num_samples_h > height or num_samples_w > width:
-        num_samples_h = height if num_samples_h > height else num_samples_h
-        num_samples_w = width if num_samples_w > width else num_samples_w
-
-    sample_points_h = np.linspace(0, height - 1, num_samples_h, dtype=np.int32)
-    sample_points_w = np.linspace(0, width - 1, num_samples_w, dtype=np.int32)
+    num_samples_h = tf.cond(tf.greater(num_samples_h, tf.constant(height)), lambda: tf.constant(height - 1),
+                            lambda: num_samples_h)
+    num_samples_w = tf.cond(tf.greater(num_samples_w, tf.constant(width)), lambda: tf.constant(width - 1),
+                            lambda: num_samples_w)
+    # if num_samples_h > height or num_samples_w > width:
+    #     num_samples_h = height if num_samples_h > height else num_samples_h
+    #     num_samples_w = width if num_samples_w > width else num_samples_w
+    sample_points_h = tf.linspace(0, height - 1, num_samples_h, dtype=tf.int32)
+    # sample_points_h = np.linspace(0, height - 1, num_samples_h, dtype=np.int32)
+    sample_points_w = tf.linspace(0, width - 1, num_samples_w, dtype=tf.int32)
+    # sample_points_w = np.linspace(0, width - 1, num_samples_w, dtype=np.int32)
     # Create meshgrid of all combinations (i.e.: coordinates to sample at)
+    # matches = tf.zeros((height, width), dtype=tf.int32)
     matches = np.zeros((height, width), dtype=np.int32)
-    xx, yy = np.meshgrid(sample_points_w, sample_points_h)
-    xx_flatten = xx.flatten()
-    yy_flatten = yy.flatten()
+    xx, yy = tf.meshgrid(sample_points_h, sample_points_w)
+    # xx, yy = np.meshgrid(sample_points_w, sample_points_h)
+    xx_flatten = tf.reshape(xx, [-1])
+    # xx_flatten = xx.flatten()
+    yy_flatten = tf.reshape(yy, [-1])
+    # yy_flatten = yy.flatten()
+    # two_five_five = tf.Variable(255 * tf.ones(tf.shape(xx_flatten)), trainable=False)
     matches[yy_flatten, xx_flatten] = 255
 
     # Randomly subtract a part with a random rectangle (superpixels in the future)
-    corrupt_mask = tf.random_uniform([], maxval=1, dtype=tf.int32)
-
-    rand_offset_h, rand_offset_w, crop_h, crop_w = get_random_offset_and_crop((height, width), target_density / 10)
-    matches[rand_offset_h:rand_offset_h + crop_h, rand_offset_w: rand_offset_w + crop_w] = 0
+    corrupt_mask = np.random.choice([0, 1])  # tf.random_uniform([], maxval=2, dtype=tf.int32)
+    if corrupt_mask > 0:
+        rand_offset_h, rand_offset_w, crop_h, crop_w = get_random_offset_and_crop((height, width), target_density / 10)
+        matches[rand_offset_h:rand_offset_h + crop_h, rand_offset_w: rand_offset_w + crop_w] = 0
     sampling_mask = matches  # sampling_mask of size (h, w)
     matches = tf.cast(tf.expand_dims(matches, -1), dtype=tf.float32)  # convert to (h, w, 1)
     # Sample ground truth flow with given map
