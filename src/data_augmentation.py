@@ -353,13 +353,20 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     return matches, sparse_flow
 
 
+def return_identity(x, y):
+    return x, y
+
+
 def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
     height, width, _ = gt_flow.get_shape().as_list()
 
+    sample_dm = True if (np.random.choice([0, 1]) > 0 and density >= 1) else False  # tf.random_uniform([], maxval=2, dtype=tf.int32)  # 0 or 1
     matches, sparse_flow = tf.case(
         pred_fn_pairs=[
-            tf.equal(distrib_id, tf.constant(0)), lambda: sample_sparse_grid_like(gt_flow, target_density=density,
-                                                                                  height=height, width=width),
+            tf.logical_and(tf.equal(distrib_id, tf.constant(0)), tf.equal(sample_dm, tf.constant(True))),
+            lambda: sample_sparse_grid_like(gt_flow, target_density=density, height=height, width=width),
+            tf.logical_and(tf.equal(distrib_id, tf.constant(0)), tf.equal(sample_dm, tf.constant(False))),
+            lambda: return_identity(dm_matches, dm_flow),
             tf.equal(distrib_id, tf.constant(1)), lambda: sample_sparse_uniform(gt_flow, target_density=density,
                                                                                 height=height, width=width),
             tf.equal(distrib_id, tf.constant(2)), lambda: sample_sparse_invalid_like(gt_flow, target_density=density,
