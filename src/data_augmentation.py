@@ -225,7 +225,7 @@ def get_random_offset_and_crop(image_shape, density):
     :return:
     """
     p_fill = tf.divide(density, 100.0)  # target_density expressed in %
-    bbox_area = tf.multiply(p_fill, tf.multiply(image_shape[0], image_shape[1]))
+    bbox_area = tf.multiply(p_fill, tf.cast(tf.multiply(image_shape[0], image_shape[1]), dtype=tf.float32))
     num_aspect_ratios = 5
     # aspect_ratios = [16 / 9, 4 / 3, 3 / 2, 3 / 1, 4 / 5]
     aspect_ratios = tf.constant([16 / 9, 4 / 3, 3 / 2, 3 / 1, 4 / 5])
