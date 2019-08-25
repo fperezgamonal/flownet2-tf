@@ -316,16 +316,17 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
     # sampling_mask_rep = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
     sampling_mask_flatten = tf.reshape(sampling_mask_rep, [-1])
     # sampling_mask_flatten = np.reshape(sampling_mask_rep, [-1])
-    sampling_mask_flatten = tf.where(tf.equal(sampling_mask_flatten, tf.cast(255, dtype=sampling_mask_flatten.dtype)))
+    sampling_mask_flatten_where = tf.where(tf.equal(sampling_mask_flatten, tf.cast(1, dtype=sampling_mask_flatten.dtype)))
+    sampling_mask_flatten_where = tf.reshape(sampling_mask_flatten_where, [-1])
     # sampling_mask_flatten = np.where(sampling_mask_flatten == 255)
 
     gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask_rep)
     sparse_flow = tf.reshape(sparse_flow, [-1])
-    print("sparse_flow.shape: {}\nsampling_mask_flatten[0].shape: {}\ngt_flow_sampling_mask.shape: {}".format(
-        sparse_flow.shape, sampling_mask_flatten.shape[0], gt_flow_sampling_mask.shape))
+    print("sparse_flow.shape: {}\nsampling_mask_flatten_where.shape: {}\ngt_flow_sampling_mask.shape: {}".format(
+        sparse_flow.shape, sampling_mask_flatten_where.shape, gt_flow_sampling_mask.shape))
     print("type(sparse_flow): {}\ntype(sampling_mask_flatten[0]): {}\ntype(gt_flow_sampling_mask): {}".format(
-        type(sparse_flow), type(sampling_mask_flatten[0]), type(gt_flow_sampling_mask)))
-    sparse_flow = tf.scatter_update(sparse_flow, sampling_mask_flatten, gt_flow_sampling_mask)
+        type(sparse_flow), type(sampling_mask_flatten_where), type(gt_flow_sampling_mask)))
+    sparse_flow = tf.scatter_update(sparse_flow, sampling_mask_flatten_where, gt_flow_sampling_mask)
     sparse_flow = tf.reshape(sparse_flow, gt_flow.shape)
 
     return matches, sparse_flow
