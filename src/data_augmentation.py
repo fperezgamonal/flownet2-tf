@@ -282,7 +282,7 @@ def sample_sparse_invalid_like(gt_flow, target_density=75, height=384, width=512
     # sampling_mask_rep = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
     sampling_mask_flatten = tf.reshape(sampling_mask_rep, [-1])
     # sampling_mask_flatten = np.reshape(sampling_mask_rep, [-1])
-    sampling_mask_flatten = tf.where_v2(tf.equal(sampling_mask_flatten, tf.constant(255)))
+    sampling_mask_flatten = tf.compat.v1.where_v2(tf.equal(sampling_mask_flatten, tf.constant(255)))
     # sampling_mask_flatten = np.where(sampling_mask_flatten == 255)
 
     gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask_rep)
@@ -315,7 +315,7 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
     # sampling_mask_rep = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
     sampling_mask_flatten = tf.reshape(sampling_mask_rep, [-1])
     # sampling_mask_flatten = np.reshape(sampling_mask_rep, [-1])
-    sampling_mask_flatten = tf.where_v2(tf.equal(sampling_mask_flatten, tf.constant(255)))
+    sampling_mask_flatten = tf.compat.v1.where_v2(tf.equal(sampling_mask_flatten, tf.constant(255)))
     # sampling_mask_flatten = np.where(sampling_mask_flatten == 255)
 
     gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask_rep)
@@ -413,7 +413,7 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     # sampling_mask_rep = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
     sampling_mask_flatten = tf.reshape(sampling_mask_rep, [-1])
     # sampling_mask_flatten = np.reshape(sampling_mask_rep, [-1])
-    sampling_mask_flatten = tf.where_v2(tf.equal(sampling_mask_flatten, tf.constant(255)))
+    sampling_mask_flatten = tf.compat.v1.where_v2(tf.equal(sampling_mask_flatten, tf.constant(255)))
     # sampling_mask_flatten = np.where(sampling_mask_flatten == 255)
 
     gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask_rep)
