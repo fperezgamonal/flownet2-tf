@@ -271,7 +271,7 @@ def sample_sparse_invalid_like(gt_flow, target_density=75, height=384, width=512
     # matches = 255 * np.ones((height, width), dtype=np.int32)  # (h, w)
     # Assumption: matches is already a flatten array (when inputted to set_range...)
     matches = tf.reshape(matches, [-1])
-    matches = set_range_to_zero(matches, rand_offset_h, rand_offset_w, crop_h, crop_w)
+    matches = set_range_to_zero(matches, width, rand_offset_h, rand_offset_w, crop_h, crop_w)
     # Convert back to (height, width)
     matches = tf.reshape(matches, (height, width))
     # matches[rand_offset_h:rand_offset_h + crop_h, rand_offset_w: rand_offset_w + crop_w] = 0
@@ -326,11 +326,11 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
     return matches, sparse_flow
 
 
-def set_range_to_zero(matches, offset_h, offset_w, crop_h, crop_w):
+def set_range_to_zero(matches, width, offset_h, offset_w, crop_h, crop_w):
     range_rows = tf.range(offset_h, offset_h + crop_h)
     range_cols = tf.range(offset_w, offset_w + crop_w)
     # Get absolute indices as rows * width + cols
-    indices = tf.add(tf.multiply(range_rows, matches.shape[1]), range_cols)
+    indices = tf.add(tf.multiply(range_rows, width), range_cols)
     zeros = tf.zeros(tf.shape(indices))
     matches = tf.scatter_update(matches, indices, zeros)
     # numpy: matches[rand_offset_h:rand_offset_h + crop_h, rand_offset_w: rand_offset_w + crop_w] = 0
@@ -342,7 +342,7 @@ def corrupt_sparse_flow(matches, density, height=384, width=512):
     inv_fraction = 10.0
     rand_offset_h, rand_offset_w, crop_h, crop_w = get_random_offset_and_crop((height, width),
                                                                               tf.divide(density, inv_fraction))
-    matches = set_range_to_zero(matches, rand_offset_h, rand_offset_w, crop_h, crop_w)
+    matches = set_range_to_zero(matches, width, rand_offset_h, rand_offset_w, crop_h, crop_w)
     return matches
 
 
