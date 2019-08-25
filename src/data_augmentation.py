@@ -267,10 +267,10 @@ def sample_sparse_invalid_like(gt_flow, target_density=75, height=384, width=512
     rand_offset_h, rand_offset_w, crop_h, crop_w = get_random_offset_and_crop((height, width), target_density)
 
     # Define matches as 0 inside the random bbox, 255s elsewhere (at training time the mask is normalised to [0,1])
-    matches = tf.Variable(255 * tf.ones((height, width), dtype=tf.int32))
+    matches = 255 * tf.ones((height, width), dtype=tf.int32)
     # matches = 255 * np.ones((height, width), dtype=np.int32)  # (h, w)
     # Assumption: matches is already a flatten array (when inputted to set_range...)
-    matches = tf.reshape(matches, [-1])
+    matches = tf.Variable(tf.reshape(matches, [-1]), trainable=False)
     matches = set_range_to_zero(matches, width, rand_offset_h, rand_offset_w, crop_h, crop_w)
     # Convert back to (height, width)
     matches = tf.reshape(matches, (height, width))
@@ -439,8 +439,8 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
     sample_dm = tf.cond(tf.logical_and(tf.greater_equal(tf.random_uniform([], maxval=2, dtype=tf.int32), tf.constant(0)),  # 0 or 1
                         tf.less_equal(density, tf.constant(1.0))), lambda: tf.constant(True), lambda: tf.constant(False))
     # sample_dm = tf.cond(True if (np.random.choice([0, 1]) > 0 and density <= 1) else False  # tf.random_uniform([], maxval=2, dtype=tf.int32)  # 0 or 1
-    tf.print("sample_dm: {}".format(sample_dm))
-    tf.print("distrib_id: {}".format(distrib_id))
+    print("sample_dm: {}".format(sample_dm))
+    print("distrib_id: {}".format(distrib_id))
     matches, sparse_flow = tf.case(
         {tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
                         tf.equal(sample_dm, tf.constant(True))): sample_sparse_grid_like(gt_flow, target_density=density,
