@@ -322,9 +322,9 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
     gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask_rep)
     sparse_flow = tf.reshape(sparse_flow, [-1])
     print("sparse_flow.shape: {}\nsampling_mask_flatten[0].shape: {}\ngt_flow_sampling_mask.shape: {}".format(
-        sparse_flow.shape, sampling_mask_flatten.shape, gt_flow_sampling_mask.shape))
-    print("type(sparse_flow): {}\ntype(sampling_mask_flatten): {}\ntype(gt_flow_sampling_mask): {}".format(
-        type(sparse_flow), type(sampling_mask_flatten), type(gt_flow_sampling_mask)))
+        sparse_flow.shape, sampling_mask_flatten.shape[0], gt_flow_sampling_mask.shape))
+    print("type(sparse_flow): {}\ntype(sampling_mask_flatten[0]): {}\ntype(gt_flow_sampling_mask): {}".format(
+        type(sparse_flow), type(sampling_mask_flatten[0]), type(gt_flow_sampling_mask)))
     sparse_flow = tf.scatter_update(sparse_flow, sampling_mask_flatten, gt_flow_sampling_mask)
     sparse_flow = tf.reshape(sparse_flow, gt_flow.shape)
 
