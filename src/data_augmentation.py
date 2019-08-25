@@ -302,7 +302,8 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
     :param target_density:
     :return:
     """
-    sparse_flow = tf.Variable(tf.zeros(gt_flow.shape, dtype=tf.float32), trainable=False)
+    zeros = lambda: tf.zeros(gt_flow.shape, dtype=tf.float32)
+    sparse_flow = tf.Variable(initial_value=zeros, dtype=tf.float32, trainable=False)
     p_fill = tf.divide(target_density, 100.0)
     # p_fill = target_density / 100  # target_density expressed in %
     samples = tf.multinomial(tf.log([[1 - p_fill, p_fill]]), height * width)  # note log-prob
