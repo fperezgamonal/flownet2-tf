@@ -267,7 +267,7 @@ def sample_sparse_invalid_like(gt_flow, target_density=75, height=384, width=512
     rand_offset_h, rand_offset_w, crop_h, crop_w = get_random_offset_and_crop((height, width), target_density)
 
     # Define matches as 0 inside the random bbox, 255s elsewhere (at training time the mask is normalised to [0,1])
-    matches = 255 * tf.ones((height, width), dtype=tf.int32)
+    matches = 255 * tf.ones((height, width), dtype=tf.float32)
     # matches = 255 * np.ones((height, width), dtype=np.int32)  # (h, w)
     # Assumption: matches is already a flatten array (when inputted to set_range...)
     matches = tf.Variable(tf.reshape(matches, [-1]), trainable=False)
@@ -332,7 +332,7 @@ def set_range_to_zero(matches, width, offset_h, offset_w, crop_h, crop_w):
     print("range_rows.shape: {}\nrange_cols.shape: {}".format(range_rows.shape, range_cols.shape))
     # Get absolute indices as rows * width + cols
     indices = tf.add(tf.multiply(range_rows, width), range_cols)
-    zeros = tf.zeros(tf.shape(indices), dtype=tf.int32)
+    zeros = tf.zeros(tf.shape(indices), dtype=tf.float32)
     print("matches.shape: {}\nindices.shape: {}\nzeros.shape: {}".format(matches.shape, indices.shape, zeros.shape))
     print("type(matches): {}\ntype(indices): {}\ntype(zeros): {}".format(type(matches), type(indices), type(zeros)))
     matches = tf.scatter_update(matches, indices, zeros)
