@@ -427,11 +427,11 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
 
 
 def return_identity(x, y):
-    return x, y
+    return tf.identity(x), tf.identity(y)
 
 
 def return_identity_one(x):
-    return x
+    return tf.identity(x)
 
 
 def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
@@ -443,15 +443,16 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
     print("distrib_id: {}".format(distrib_id))
     matches, sparse_flow = tf.case(
         {tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
-                        tf.equal(sample_dm, tf.constant(True))): sample_sparse_grid_like(gt_flow, target_density=density,
-                                                                                         height=height, width=width),
-         tf.logical_and(tf.equal(distrib_id, tf.constant(0)), tf.equal(sample_dm, tf.constant(False))): return_identity(
-             dm_matches, dm_flow),
-         tf.equal(distrib_id, tf.constant(1)): sample_sparse_uniform(gt_flow, target_density=density, height=height,
-                                                                     width=width),
-         tf.equal(distrib_id, tf.constant(2)): sample_sparse_invalid_like(gt_flow, target_density=density, height=height,
-                                                                          width=width)},
-        default=sample_sparse_uniform(gt_flow, target_density=density, height=height, width=width), exclusive=True)
+                        tf.equal(sample_dm, tf.constant(True))): lambda: sample_sparse_grid_like(
+            gt_flow, target_density=density, height=height, width=width),
+         tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
+                        tf.equal(sample_dm, tf.constant(False))): lambda: return_identity(dm_matches, dm_flow),
+         tf.equal(distrib_id, tf.constant(1)): lambda: sample_sparse_uniform(gt_flow, target_density=density,
+                                                                             height=height, width=width),
+         tf.equal(distrib_id, tf.constant(2)): lambda: sample_sparse_invalid_like(gt_flow, target_density=density,
+                                                                                  height=height, width=width)},
+        default=lambda: sample_sparse_uniform(gt_flow, target_density=density, height=height, width=width),
+        exclusive=True)
 
     return matches, sparse_flow
 
