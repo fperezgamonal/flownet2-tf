@@ -285,7 +285,7 @@ def sample_sparse_invalid_like(gt_flow, target_density=75, height=384, width=512
     sampling_mask_flatten = tf.where(tf.equal(sampling_mask_flatten, tf.cast(255, dtype=sampling_mask_flatten.dtype)))
     # sampling_mask_flatten = np.where(sampling_mask_flatten == 255)
 
-    gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask_rep)
+    gt_flow_sampling_mask = tf.Variable(tf.boolean_mask(gt_flow, sampling_mask_rep), trainable=False)
     sparse_flow = tf.Variable(tf.reshape(sparse_flow, [-1]), trainable=False)
     sparse_flow = tf.scatter_update(sparse_flow, sampling_mask_flatten[0], gt_flow_sampling_mask)
     sparse_flow = tf.reshape(sparse_flow, gt_flow.shape)
@@ -318,7 +318,7 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
     sampling_mask_flatten = tf.where(tf.equal(sampling_mask_flatten, tf.cast(255, dtype=sampling_mask_flatten.dtype)))
     # sampling_mask_flatten = np.where(sampling_mask_flatten == 255)
 
-    gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask_rep)
+    gt_flow_sampling_mask = tf.Variable(tf.boolean_mask(gt_flow, sampling_mask_rep), trainable=False)
     sparse_flow = tf.Variable(tf.reshape(sparse_flow, [-1]), trainable=False)
     sparse_flow = tf.scatter_update(sparse_flow, sampling_mask_flatten[0], gt_flow_sampling_mask)
     sparse_flow = tf.reshape(sparse_flow, gt_flow.shape)
@@ -327,11 +327,12 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
 
 
 def set_range_to_zero(matches, width, offset_h, offset_w, crop_h, crop_w):
-    range_rows = tf.range(offset_h, offset_h + crop_h)
-    range_cols = tf.range(offset_w, offset_w + crop_w)
+    range_rows = tf.range(offset_h, offset_h + crop_h, dtype=tf.int32)
+    range_cols = tf.range(offset_w, offset_w + crop_w, dtype=tf.int32)
+    print("range_rows.shape: {}\nrange_cols.shape: {}".format(range_rows.shape, range_cols.shape))
     # Get absolute indices as rows * width + cols
     indices = tf.add(tf.multiply(range_rows, width), range_cols)
-    zeros = tf.zeros(tf.shape(indices))
+    zeros = tf.Variable(tf.zeros(tf.shape(indices)), trainable=False)
     print("matches.shape: {}\nindices.shape: {}\nzeros.shape: {}".format(matches.shape, indices.shape, zeros.shape))
     print("type(matches): {}\ntype(indices): {}\ntype(zeros): {}".format(type(matches), type(indices), type(zeros)))
     matches = tf.scatter_update(matches, indices, zeros)
@@ -392,7 +393,7 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
 
     # Compute absolute indices as row * width + cols
     indices = tf.add(tf.multiply(rows_flatten, width), cols_flatten)
-    two_five_five = 255 * tf.ones(tf.shape(indices))
+    two_five_five = tf.Variable(255 * tf.ones(tf.shape(indices)), trainable=False)
     matches = tf.Variable(tf.reshape(matches, [-1]), trainable=False)
     # matches = np.zeros((height, width), dtype=np.int32)
 
@@ -417,7 +418,7 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     sampling_mask_flatten = tf.where(tf.equal(sampling_mask_flatten, tf.cast(255, dtype=sampling_mask_flatten.dtype)))
     # sampling_mask_flatten = np.where(sampling_mask_flatten == 255)
 
-    gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask_rep)
+    gt_flow_sampling_mask = tf.Variable(tf.boolean_mask(gt_flow, sampling_mask_rep), trainable=False)
     sparse_flow = tf.Variable(tf.reshape(sparse_flow, [-1]), trainable=False)
     sparse_flow = tf.scatter_update(sparse_flow, sampling_mask_flatten[0], gt_flow_sampling_mask)
     sparse_flow = tf.reshape(sparse_flow, gt_flow.shape)
