@@ -282,7 +282,7 @@ def sample_sparse_invalid_like(gt_flow, target_density=75, height=384, width=512
     # sampling_mask_rep = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
     sampling_mask_flatten = tf.reshape(sampling_mask_rep, [-1])
     # sampling_mask_flatten = np.reshape(sampling_mask_rep, [-1])
-    sampling_mask_flatten = tf.where(tf.equal(sampling_mask_flatten, 255.0))
+    sampling_mask_flatten = tf.where(tf.equal(sampling_mask_flatten, tf.cast(255, dtype=tf.int32)))
     # sampling_mask_flatten = np.where(sampling_mask_flatten == 255)
 
     gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask_rep)
@@ -315,7 +315,7 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
     # sampling_mask_rep = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
     sampling_mask_flatten = tf.reshape(sampling_mask_rep, [-1])
     # sampling_mask_flatten = np.reshape(sampling_mask_rep, [-1])
-    sampling_mask_flatten = tf.where(tf.equal(sampling_mask_flatten, 255))
+    sampling_mask_flatten = tf.where(tf.equal(sampling_mask_flatten, tf.cast(255, dtype=tf.int32)))
     # sampling_mask_flatten = np.where(sampling_mask_flatten == 255)
 
     gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask_rep)
@@ -333,6 +333,8 @@ def set_range_to_zero(matches, width, offset_h, offset_w, crop_h, crop_w):
     indices = tf.add(tf.multiply(range_rows, width), range_cols)
     zeros = tf.zeros(tf.shape(indices))
     matches = tf.scatter_update(matches, indices, zeros)
+    tf.print("matches.shape: {}\nindices.shape: {}\nzeros.shape: {}".format(matches.shape, indices.shape, zeros.shape))
+    tf.print("type(matches): {}\ntype(indices): {}\ntype(zeros): {}".format(type(matches), type(indices), type(zeros)))
     # numpy: matches[rand_offset_h:rand_offset_h + crop_h, rand_offset_w: rand_offset_w + crop_w] = 0
     return matches
 
@@ -393,8 +395,7 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     two_five_five = 255 * tf.ones(tf.shape(indices))
     matches = tf.Variable(tf.reshape(matches, [-1]), trainable=False)
     # matches = np.zeros((height, width), dtype=np.int32)
-    tf.print("matches.shape: {}\nindices.shape: {}\ntwo_five_five.shape: {}".format(matches.shape, indices.shape,
-                                                                                    two_five_five.shape))
+
     matches = tf.scatter_update(matches, indices, two_five_five)  # all 1D tensors
     # matches[yy_flatten, xx_flatten] = 255
     # matches = tf.reshape(matches, (height, width, 1))
@@ -413,7 +414,7 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     # sampling_mask_rep = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
     sampling_mask_flatten = tf.reshape(sampling_mask_rep, [-1])
     # sampling_mask_flatten = np.reshape(sampling_mask_rep, [-1])
-    sampling_mask_flatten = tf.where(tf.equal(sampling_mask_flatten, 255))
+    sampling_mask_flatten = tf.where(tf.equal(sampling_mask_flatten, tf.cast(255, dtype=tf.int32)))
     # sampling_mask_flatten = np.where(sampling_mask_flatten == 255)
 
     gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask_rep)
