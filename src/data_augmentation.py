@@ -332,9 +332,9 @@ def set_range_to_zero(matches, width, offset_h, offset_w, crop_h, crop_w):
     # Get absolute indices as rows * width + cols
     indices = tf.add(tf.multiply(range_rows, width), range_cols)
     zeros = tf.zeros(tf.shape(indices))
-    matches = tf.scatter_update(matches, indices, zeros)
     tf.print("matches.shape: {}\nindices.shape: {}\nzeros.shape: {}".format(matches.shape, indices.shape, zeros.shape))
     tf.print("type(matches): {}\ntype(indices): {}\ntype(zeros): {}".format(type(matches), type(indices), type(zeros)))
+    matches = tf.scatter_update(matches, indices, zeros)
     # numpy: matches[rand_offset_h:rand_offset_h + crop_h, rand_offset_w: rand_offset_w + crop_w] = 0
     return matches
 
