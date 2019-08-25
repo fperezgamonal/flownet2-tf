@@ -393,7 +393,7 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
 
     # Compute absolute indices as row * width + cols
     indices = tf.add(tf.multiply(rows_flatten, width), cols_flatten)
-    two_five_five = tf.Variable(255 * tf.ones(tf.shape(indices)), trainable=False)
+    two_five_five = tf.Variable(255 * tf.ones(tf.shape(indices)), trainable=False, validate_shape=False)
     matches = tf.Variable(tf.reshape(matches, [-1]), trainable=False)
     # matches = np.zeros((height, width), dtype=np.int32)
 
