@@ -305,7 +305,7 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
     sparse_flow = tf.Variable(tf.zeros(gt_flow.shape, dtype=tf.float32), trainable=False)
     p_fill = tf.divide(target_density, 100.0)
     # p_fill = target_density / 100  # target_density expressed in %
-    samples = tf.random.categorical(tf.log([[1 - p_fill, p_fill]]), height * width)  # note log-prob
+    samples = tf.multinomial(tf.log([[1 - p_fill, p_fill]]), height * width)  # note log-prob
     sampling_mask = tf.cast(tf.reshape(samples, (height, width)), dtype=tf.int32)
     # sampling_mask = np.random.choice([0, 255], size=(height, width), p=[1 - p_fill, p_fill]).astype(
     #     np.int32)  # sampling_mask.shape: (h, w)
