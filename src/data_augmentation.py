@@ -225,7 +225,7 @@ def get_random_offset_and_crop(image_shape, density):
     :return:
     """
     p_fill = tf.divide(density, 100.0)  # target_density expressed in %
-    bbox_area = tf.multiply(p_fill, tf.reduce_prod(tf.shape(image_shape)))
+    bbox_area = tf.multiply(p_fill, tf.multiply(image_shape[0], image_shape[1]))
     num_aspect_ratios = 5
     # aspect_ratios = [16 / 9, 4 / 3, 3 / 2, 3 / 1, 4 / 5]
     aspect_ratios = tf.constant([16 / 9, 4 / 3, 3 / 2, 3 / 1, 4 / 5])
@@ -354,8 +354,8 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     :return:
     """
     sparse_flow = tf.Variable(tf.zeros(gt_flow.shape, dtype=tf.float32), trainable=False)
-    matches = tf.Variable(tf.zeros((height, width, 1), dtype=tf.float32), trainable=False)
-    num_samples = tf.multiply(tf.multiply(tf.divide(target_density, 100), height), width)
+    matches = tf.zeros((height, width, 1), dtype=tf.float32)
+    num_samples = tf.multiply(tf.multiply(tf.divide(target_density, 100.0), height), width)
     # num_samples = (target_density / 100) * height * width
     aspect_ratio = tf.divide(width, height)
     # Compute as in invalid_like for a random box to know the number of samples in horizontal and vertical
@@ -389,10 +389,12 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     # yy_flatten = yy.flatten()
 
     # Compute absolute indices as row * width + cols
-    indices = tf.add(tf.multiply(rows_flatten, matches.shape[1]), cols_flatten)
+    indices = tf.add(tf.multiply(rows_flatten, width), cols_flatten)
     two_five_five = 255 * tf.ones(tf.shape(indices))
-    matches = tf.reshape(matches, [-1])
+    matches = tf.Variable(tf.reshape(matches, [-1]), trainable=False)
     # matches = np.zeros((height, width), dtype=np.int32)
+    tf.print("matches.shape: {}\nindices.shape: {}\ntwo_five_five.shape: {}".format(matches.shape, indices.shape,
+                                                                                    two_five_five.shape))
     matches = tf.scatter_update(matches, indices, two_five_five)  # all 1D tensors
     # matches[yy_flatten, xx_flatten] = 255
     # matches = tf.reshape(matches, (height, width, 1))
@@ -401,7 +403,7 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     corrupt_mask = tf.random_uniform([], maxval=2, dtype=tf.int32)  # np.random.choice([0, 1])
     matches = tf.cond(tf.greater(corrupt_mask, tf.constant(0)), lambda: corrupt_sparse_flow(matches, target_density,
                                                                                             height, width),
-                      lambda: matches)
+                      lambda: return_identity_one(matches))
 
     sampling_mask = tf.reshape(matches, (height, width))  # sampling_mask of size (h, w)
     matches = tf.cast(tf.expand_dims(sampling_mask, -1), dtype=tf.float32)  # convert to (h, w, 1)
@@ -424,6 +426,10 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
 
 def return_identity(x, y):
     return x, y
+
+
+def return_identity_one(x):
+    return x
 
 
 def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
