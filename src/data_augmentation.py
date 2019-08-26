@@ -307,10 +307,14 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
     """
     p_fill = tf.divide(target_density, 100.0)
     # p_fill = target_density / 100  # target_density expressed in %
+    print("p_fill: {}".format(p_fill))
     samples = tf.multinomial(tf.log([[1 - p_fill, p_fill]]), height * width)  # note log-prob
+    print("samples: {}".format(samples))
+    print("samples.shape: {}".format(samples.shape))
     sampling_mask = tf.cast(tf.reshape(samples, (height, width)), dtype=tf.int32)
     # sampling_mask = np.random.choice([0, 255], size=(height, width), p=[1 - p_fill, p_fill]).astype(
     #     np.int32)  # sampling_mask.shape: (h, w)
+    print("(approx. equal to p_fill) sum(sampling_mask) / image_shape: {}".format(tf.reduce_sum(sampling_mask) / (height * width)))
     matches = tf.cast(tf.expand_dims(sampling_mask, -1), dtype=tf.float32)  # convert to (h, w, 1)
     sampling_mask = sampling_mask[:, :, tf.newaxis]
     print("before tf.tile: sampling_mask.shape: {}".format(sampling_mask.shape))
