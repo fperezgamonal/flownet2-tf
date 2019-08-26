@@ -235,7 +235,7 @@ def get_random_offset_and_crop(image_shape, density):
 
     # Check crop dimensions are plausible, otherwise crop them to fit (this alters the density we were sampling at)
     crop_w = tf.cast(tf.round(tf.sqrt(tf.multiply(tf.cast(bbox_area, dtype=tf.float32), aspect_ratio))), dtype=tf.int32)
-    crop_h = tf.cast(tf.round(tf.sqrt(tf.divide(tf.cast(crop_w, dtype=tf.float32), aspect_ratio))), dtype=tf.int32)
+    crop_h = tf.cast(tf.round(tf.divide(tf.cast(crop_w, dtype=tf.float32), aspect_ratio)), dtype=tf.int32)
     # crop_w = int(np.round(np.sqrt(bbox_area * aspect_ratio)))
     # crop_h = int(np.round(crop_w / aspect_ratio))
 
@@ -377,23 +377,25 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     num_samples_w = tf.cast(tf.round(tf.sqrt(tf.multiply(num_samples, aspect_ratio))),
                             dtype=tf.int32)
     # num_samples_w = int(np.round(np.sqrt(num_samples * aspect_ratio)))
-    num_samples_h = tf.cast(tf.round(tf.sqrt(tf.divide(tf.cast(num_samples_w, dtype=tf.float32), aspect_ratio))),
+    num_samples_h = tf.cast(tf.round(tf.divide(tf.cast(num_samples_w, dtype=tf.float32), aspect_ratio)),
                             dtype=tf.int32)
     # num_samples_h = int(np.round(num_samples_w / aspect_ratio))
 
     # Check crop dimensions are plausible, otherwise crop them to fit (this alters the density we were sampling at)
     num_samples_h = tf.cond(
-        tf.greater(num_samples_h, tf.constant(height)), lambda: tf.constant(height - 1, dtype=tf.int32),
+        tf.greater(num_samples_h, tf.constant(height)), lambda: tf.constant(height, dtype=tf.int32),
         lambda: num_samples_h)
     num_samples_w = tf.cond(
-        tf.greater(num_samples_w, tf.constant(width)), lambda: tf.constant(width - 1, dtype=tf.int32),
+        tf.greater(num_samples_w, tf.constant(width)), lambda: tf.constant(width, dtype=tf.int32),
         lambda: num_samples_w)
     # if num_samples_h > height or num_samples_w > width:
     #     num_samples_h = height if num_samples_h > height else num_samples_h
     #     num_samples_w = width if num_samples_w > width else num_samples_w
-    sample_points_h = tf.range(0, height - 1, num_samples_h, dtype=tf.int32)
+    sample_points_h = tf.cast(tf.round(tf.linspace(0.0, height - 1, num_samples_h)), dtype=tf.int32)
+    # sample_points_h = tf.range(0, height - 1, num_samples_h, dtype=tf.int32)
     # sample_points_h = np.linspace(0, height - 1, num_samples_h, dtype=np.int32)
-    sample_points_w = tf.range(0, width - 1, num_samples_w, dtype=tf.int32)
+    sample_points_w = tf.cast(tf.round(tf.linspace(0.0, width - 1, num_samples_w)), dtype=tf.int32)
+    # sample_points_w = tf.range(0, width - 1, num_samples_w, dtype=tf.int32)
     # sample_points_w = np.linspace(0, width - 1, num_samples_w, dtype=np.int32)
     # Create meshgrid of all combinations (i.e.: coordinates to sample at)
     rows, cols = tf.meshgrid(sample_points_h, sample_points_w, indexing='ij')
@@ -470,8 +472,8 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
                            tf.equal(sample_dm, tf.constant(True))): lambda: return_identity(dm_matches, dm_flow),
             tf.equal(distrib_id, tf.constant(1)): lambda: sample_sparse_uniform(gt_flow, target_density=density,
                                                                                 height=height, width=width),
-            # tf.equal(distrib_id, tf.constant(2)): lambda: sample_sparse_invalid_like(gt_flow, target_density=density,
-            #                                                                          height=height, width=width)
+            tf.equal(distrib_id, tf.constant(2)): lambda: sample_sparse_invalid_like(gt_flow, target_density=density,
+                                                                                     height=height, width=width)
         },
         default=lambda: sample_sparse_uniform(gt_flow, target_density=default_density, height=height, width=width),
         exclusive=True)
