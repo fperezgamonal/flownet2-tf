@@ -487,9 +487,10 @@ def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=6, num_distrib=3
     """
     # Temporal checks
     print("dm_matches.shape: {}\ndm_matches.dtype: {}\ntf.unique(dm_matches)".format(dm_matches.shape, dm_matches.dtype,
-                                                                                     tf.unique(dm_matches)))
-    print("dm_flow.shape: {}\ndm_flow.dtype: {}\ntf.unique(dm_flow)".format(dm_flow.shape, dm_flow.dtype,
-                                                                            tf.unique(dm_flow)))
+                                                                                     tf.unique(tf.reshape(dm_matches,
+                                                                                                          [-1]))))
+    print("dm_flow.shape: {}\ndm_flow.dtype: {}\ntf.reduce_mean(dm_flow)".format(dm_flow.shape, dm_flow.dtype,
+                                                                                 tf.reduce_mean(dm_flow)))
     density = tf.zeros([], dtype=tf.float32)
     density = apply_with_random_selector(density, lambda x, ordering: get_sampling_density(x, ordering, fast_mode),
                                          num_cases=num_ranges)
