@@ -214,6 +214,7 @@ def get_sampling_density(density, density_id=0, fast_mode=True, scope=None):
         else:
             raise ValueError('density_id must be in [0, 5]')
 
+        tf.summary.scalar('debug/density_id', density_id)
         return density
 
 
@@ -475,6 +476,11 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
          },
         default=lambda: sample_sparse_uniform(gt_flow, target_density=density, height=height, width=width),
         exclusive=True)
+
+    # Ensure we do not give an empty mask back!
+    matches, sparse_flow = tf.cond(tf.greater(tf.reduce_mean(matches), tf.constant(0),
+                                              lambda: return_identity(matches, sparse_flow),
+                                              lambda: return_identity(dm_matches, dm_flow)))
 
     return matches, sparse_flow
 
