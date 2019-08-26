@@ -484,7 +484,7 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
     return matches, sparse_flow
 
 
-def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=6, num_distrib=3, fast_mode=False):
+def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=(4, 2), num_distrib=3, fast_mode=False):
     """
 
     :param dm_matches:
