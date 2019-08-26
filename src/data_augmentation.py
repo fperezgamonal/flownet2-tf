@@ -457,6 +457,7 @@ def return_identity_one(x):
 
 
 def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
+    default_density = 50  # default density to use with default uniform sampling
     height, width, _ = gt_flow.get_shape().as_list()
     aux_choice = tf.random_uniform([], maxval=2, dtype=tf.int32)  # 0 or 1
     sample_dm = tf.cond(tf.logical_and(tf.greater(aux_choice, tf.constant(0)),
@@ -464,9 +465,9 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
     # sample_dm = tf.cond(True if (np.random.choice([0, 1]) > 0 and density <= 1) else False
     matches, sparse_flow = tf.case(
         {
-        # tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
-        #                tf.equal(sample_dm, tf.constant(False))): lambda: sample_sparse_grid_like(
-        # gt_flow, target_density=density, height=height, width=width),
+        tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
+                       tf.equal(sample_dm, tf.constant(False))): lambda: sample_sparse_grid_like(
+            gt_flow, target_density=density, height=height, width=width),
          tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
                         tf.equal(sample_dm, tf.constant(True))): lambda: return_identity(dm_matches, dm_flow),
          tf.equal(distrib_id, tf.constant(1)): lambda: sample_sparse_uniform(gt_flow, target_density=density,
@@ -474,7 +475,7 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
          tf.equal(distrib_id, tf.constant(2)): lambda: sample_sparse_invalid_like(gt_flow, target_density=density,
                                                                                   height=height, width=width)
          },
-        default=lambda: sample_sparse_uniform(gt_flow, target_density=density, height=height, width=width),
+        default=lambda: sample_sparse_uniform(gt_flow, target_density=50, height=height, width=width),
         exclusive=True)
 
     # Ensure we do not give an empty mask back!
