@@ -284,14 +284,17 @@ def sample_sparse_invalid_like(gt_flow, target_density=75, height=384, width=512
     # sampling_mask_rep = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
     sampling_mask_flatten = tf.reshape(sampling_mask_rep, [-1])
     # sampling_mask_flatten = np.reshape(sampling_mask_rep, [-1])
-    sampling_mask_flatten = tf.where(tf.equal(sampling_mask_flatten, tf.cast(1, dtype=sampling_mask_flatten.dtype)))
+    sampling_mask_flatten_where = tf.where(
+        tf.equal(sampling_mask_flatten, tf.cast(1, dtype=sampling_mask_flatten.dtype)))
+    sampling_mask_flatten_where = tf.reshape(sampling_mask_flatten_where, [-1])
+    # sampling_mask_flatten = tf.where(tf.equal(sampling_mask_flatten, tf.cast(1, dtype=sampling_mask_flatten.dtype)))
     # sampling_mask_flatten = np.where(sampling_mask_flatten == 1)
 
     gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask_rep)
     zeros = lambda: tf.zeros(tf.reduce_prod(gt_flow.shape), dtype=tf.float32)
     sparse_flow = tf.Variable(initial_value=zeros, dtype=tf.float32, trainable=False)
     # sparse_flow = tf.Variable(tf.reshape(sparse_flow, [-1]), trainable=False)
-    sparse_flow = tf.scatter_update(sparse_flow, sampling_mask_flatten[0], gt_flow_sampling_mask)
+    sparse_flow = tf.scatter_update(sparse_flow, sampling_mask_flatten_where, gt_flow_sampling_mask)
     sparse_flow = tf.reshape(sparse_flow, gt_flow.shape)
 
     return matches, sparse_flow
@@ -417,21 +420,26 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
 
     # Compute absolute indices as row * width + cols
     indices = tf.add(tf.multiply(rows_flatten, width), cols_flatten)
-    ones_raw = lambda: tf.ones(tf.shape(indices))
-    ones = tf.Variable(initial_value=ones_raw, trainable=False, validate_shape=False)
+    # ones_raw = lambda: tf.ones(tf.shape(indices))
+    # ones = tf.Variable(initial_value=ones_raw, trainable=False, validate_shape=False)
+    ones = tf.ones(tf.shape(indices), dtype=tf.float32)
     zeros = lambda: tf.zeros((height * width), dtype=tf.float32)
     matches = tf.Variable(initial_value=zeros, trainable=False)
+    print("(after init) matches: {}".format(matches))
+
     # matches = np.zeros((height, width), dtype=np.int32)
 
     matches = tf.scatter_update(matches, indices, ones)  # all 1D tensors
     # matches[yy_flatten, xx_flatten] = 1
     # matches = tf.reshape(matches, (height, width, 1))
+    print("(after scatter_update) matches: {}".format(matches))
 
     # Randomly subtract a part with a random rectangle (superpixels in the future)
     corrupt_mask = tf.random_uniform([], maxval=2, dtype=tf.int32)  # np.random.choice([0, 1])
     matches = tf.cond(tf.greater(corrupt_mask, tf.constant(0)), lambda: corrupt_sparse_flow(matches, target_density,
                                                                                             height, width),
                       lambda: return_identity_one(matches))
+    print("(after tf.cond corrupt_mask) matches: {}".format(matches))
 
     sampling_mask = tf.reshape(matches, (height, width))  # sampling_mask of size (h, w)
     matches = tf.cast(tf.expand_dims(sampling_mask, -1), dtype=tf.float32)  # convert to (h, w, 1)
@@ -441,14 +449,17 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     # sampling_mask_rep = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
     sampling_mask_flatten = tf.reshape(sampling_mask_rep, [-1])
     # sampling_mask_flatten = np.reshape(sampling_mask_rep, [-1])
-    sampling_mask_flatten = tf.where(tf.equal(sampling_mask_flatten, tf.cast(1, dtype=sampling_mask_flatten.dtype)))
+    sampling_mask_flatten_where = tf.where(
+        tf.equal(sampling_mask_flatten, tf.cast(1, dtype=sampling_mask_flatten.dtype)))
+    sampling_mask_flatten_where = tf.reshape(sampling_mask_flatten_where, [-1])
+    # sampling_mask_flatten = tf.where(tf.equal(sampling_mask_flatten, tf.cast(1, dtype=sampling_mask_flatten.dtype)))
     # sampling_mask_flatten = np.where(sampling_mask_flatten == 1)
 
     gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask_rep)
     zeros = lambda: tf.zeros(tf.reduce_prod(gt_flow.shape), dtype=tf.float32)
     sparse_flow = tf.Variable(initial_value=zeros, dtype=tf.float32, trainable=False)
     # sparse_flow = tf.Variable(tf.reshape(sparse_flow, [-1]), trainable=False)
-    sparse_flow = tf.scatter_update(sparse_flow, sampling_mask_flatten[0], gt_flow_sampling_mask)
+    sparse_flow = tf.scatter_update(sparse_flow, sampling_mask_flatten_where, gt_flow_sampling_mask)
     sparse_flow = tf.reshape(sparse_flow, gt_flow.shape)
 
     return matches, sparse_flow
