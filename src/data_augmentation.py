@@ -303,8 +303,6 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
     :param target_density:
     :return:
     """
-    zeros = lambda: tf.zeros(gt_flow.shape, dtype=tf.float32)
-    sparse_flow = tf.Variable(initial_value=zeros, dtype=tf.float32, trainable=False)
     p_fill = tf.divide(target_density, 100.0)
     # p_fill = target_density / 100  # target_density expressed in %
     samples = tf.multinomial(tf.log([[1 - p_fill, p_fill]]), height * width)  # note log-prob
@@ -318,15 +316,20 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
     print("after tf.tile: sampling_mask_rep.shape: {}".format(sampling_mask_rep.shape))
     # sampling_mask_rep = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
     sampling_mask_flatten = tf.reshape(sampling_mask_rep, [-1])
+    print("after flatten: sampling_mask_flatten.shape: {}".format(sampling_mask_flatten.shape))
     # sampling_mask_flatten = np.reshape(sampling_mask_rep, [-1])
     sampling_mask_flatten_where = tf.where(tf.equal(sampling_mask_flatten, tf.cast(1, dtype=sampling_mask_flatten.dtype)))
+    print("after tf.where: sampling_mask_flatten_where.shape: {}".format(sampling_mask_flatten_where.shape))
     sampling_mask_flatten_where = tf.reshape(sampling_mask_flatten_where, [-1])
+    print("after flatten: sampling_mask_flatten_where.shape: {}".format(sampling_mask_flatten_where.shape))
+
     # sampling_mask_flatten = np.where(sampling_mask_flatten == 1)
     gt_flow_sampling_mask = tf.boolean_mask(gt_flow, sampling_mask_rep)
     # gt_flow_boolean_mask = lambda: tf.boolean_mask(gt_flow, sampling_mask_rep)
     # gt_flow_sampling_mask = tf.Variable(initial_value=gt_flow_boolean_mask, dtype=tf.float32, validate_shape=False,
     #                                     trainable=False)
-    sparse_flow = tf.Variable(tf.reshape(sparse_flow, [-1]), trainable=False)
+    zeros = lambda: tf.zeros(tf.reduce_prod(gt_flow.shape), dtype=tf.float32)
+    sparse_flow = tf.Variable(initial_value=zeros, dtype=tf.float32, trainable=False)
     print("sparse_uniform")
     print("sparse_flow.shape: {}\nsampling_mask_flatten_where.shape: {}\ngt_flow_sampling_mask.shape: {}".format(
         sparse_flow.shape, sampling_mask_flatten_where.shape, gt_flow_sampling_mask.shape))
