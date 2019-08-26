@@ -266,7 +266,14 @@ class Net(object):
             event_string = 'Sfine_{0}_{1}_it={2}_BS{3}_opt_Adam_wd={4:.1e}HFEM_{5}_{6}'.format(
                 dataset_name, ckpt_str, step_number, eff_batch_size, training_schedule['l2_regularization'], add_hfem,
                 date_string)
-
+        elif 'sintel_s' in training_schedule_str.lower():  # LR disruptions from PWC-Net+ for MPI-Sintel
+            event_string = '{0}_{1}_it={2}_BS{3}_opt_Adam_wd={4:.1e}HFEM_{5}_{6}'.format(
+                training_schedule_str.lower(), ckpt_str, step_number, eff_batch_size,
+                training_schedule['l2_regularization'], add_hfem, date_string)
+        elif 'kitti_s' in training_schedule_str.lower():  # LR disruptions from PWC-Net+ for KITTI
+            event_string = '{0}_{1}_it={2}_BS{3}_opt_Adam_wd={4:.1e}HFEM_{5}_{6}'.format(
+                training_schedule_str.lower(), ckpt_str, step_number, eff_batch_size,
+                training_schedule['l2_regularization'], add_hfem, date_string)
         elif 'lr_range_test' in training_schedule_str.lower():
             if train_params_dict['lr_range_mode'] == 'linear':
                 total_iters = train_params_dict['lr_range_niters']
@@ -893,7 +900,7 @@ class Net(object):
               val_matches_a=None, val_sparse_flow=None, val_edges_a=None, checkpoints=None, input_type='image_pairs',
               log_verbosity=1, log_tensorboard=True, lr_range_test=False, train_params_dict=None,
               log_smoothed_loss=True, reset_global_step=False, summarise_grads=False, add_hfem='', lambda_w=2,
-              hfem_perc=50, dataset_config_str='flying_chairs'):
+              hfem_perc=50, dataset_config_str='flying_chairs', global_step_tensor=None):
 
         """
         runs training on the network from which this method is called.
@@ -925,9 +932,13 @@ class Net(object):
         :param lambda_w:
         :param hfem_perc:
         :param dataset_config_str:
+        :param global_step_tensor:
 
         :return:
         """
+        if global_step_tensor is None:
+            global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64)
+
         if log_verbosity <= 1:  # print loss and tfinfo to stdout
             tf.logging.set_verbosity(tf.logging.INFO)
         else:  # debug info (more verbose)
@@ -985,8 +996,9 @@ class Net(object):
                     }
                 # Initialise checkpoint for stacked nets with the global step as the number of the outermost net
                 step_number = int(checkpoint_path.split('-')[-1])
-                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
-                                                            dtype=tf.int64)
+                # checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
+                #                                             dtype=tf.int64)
+                global_step_tensor.assign(step_number)
             # TODO: adapt resuming from saver to stacked architectures
             elif isinstance(checkpoints, str):
                 checkpoint_path = checkpoints
@@ -996,16 +1008,19 @@ class Net(object):
                         print("Defining global step by parsing model filename...")
                         print("Found step number: {}".format(step_number))
 
-                    checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
-                                                                dtype=tf.int64)
+                    # checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
+                    #                                             dtype=tf.int64)
+                    global_step_tensor.assign(step_number)
                 else:
                     if log_verbosity > 1:
                         print("Defining global step as 0 (reset_global_step = True)")
-                    checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64)
+                    # checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64)
+                    global_step_tensor.assign(0)
             else:
                 raise ValueError("checkpoint should be a single path (string) or a dictionary for stacked networks")
         else:
-            checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64)
+            # checkpoint_global_step_tensor = tf.Variable(0, trainable=False, name='global_step', dtype=tf.int64)
+            global_step_tensor.assign(0)
 
         # TODO: simplify (if possible) how we separate the step-wise policies (train_params_dict is None) vs the rest
         # max_steps overrides max_iter which is configured in training_schedules.py
@@ -1034,7 +1049,7 @@ class Net(object):
                 if log_verbosity:
                     print("max_iters: {}, min_lr: {:.4f}, max_lr: {:.4f}".format(training_schedule['max_iters'],
                                                                                  start_lr, end_lr))
-                learning_rate = exponentially_increasing_lr(checkpoint_global_step_tensor, min_lr=start_lr,
+                learning_rate = exponentially_increasing_lr(global_step_tensor, min_lr=start_lr,
                                                             max_lr=end_lr, num_iters=training_schedule['max_iters'])
             else:  # linear
                 if log_verbosity > 1:
@@ -1042,7 +1057,7 @@ class Net(object):
                     print("base learning rate: {}, maximum learning rate: {}, step_size: {}, max_iters: {}".format(
                         start_lr, end_lr, lr_range_niters, train_params_dict['max_steps']))
 
-                learning_rate = _lr_cyclic(g_step_op=checkpoint_global_step_tensor, base_lr=start_lr, max_lr=end_lr,
+                learning_rate = _lr_cyclic(g_step_op=global_step_tensor, base_lr=start_lr, max_lr=end_lr,
                                            step_size=lr_range_niters, mode='triangular')
 
         elif isinstance(training_schedule['learning_rates'], str) and not lr_range_test and \
@@ -1051,7 +1066,7 @@ class Net(object):
                 if log_verbosity > 1:
                     print("Learning rate policy is CLR (Cyclical Learning Rate)")
                 learning_rate = _lr_cyclic(
-                    g_step_op=checkpoint_global_step_tensor, base_lr=train_params_dict['clr_min_lr'],
+                    g_step_op=global_step_tensor, base_lr=train_params_dict['clr_min_lr'],
                     max_lr=train_params_dict['clr_max_lr'], step_size=train_params_dict['clr_stepsize'],
                     gamma=train_params_dict['clr_gamma'], mode=train_params_dict['clr_mode'])
                 # Change max_iter according to the number of cycles and stepsize
@@ -1065,7 +1080,7 @@ class Net(object):
                 if log_verbosity > 1:
                     print("Learning rate policy is 1-cycle (CLR with only 1 longer cycle + LR annealing at the end)")
                 learning_rate = _lr_cyclic(
-                    g_step_op=checkpoint_global_step_tensor, base_lr=train_params_dict['clr_min_lr'],
+                    g_step_op=global_step_tensor, base_lr=train_params_dict['clr_min_lr'],
                     max_lr=train_params_dict['clr_max_lr'], step_size=train_params_dict['clr_stepsize'],
                     mode='triangular', one_cycle=True, annealing_factor=train_params_dict['one_cycle_annealing_factor'])
                 # Define total length of the 1cycle + annealing by overwriting maximum number of iterations
@@ -1073,7 +1088,7 @@ class Net(object):
                 if log_verbosity > 1:
                     print("Training schedule is 'exp_decr' (exponentially decreasing LR)")
                 learning_rate = exponentially_decreasing_lr(
-                    checkpoint_global_step_tensor, min_lr=train_params_dict['end_lr'],
+                    global_step_tensor, min_lr=train_params_dict['end_lr'],
                     max_lr=train_params_dict['start_lr'], num_iters=training_schedule['max_iters'])
             else:
                 if log_verbosity > 1:
@@ -1083,7 +1098,7 @@ class Net(object):
         else:  #
             if log_verbosity > 1:
                 print("Piecewise constant learning selected (defined in 'training_schedules.py')")
-            learning_rate = tf.train.piecewise_constant(checkpoint_global_step_tensor,
+            learning_rate = tf.train.piecewise_constant(global_step_tensor,
                                                         [tf.cast(v, tf.int64) for v in training_schedule['step_values']],
                                                         training_schedule['learning_rates'])
         # TODO: define common variables outside of individual if-statements to keep it as short as possible
@@ -1111,7 +1126,7 @@ class Net(object):
                                 print("Cycle boundaries are: max={}, min={}".format(train_params_dict['max_momentum'],
                                                                                     train_params_dict['min_momentum']))
                             # Use cyclical momentum (only decreasing half-cycle while LR increases)
-                            momentum = _lr_cyclic(g_step_op=checkpoint_global_step_tensor,
+                            momentum = _lr_cyclic(g_step_op=global_step_tensor,
                                                   base_lr=train_params_dict['max_momentum'],
                                                   max_lr=train_params_dict['min_momentum'],
                                                   step_size=lr_range_niters,
@@ -1125,7 +1140,7 @@ class Net(object):
                                     train_params_dict['gamma'] = 1  # effectively disables (avoids duplicate code)
                                 else:
                                     is_one_cycle = False
-                            momentum = _mom_cyclic(g_step_op=checkpoint_global_step_tensor,
+                            momentum = _mom_cyclic(g_step_op=global_step_tensor,
                                                    base_mom=train_params_dict['min_momentum'],
                                                    max_mom=train_params_dict['max_momentum'],
                                                    gamma=train_params_dict['gamma'],
@@ -1201,14 +1216,14 @@ class Net(object):
             val_predictions = self.model(val_inputs, training_schedule, trainable=False, is_training=True)
 
         # Compute losses (optionally add hard flow mining)
-        train_loss = self.loss(gt_flow, predictions, add_hard_flow_mining=add_hfem, lambda_weight=lambda_w,
-                               hard_examples_perc=hfem_perc, edges=edges_a)
+        train_loss, AEPE = self.loss(gt_flow, predictions, add_hard_flow_mining=add_hfem, lambda_weight=lambda_w,
+                                     hard_examples_perc=hfem_perc, edges=edges_a)
         if log_verbosity > 2:
             print("\n >>> train_loss=", train_loss)
         if valid_iters > 0:
             # Despite not using HFEM to backpropagate and update weights, it is key to compare losses at the same scale
-            val_loss = self.loss(val_gt_flow, val_predictions, add_hard_flow_mining=add_hfem, lambda_weight=lambda_w,
-                                 hard_examples_perc=hfem_perc, edges=val_edges_a)
+            val_loss, val_AEPE = self.loss(val_gt_flow, val_predictions, add_hard_flow_mining=add_hfem,
+                                           lambda_weight=lambda_w, hard_examples_perc=hfem_perc, edges=val_edges_a)
             # Add validation loss to a different collection to avoid adding it to the train one when calling get_loss()
             # By default, all losses are added to the same collection (tf.GraphKeys.LOSSES)
             tf.losses.add_loss(val_loss, loss_collection='validation_losses')
@@ -1220,6 +1235,8 @@ class Net(object):
                 pred_flow_0 = predictions['flow'][0, :, :, :]
                 pred_flow_img = tf.py_func(flow_to_image, [pred_flow_0], tf.uint8)
                 tf.summary.image('train/pred_flow', tf.expand_dims(pred_flow_img, 0), max_outputs=1)
+                # Add AEPE at original scale
+                tf.summary.scalar('train/AEPE', AEPE)
 
             # Add ground truth flow (TRAIN)
             true_flow_0 = gt_flow[0, :, :, :]
@@ -1239,6 +1256,8 @@ class Net(object):
                     val_pred_flow_0 = val_predictions['flow'][0, :, :, :]
                     val_pred_flow_img = tf.py_func(flow_to_image, [val_pred_flow_0], tf.uint8)
                     tf.summary.image('valid/pred_flow', tf.expand_dims(val_pred_flow_img, 0), max_outputs=1)
+                    # Add AEPE at original scale
+                    tf.summary.scalar('valid/AEPE', val_AEPE)
 
                 # Add ground truth flow (VALIDATION)
                 val_true_flow_0 = val_gt_flow[0, :, :, :]
@@ -1255,7 +1274,7 @@ class Net(object):
 
         if reset_global_step:
             print("global_step has value: {}".format(tf.train.get_global_step()))
-            checkpoint_global_step_tensor.assign(0)
+            global_step_tensor.assign(0)
 
         if train_params_dict is not None:
             clip_grad_norm = train_params_dict['clip_grad_norm']
@@ -1266,7 +1285,7 @@ class Net(object):
             train_loss,
             optimizer,
             summarize_gradients=summarise_grads,
-            global_step=checkpoint_global_step_tensor,
+            global_step=global_step_tensor,
             clip_gradient_norm=clip_grad_norm,
         )
 
@@ -1289,7 +1308,7 @@ class Net(object):
             # calc training losses
             total_loss, should_stop = slim.learning.train_step(sess, train_op, global_step, train_step_kwargs)
 
-            # validate on interval (added condition to avoid evaluating on first step)
+            # validate on interval
             if valid_iters > 0 and (train_step_fn.step % valid_iters == 0) and train_step_fn.step > 0:
                 valid_loss, valid_delta = sess.run([val_loss, summary_validation_delta])
                 print(">>> global step= {:<5d} | train={:^15.4f} | validation={:^15.4f} | delta={:^15.4f} <<<".format(
@@ -1320,8 +1339,9 @@ class Net(object):
                 init_assign_op, init_feed_dict = slim.assign_from_checkpoint(checkpoint_path, renamed_variables)
                 # Initialise checkpoint for stacked nets with the global step as the number of the outermost net
                 step_number = int(os.path.basename(checkpoint_path).split('-')[-1])
-                checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
-                                                            dtype=tf.int64)
+                # checkpoint_global_step_tensor = tf.Variable(step_number, trainable=False, name='global_step',
+                #                                            dtype=tf.int64)
+                global_step_tensor.assign(step_number)
                 # TODO: adapt resuming from saver to stacked architectures
                 saver = None
             # TODO: double-check but it seems that if we remove the last checkpoint and keep and older point this fails
@@ -1383,7 +1403,7 @@ class Net(object):
                 slim.learning.train_step(
                     session,
                     training_op,
-                    checkpoint_global_step_tensor,
+                    global_step_tensor,
                     {'should_trace': tf.constant(1), 'should_log': tf.constant(1), 'logdir': debug_logdir, }
                 )
         else:
@@ -1401,7 +1421,7 @@ class Net(object):
                         log_dir,
                         # local_init_op=local_init_op,
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
-                        global_step=checkpoint_global_step_tensor,
+                        global_step=global_step_tensor,
                         save_summaries_secs=save_summaries_secs,
                         save_interval_secs=save_interval_secs,
                         number_of_steps=training_schedule['max_iters'],
@@ -1417,7 +1437,7 @@ class Net(object):
                         log_dir,
                         # local_init_op=local_init_op,
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
-                        global_step=checkpoint_global_step_tensor,
+                        global_step=global_step_tensor,
                         save_summaries_secs=save_summaries_secs,
                         save_interval_secs=save_interval_secs,
                         number_of_steps=training_schedule['max_iters'],
@@ -1431,7 +1451,7 @@ class Net(object):
                         training_op,
                         log_dir,
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
-                        global_step=checkpoint_global_step_tensor,
+                        global_step=global_step_tensor,
                         save_summaries_secs=save_summaries_secs,
                         save_interval_secs=save_interval_secs,
                         number_of_steps=training_schedule['max_iters'],
@@ -1444,7 +1464,7 @@ class Net(object):
                         training_op,
                         log_dir,
                         # session_config=tf.ConfigProto(allow_soft_placement=True),
-                        global_step=checkpoint_global_step_tensor,
+                        global_step=global_step_tensor,
                         save_summaries_secs=save_summaries_secs,
                         save_interval_secs=save_interval_secs,
                         number_of_steps=training_schedule['max_iters'],
