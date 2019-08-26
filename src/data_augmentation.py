@@ -356,9 +356,13 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
 def set_range_to_zero(matches, width, offset_h, offset_w, crop_h, crop_w):
     range_rows = tf.range(offset_h, offset_h + crop_h, dtype=tf.int32)
     range_cols = tf.range(offset_w, offset_w + crop_w, dtype=tf.int32)
-    print("range_rows.shape: {}\nrange_cols.shape: {}".format(range_rows.shape, range_cols.shape))
+    print("range_rows: {}\nrange_cols: {}".format(range_rows, range_cols))
+    rows, cols = tf.meshgrid(range_rows, range_cols)
+    rows_flatten = tf.reshape(rows, [-1])
+    cols_flatten = tf.reshape(cols, [-1])
+
     # Get absolute indices as rows * width + cols
-    indices = tf.add(tf.multiply(range_rows, width), range_cols)
+    indices = tf.add(tf.multiply(rows_flatten, width), cols_flatten)
     zeros = tf.zeros(tf.shape(indices), dtype=tf.float32)
     print("matches.shape: {}\nindices.shape: {}\nzeros.shape: {}".format(matches.shape, indices.shape, zeros.shape))
     print("type(matches): {}\ntype(indices): {}\ntype(zeros): {}".format(type(matches), type(indices), type(zeros)))
