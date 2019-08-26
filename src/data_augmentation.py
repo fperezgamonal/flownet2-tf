@@ -317,6 +317,8 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
     # sampling_mask_rep = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
     sampling_mask_flatten = tf.reshape(sampling_mask_rep, [-1])
     print("after flatten: sampling_mask_flatten.shape: {}".format(sampling_mask_flatten.shape))
+    uniq, uniq_idx = tf.unique(sampling_mask_flatten)
+    print("tf.unique(sampling_mask_flatten): {}\nsampling_mask_flatten.dtype: {}".format(uniq, sampling_mask_flatten.dtype))
     # sampling_mask_flatten = np.reshape(sampling_mask_rep, [-1])
     sampling_mask_flatten_where = tf.where(tf.equal(sampling_mask_flatten, tf.cast(1, dtype=sampling_mask_flatten.dtype)))
     print("after tf.where: sampling_mask_flatten_where.shape: {}".format(sampling_mask_flatten_where.shape))
