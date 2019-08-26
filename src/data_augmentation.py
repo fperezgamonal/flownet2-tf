@@ -321,7 +321,8 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
     sampling_mask_flatten_where = tf.reshape(sampling_mask_flatten_where, [-1])
     # sampling_mask_flatten = np.where(sampling_mask_flatten == 1)
     gt_flow_boolean_mask = lambda: tf.boolean_mask(gt_flow, sampling_mask_rep)
-    gt_flow_sampling_mask = tf.Variable(initial_value=gt_flow_boolean_mask, dtype=tf.float32, trainable=False)
+    gt_flow_sampling_mask = tf.Variable(initial_value=gt_flow_boolean_mask, dtype=tf.float32, validate_shape=False,
+                                        trainable=False)
     sparse_flow = tf.reshape(sparse_flow, [-1])
     print("sparse_uniform")
     print("sparse_flow.shape: {}\nsampling_mask_flatten_where.shape: {}\ngt_flow_sampling_mask.shape: {}".format(
