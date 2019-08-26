@@ -268,10 +268,11 @@ def sample_sparse_invalid_like(gt_flow, target_density=75, height=384, width=512
     rand_offset_h, rand_offset_w, crop_h, crop_w = get_random_offset_and_crop((height, width), target_density)
 
     # Define matches as 0 inside the random bbox, 1s elsewhere
-    matches = tf.ones((height, width), dtype=tf.float32)
+    ones = lambda: tf.ones((height * width), dtype=tf.float32)
     # matches = np.ones((height, width), dtype=np.int32)  # (h, w)
     # Assumption: matches is already a flatten array (when inputted to set_range...)
-    matches = tf.Variable(tf.reshape(matches, [-1]), trainable=False)
+    matches = tf.Variable(initial_value=ones, dtype=tf.float32, trainable=False)
+    # matches = tf.Variable(tf.reshape(matches, [-1]), trainable=False)
     matches = set_range_to_zero(matches, width, rand_offset_h, rand_offset_w, crop_h, crop_w)
     # Convert back to (height, width)
     matches = tf.reshape(matches, (height, width))
@@ -323,7 +324,7 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
     # sampling_mask_rep = np.repeat(sampling_mask[:, :, np.newaxis], 2, axis=-1)
     sampling_mask_flatten = tf.reshape(sampling_mask_rep, [-1])
     print("after flatten: sampling_mask_flatten.shape: {}".format(sampling_mask_flatten.shape))
-    uniq, uniq_idx = tf.unique(sampling_mask_flatten)
+    uniq = tf.unique(sampling_mask_flatten)
     print("tf.unique(sampling_mask_flatten): {}\nsampling_mask_flatten.dtype: {}".format(uniq, sampling_mask_flatten.dtype))
     # sampling_mask_flatten = np.reshape(sampling_mask_rep, [-1])
     sampling_mask_flatten_where = tf.where(tf.equal(sampling_mask_flatten, tf.cast(1, dtype=sampling_mask_flatten.dtype)))
