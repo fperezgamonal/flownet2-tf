@@ -354,7 +354,7 @@ def set_range_to_zero(matches, width, offset_h, offset_w, crop_h, crop_w):
 
 def corrupt_sparse_flow(matches, density, height=384, width=512):
     # Assumption: matches is already a flatten array
-    inv_fraction = 10.0
+    inv_fraction = tf.random_uniform([], minval=4., maxval=20., dtype=tf.float32)
     rand_offset_h, rand_offset_w, crop_h, crop_w = get_random_offset_and_crop((height, width),
                                                                               tf.divide(density, inv_fraction))
     matches = set_range_to_zero(matches, width, rand_offset_h, rand_offset_w, crop_h, crop_w)
@@ -463,9 +463,9 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
     # sample_dm = tf.cond(True if (np.random.choice([0, 1]) > 0 and density <= 1) else False
     matches, sparse_flow = tf.case(
         {
-            tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
-                           tf.equal(sample_dm, tf.constant(False))): lambda: sample_sparse_grid_like(
-                gt_flow, target_density=density, height=height, width=width),
+            # tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
+            #                tf.equal(sample_dm, tf.constant(False))): lambda: sample_sparse_grid_like(
+            #     gt_flow, target_density=density, height=height, width=width),
             tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
                            tf.equal(sample_dm, tf.constant(True))): lambda: return_identity(dm_matches, dm_flow),
             tf.equal(distrib_id, tf.constant(1)): lambda: sample_sparse_uniform(gt_flow, target_density=density,
