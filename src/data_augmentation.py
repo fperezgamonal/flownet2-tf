@@ -382,7 +382,6 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     """
     # Important: matches is already normalised to [0, 1]
     # sparse_flow = tf.Variable(tf.zeros(gt_flow.shape, dtype=tf.float32), trainable=False)
-    matches = tf.zeros((height, width, 1), dtype=tf.float32)
     num_samples = tf.multiply(tf.multiply(tf.divide(target_density, 100.0), height), width)
     # num_samples = (target_density / 100) * height * width
     aspect_ratio = tf.divide(width, height)
@@ -420,7 +419,8 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     indices = tf.add(tf.multiply(rows_flatten, width), cols_flatten)
     ones_raw = lambda: tf.ones(tf.shape(indices))
     ones = tf.Variable(initial_value=ones_raw, trainable=False, validate_shape=False)
-    matches = tf.Variable(tf.reshape(matches, [-1]), trainable=False)
+    zeros = lambda: tf.zeros((height * width), dtype=tf.float32)
+    matches = tf.Variable(initial_value=zeros, trainable=False)
     # matches = np.zeros((height, width), dtype=np.int32)
 
     matches = tf.scatter_update(matches, indices, ones)  # all 1D tensors
