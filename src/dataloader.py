@@ -47,8 +47,7 @@ def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop
     # Random colour distortions (only for RGB images)
     # There are 1 or 4 ways to do it. (1 == only brightness and contrast, 4 hue and saturation)
     num_distort_cases = 1 if fast_mode else 4
-    image = apply_with_random_selector(image, lambda x, ordering: distort_color(x, ordering, fast_mode),
-                                       num_cases=num_distort_cases)
+    image = distort_colour(image, num_permutations=num_distort_cases)
     if add_summary:
         tf.summary.image('data_augmentation/distorted_image',
                          tf.expand_dims(image, 0))
@@ -71,10 +70,8 @@ def augment_all_estimation(image1, image2, gt_flow, crop_h, crop_w, add_summary=
     # Random colour distortions (only for RGB images)
     # There are 1 or 4 ways to do it. (1 == only brightness and contrast, 4 hue and saturation)
     num_distort_cases = 1 if fast_mode else 4
-    image1 = apply_with_random_selector(image1, lambda x, ordering: distort_color(x, ordering, fast_mode),
-                                        num_cases=num_distort_cases)
-    image2 = apply_with_random_selector(image2, lambda x, ordering: distort_color(x, ordering, fast_mode),
-                                        num_cases=num_distort_cases)
+    image1 = distort_colour(image1, num_permutations=num_distort_cases)
+    image2 = distort_colour(image2, num_permutations=num_distort_cases)
     if add_summary:
         tf.summary.image('data_augmentation/distorted_image1',
                          tf.expand_dims(image1, 0))

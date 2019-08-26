@@ -31,63 +31,61 @@ def apply_with_random_selector(x, func, num_cases):
         for case in range(num_cases)])[0]
 
 
-# We keep it as is as colour distortions can only be applied to img1 and optionally img2 (if we use image pairs)
-def distort_color(image, color_ordering=0, fast_mode=True, scope=None):
-    """Distort the color of a Tensor image.
-    Each color distortion is non-commutative and thus ordering of the color ops
-    matters. Ideally we would randomly permute the ordering of the color ops.
-    Rather then adding that level of complication, we select a distinct ordering
-    of color ops for each preprocessing thread.
-    Args:
-      image: 3-D Tensor containing single image in [0, 1].
-      color_ordering: Python int, a type of distortion (valid values: 0-3).
-      fast_mode: Avoids slower ops (random_hue and random_contrast)
-      scope: Optional scope for name_scope.
-    Returns:
-      3-D Tensor color-distorted image on range [0, 1]
-    Raises:
-      ValueError: if color_ordering not in [0, 3]
-    """
-    max_delta_brightness = 51.  # around 0.2 specified in FlowNet2.0
-    lower_saturation = 0.5  # FN2 samples from [0.5, 2] (halving/doubling saturation)
-    upper_saturation = 1.5
-    max_delta_hue = 0.2  # FN2 samples randomly for gamma instead
-    lower_contrast = 0.2  # in flownet is [-0.8, 0.4] for a range of [-1, 1]?
-    upper_contrast = 1.4
-    with tf.name_scope(scope, 'distort_color', [image]):
-        if fast_mode:
-            if color_ordering == 0:
-                image = tf.image.random_brightness(image, max_delta=max_delta_brightness / 255.)
-                image = tf.image.random_saturation(image, lower=lower_saturation, upper=upper_saturation)
-            else:
-                image = tf.image.random_saturation(image, lower=lower_saturation, upper=upper_saturation)
-                image = tf.image.random_brightness(image, max_delta=max_delta_brightness / 255.)
-        else:
-            if color_ordering == 0:
-                image = tf.image.random_brightness(image, max_delta=max_delta_brightness / 255.)
-                image = tf.image.random_saturation(image, lower=lower_saturation, upper=upper_saturation)
-                image = tf.image.random_hue(image, max_delta=max_delta_hue)
-                image = tf.image.random_contrast(image, lower=lower_contrast, upper=upper_contrast)
-            elif color_ordering == 1:
-                image = tf.image.random_saturation(image, lower=lower_saturation, upper=upper_saturation)
-                image = tf.image.random_brightness(image, max_delta=max_delta_brightness / 255.)
-                image = tf.image.random_contrast(image, lower=lower_contrast, upper=upper_contrast)
-                image = tf.image.random_hue(image, max_delta=max_delta_hue)
-            elif color_ordering == 2:
-                image = tf.image.random_contrast(image, lower=lower_contrast, upper=upper_contrast)
-                image = tf.image.random_hue(image, max_delta=max_delta_hue)
-                image = tf.image.random_brightness(image, max_delta=max_delta_brightness / 255.)
-                image = tf.image.random_saturation(image, lower=lower_saturation, upper=upper_saturation)
-            elif color_ordering == 3:
-                image = tf.image.random_hue(image, max_delta=max_delta_hue)
-                image = tf.image.random_saturation(image, lower=lower_saturation, upper=upper_saturation)
-                image = tf.image.random_contrast(image, lower=lower_contrast, upper=upper_contrast)
-                image = tf.image.random_brightness(image, max_delta=max_delta_brightness / 255.)
-            else:
-                raise ValueError('color_ordering must be in [0, 3]')
+def distort_colour_zero(image, dist_params):
+    image = tf.image.random_brightness(image, max_delta=dist_params['max_delta_brightness'] / 255.)
+    image = tf.image.random_saturation(image, lower=dist_params['lower_saturation'],
+                                       upper=dist_params['upper_saturation'])
+    image = tf.image.random_hue(image, max_delta=dist_params['max_delta_hue'])
+    image = tf.image.random_contrast(image, lower=dist_params['lower_contrast'], upper=dist_params['upper_contrast'])
+    return image
 
-        # The random_* ops do not necessarily clamp.
-        return tf.clip_by_value(image, 0.0, 1.0)
+
+def distort_colour_one(image, dist_params):
+    image = tf.image.random_saturation(image, lower=dist_params['lower_saturation'],
+                                       upper=dist_params['upper_saturation'])
+    image = tf.image.random_brightness(image, max_delta=dist_params['max_delta_brightness'] / 255.)
+    image = tf.image.random_contrast(image, lower=dist_params['lower_contrast'], upper=dist_params['upper_contrast'])
+    image = tf.image.random_hue(image, max_delta=dist_params['max_delta_hue'])
+    return image
+
+
+def distort_colour_two(image, dist_params):
+    image = tf.image.random_contrast(image, lower=dist_params['lower_contrast'], upper=dist_params['upper_contrast'])
+    image = tf.image.random_hue(image, max_delta=dist_params['max_delta_hue'])
+    image = tf.image.random_brightness(image, max_delta=dist_params['max_delta_brightness'] / 255.)
+    image = tf.image.random_saturation(image, lower=dist_params['lower_saturation'],
+                                       upper=dist_params['upper_saturation'])
+    return image
+
+
+def distort_colour_three(image, dist_params):
+    image = tf.image.random_hue(image, max_delta=dist_params['max_delta_hue'])
+    image = tf.image.random_saturation(image, lower=dist_params['lower_saturation'],
+                                       upper=dist_params['upper_saturation'])
+    image = tf.image.random_contrast(image, lower=dist_params['lower_contrast'], upper=dist_params['upper_contrast'])
+    image = tf.image.random_brightness(image, max_delta=dist_params['max_delta_brightness'] / 255.)
+    return image
+
+
+# We keep it as is as colour distortions can only be applied to img1 and optionally img2 (if we use image pairs)
+def distort_colour(image, num_permutations=4):
+    distortion_params = {'max_delta_brightness': 51.,  # around 0.2 specified in FlowNet2.0
+                         'lower_saturation': 0.5,  # FN2 samples from [0.5, 2] (halving/doubling saturation)
+                         'upper_saturation': 1.5,
+                         'max_delta_hue': 0.2,  # FN2 samples randomly for gamma instead
+                         'lower_contrast': 0.2,  # in flownet is [-0.8, 0.4] for a range of [-1, 1]?
+                         'upper_contrast': 1.4}
+
+    colour_id = tf.random_uniform([], maxval=num_permutations, dtype=tf.int32)
+    image = tf.case(
+        {tf.equal(colour_id, tf.constant(0)): lambda: distort_colour_zero(image, dist_params=distortion_params),
+         tf.equal(colour_id, tf.constant(1)): lambda: distort_colour_one(image, dist_params=distortion_params),
+         tf.equal(colour_id, tf.constant(2)): lambda: distort_colour_two(image, dist_params=distortion_params),
+         tf.equal(colour_id, tf.constant(3)): lambda: distort_colour_three(image, dist_params=distortion_params),
+         },
+        default=lambda: distort_colour_zero(image, dist_params=distortion_params), exclusive=True)
+    # The random_* ops do not necessarily clamp.
+    return tf.clip_by_value(image, 0.0, 1.0)
 
 
 # Note: not used ATM due to mismatch in net dimensions (first conv) in validation and training (tf.AUTO_REUSE)
@@ -149,15 +147,6 @@ def random_channel_swap(img_list):
     rand_i = tf.random_uniform([], minval=0, maxval=6, dtype=tf.int32)
     permutation = channel_permutation[rand_i]
 
-    # def channel_swap_once(image, perm):
-    #     channel_1 = image[:, :, perm[0]]
-    #     channel_2 = image[:, :, perm[1]]
-    #     channel_3 = image[:, :, perm[2]]
-    #     image = tf.stack([channel_1, channel_2, channel_3], axis=-1)
-    #     return image
-    #
-    # img_list = tf.map_fn(lambda x: channel_swap_once(x, permutation), img_list)
-    # for i, img in enumerate(img_list):
     for i in range(len(img_list)):
         img = img_list[i]
         channel_1 = img[:, :, permutation[0]]
@@ -197,25 +186,35 @@ def flow_resize(flow, out_size, is_scale=True, method=0):
     return flow
 
 
-def get_sampling_density(density, density_id=0, fast_mode=True, scope=None):
-    with tf.name_scope(scope, 'get_density', [density]):
-        if density_id == 0:
-            density = tf.random_uniform([], minval=0.01, maxval=1., dtype=tf.float32)
-        elif density_id == 1:
-            density = tf.random_uniform([], minval=1., maxval=10., dtype=tf.float32)
-        elif density_id == 2:
-            density = tf.random_uniform([], minval=10., maxval=25., dtype=tf.float32)
-        elif density_id == 3:
-            density = tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32)
-        elif density_id == 4:
-            density = tf.random_uniform([], minval=50., maxval=75., dtype=tf.float32)
-        elif density_id == 5:
-            density = tf.random_uniform([], minval=75., maxval=90., dtype=tf.float32)
-        else:
-            raise ValueError('density_id must be in [0, 5]')
+def case_sparse(num_cases=2):
+    density_id = tf.random_uniform([], maxval=num_cases, dtype=tf.int32)
+    density = tf.case(
+        {tf.equal(density_id, tf.constant(0)): lambda: tf.random_uniform([], minval=0.01, maxval=1., dtype=tf.float32),
+         tf.equal(density_id, tf.constant(1)): lambda: tf.random_uniform([], minval=1., maxval=10., dtype=tf.float32),
+         },
+        default=lambda: tf.random_uniform([], minval=1., maxval=10., dtype=tf.float32), exclusive=True)
+    return density, density_id
 
-        tf.summary.scalar('debug/density_id', density_id)
-        return density
+
+def case_dense(num_cases=4):
+    density_id = tf.random_uniform([], maxval=num_cases, dtype=tf.int32)
+    density = tf.case(
+        {tf.equal(density_id, tf.constant(0)): lambda: tf.random_uniform([], minval=10., maxval=25., dtype=tf.float32),
+         tf.equal(density_id, tf.constant(1)): lambda: tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32),
+         tf.equal(density_id, tf.constant(2)): lambda: tf.random_uniform([], minval=50., maxval=75., dtype=tf.float32),
+         tf.equal(density_id, tf.constant(3)): lambda: tf.random_uniform([], minval=75., maxval=90., dtype=tf.float32),
+         },
+        default=lambda: tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32), exclusive=True)
+    return density, density_id
+
+
+def get_sampling_density(dense_or_sparse, num_ranges=(4, 2)):
+    density, density_id = tf.cond(tf.greater(dense_or_sparse, tf.constant(0)),
+                                  lambda: case_dense(num_cases=num_ranges[0]),
+                                  lambda: case_sparse(num_cases=num_ranges[1]))
+
+    tf.summary.scalar('debug/density_id', density_id)
+    return density
 
 
 def get_random_offset_and_crop(image_shape, density):
@@ -228,9 +227,8 @@ def get_random_offset_and_crop(image_shape, density):
     p_fill = tf.divide(density, 100.0)  # target_density expressed in %
     bbox_area = tf.multiply(p_fill, tf.cast(tf.multiply(image_shape[0], image_shape[1]), dtype=tf.float32))
     num_aspect_ratios = 5
-    # aspect_ratios = [16 / 9, 4 / 3, 3 / 2, 3 / 1, 4 / 5]
     aspect_ratios = tf.constant([16 / 9, 4 / 3, 3 / 2, 3 / 1, 4 / 5])
-    aspect_id = tf.random_uniform([], maxval=num_aspect_ratios, dtype=tf.int32)  # np.random.choice(range(len(aspect_ratios)))
+    aspect_id = tf.random_uniform([], maxval=num_aspect_ratios, dtype=tf.int32)
     aspect_ratio = aspect_ratios[aspect_id]
     # Compute width and height based of random aspect ratio and bbox area
     # bbox = w * h, AR = w/h
@@ -457,7 +455,7 @@ def return_identity_one(x):
 
 
 def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
-    default_density = 50  # default density to use with default uniform sampling
+    default_density = 25  # default density to use with default uniform sampling
     height, width, _ = gt_flow.get_shape().as_list()
     aux_choice = tf.random_uniform([], maxval=2, dtype=tf.int32)  # 0 or 1
     sample_dm = tf.cond(tf.logical_and(tf.greater(aux_choice, tf.constant(0)),
@@ -465,17 +463,17 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
     # sample_dm = tf.cond(True if (np.random.choice([0, 1]) > 0 and density <= 1) else False
     matches, sparse_flow = tf.case(
         {
-        tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
-                       tf.equal(sample_dm, tf.constant(False))): lambda: sample_sparse_grid_like(
-            gt_flow, target_density=density, height=height, width=width),
-         tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
-                        tf.equal(sample_dm, tf.constant(True))): lambda: return_identity(dm_matches, dm_flow),
-         tf.equal(distrib_id, tf.constant(1)): lambda: sample_sparse_uniform(gt_flow, target_density=density,
-                                                                             height=height, width=width),
-         tf.equal(distrib_id, tf.constant(2)): lambda: sample_sparse_invalid_like(gt_flow, target_density=density,
-                                                                                  height=height, width=width)
-         },
-        default=lambda: sample_sparse_uniform(gt_flow, target_density=50, height=height, width=width),
+            tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
+                           tf.equal(sample_dm, tf.constant(False))): lambda: sample_sparse_grid_like(
+                gt_flow, target_density=density, height=height, width=width),
+            tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
+                           tf.equal(sample_dm, tf.constant(True))): lambda: return_identity(dm_matches, dm_flow),
+            tf.equal(distrib_id, tf.constant(1)): lambda: sample_sparse_uniform(gt_flow, target_density=density,
+                                                                                height=height, width=width),
+            tf.equal(distrib_id, tf.constant(2)): lambda: sample_sparse_invalid_like(gt_flow, target_density=density,
+                                                                                     height=height, width=width)
+        },
+        default=lambda: sample_sparse_uniform(gt_flow, target_density=default_density, height=height, width=width),
         exclusive=True)
 
     # Ensure we do not give an empty mask back!
@@ -493,15 +491,12 @@ def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=6, num_distrib=3
     :param gt_flow:
     :return:
     """
-    # Temporal checks
-    print("dm_matches.shape: {}\ndm_matches.dtype: {}\ntf.unique(dm_matches)".format(dm_matches.shape, dm_matches.dtype,
-                                                                                     tf.unique(tf.reshape(dm_matches,
-                                                                                                          [-1]))))
-    print("dm_flow.shape: {}\ndm_flow.dtype: {}\ntf.reduce_mean(dm_flow)".format(dm_flow.shape, dm_flow.dtype,
-                                                                                 tf.reduce_mean(dm_flow)))
-    density = tf.zeros([], dtype=tf.float32)
-    density = apply_with_random_selector(density, lambda x, ordering: get_sampling_density(x, ordering, fast_mode),
-                                         num_cases=num_ranges)
+    # apply_with_random_selector does not work for our case (maybe it interferes with tf.slim or something else...)
+    # use tf.case instead
+    # density = apply_with_random_selector(density, lambda x, ordering: get_sampling_density(x, ordering, fast_mode),
+    #                                      num_cases=num_ranges)
+    dense_or_sparse = tf.random_uniform([], maxval=2, dtype=tf.int32)  # 0 or 1
+    density = get_sampling_density(dense_or_sparse, num_ranges=num_ranges)
     tf.summary.scalar('debug/density', density)
 
     # Select a distribution (random uniform, invalid like or grid like with holes
