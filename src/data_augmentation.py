@@ -460,7 +460,7 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
     aux_choice = tf.random_uniform([], maxval=2, dtype=tf.int32)  # 0 or 1
     sample_dm = tf.cond(tf.logical_and(tf.greater(aux_choice, tf.constant(0)),
                         tf.less_equal(density, tf.constant(1.0))), lambda: tf.constant(True), lambda: tf.constant(False))
-    # sample_dm = tf.cond(True if (np.random.choice([0, 1]) > 0 and density <= 1) else False  # tf.random_uniform([], maxval=2, dtype=tf.int32)  # 0 or 1
+    # sample_dm = tf.cond(True if (np.random.choice([0, 1]) > 0 and density <= 1) else False
     matches, sparse_flow = tf.case(
         {tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
                         tf.equal(sample_dm, tf.constant(False))): lambda: sample_sparse_grid_like(
@@ -469,8 +469,8 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
                         tf.equal(sample_dm, tf.constant(True))): lambda: return_identity(dm_matches, dm_flow),
          tf.equal(distrib_id, tf.constant(1)): lambda: sample_sparse_uniform(gt_flow, target_density=density,
                                                                              height=height, width=width),
-         # tf.equal(distrib_id, tf.constant(2)): lambda: sample_sparse_invalid_like(gt_flow, target_density=density,
-         #                                                                          height=height, width=width)
+         tf.equal(distrib_id, tf.constant(2)): lambda: sample_sparse_invalid_like(gt_flow, target_density=density,
+                                                                                  height=height, width=width)
          },
         default=lambda: sample_sparse_uniform(gt_flow, target_density=density, height=height, width=width),
         exclusive=True)
@@ -494,11 +494,11 @@ def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=6, num_distrib=3
     density = tf.zeros([], dtype=tf.float32)
     density = apply_with_random_selector(density, lambda x, ordering: get_sampling_density(x, ordering, fast_mode),
                                          num_cases=num_ranges)
-    tf.summary.scalar('train/density', density)
+    tf.summary.scalar('debug/density', density)
 
     # Select a distribution (random uniform, invalid like or grid like with holes
     distrib_id = tf.random_uniform([], maxval=num_distrib, dtype=tf.int32)  # np.random.choice(range(num_distrib))
-    tf.summary.scalar('train/distrib_id', distrib_id)
+    tf.summary.scalar('debug/distrib_id', distrib_id)
     matches, sparse_flow = sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow)
 
     return matches, sparse_flow
