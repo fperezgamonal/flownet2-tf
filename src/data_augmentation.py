@@ -478,7 +478,7 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
         exclusive=True)
 
     # Ensure we do not give an empty mask back!
-    matches, sparse_flow = tf.cond(tf.greater(tf.reduce_mean(matches), tf.constant(0)),
+    matches, sparse_flow = tf.cond(tf.greater(tf.reduce_mean(matches), 0.0),
                                    lambda: return_identity(matches, sparse_flow),
                                    lambda: return_identity(dm_matches, dm_flow))
 
