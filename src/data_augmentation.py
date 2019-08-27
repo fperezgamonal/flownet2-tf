@@ -352,9 +352,25 @@ def set_range_to_zero(matches, width, offset_h, offset_w, crop_h, crop_w):
     return matches
 
 
-def corrupt_sparse_flow(matches, density, height=384, width=512):
+def corrupt_sparse_flow_loop(matches, density, height=384, width=512):
+    def body(matches, density, height, width):  # what to do once the while loop condition is met
+        matches = corrupt_sparse_flow_once(matches, density, height, width)
+        return matches
+
+    def condition(matches, density, height, width):
+        return tf.greater(tf.random_uniform([], maxval=2, dtype=tf.int32), tf.constant(0))
+
+    # Perturbate always once (at least)
+    matches = corrupt_sparse_flow_once(matches, density, height, width)
+    # Draw a random number within 0, 1. If 1, keep corrupting the sparse flow (matches mask) with holes
+    matches = tf.while_loop(condition, body, [matches, density, height, width])
+
+    return matches
+
+
+def corrupt_sparse_flow_once(matches, density, height=384, width=512):
     # Assumption: matches is already a flatten array
-    inv_fraction = tf.random_uniform([], minval=4., maxval=20., dtype=tf.float32)
+    inv_fraction = tf.random_uniform([], minval=4., maxval=12., dtype=tf.float32)
     rand_offset_h, rand_offset_w, crop_h, crop_w = get_random_offset_and_crop((height, width),
                                                                               tf.divide(density, inv_fraction))
     matches = set_range_to_zero(matches, width, rand_offset_h, rand_offset_w, crop_h, crop_w)
@@ -391,12 +407,12 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     # if num_samples_h > height or num_samples_w > width:
     #     num_samples_h = height if num_samples_h > height else num_samples_h
     #     num_samples_w = width if num_samples_w > width else num_samples_w
-    sample_points_h = tf.cast(tf.round(tf.linspace(0.0, height - 1, num_samples_h)), dtype=tf.int32)
-    # sample_points_h = tf.range(0, height - 1, num_samples_h, dtype=tf.int32)
-    # sample_points_h = np.linspace(0, height - 1, num_samples_h, dtype=np.int32)
-    sample_points_w = tf.cast(tf.round(tf.linspace(0.0, width - 1, num_samples_w)), dtype=tf.int32)
-    # sample_points_w = tf.range(0, width - 1, num_samples_w, dtype=tf.int32)
-    # sample_points_w = np.linspace(0, width - 1, num_samples_w, dtype=np.int32)
+    delta_rows = tf.cast((height - 1 - 0) / num_samples_h, tf.float32)
+    sample_points_h = tf.cast(tf.round(tf.range(start=0, limit=height, delta=delta_rows, dtype=tf.float32)),
+                              dtype=tf.int32)
+    delta_cols = tf.cast((width - 1 - 0) / num_samples_w, tf.float32)
+    sample_points_w= tf.cast(tf.round(tf.range(start=0, limit=width, delta=delta_cols, dtype=tf.float32)),
+                             dtype=tf.int32)
     # Create meshgrid of all combinations (i.e.: coordinates to sample at)
     rows, cols = tf.meshgrid(sample_points_h, sample_points_w, indexing='ij')
     # xx, yy = np.meshgrid(sample_points_w, sample_points_h)
@@ -420,8 +436,8 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
 
     # Randomly subtract a part with a random rectangle (superpixels in the future)
     corrupt_mask = tf.random_uniform([], maxval=2, dtype=tf.int32)  # np.random.choice([0, 1])
-    matches = tf.cond(tf.greater(corrupt_mask, tf.constant(0)), lambda: corrupt_sparse_flow(matches, target_density,
-                                                                                            height, width),
+    matches = tf.cond(tf.greater(corrupt_mask, tf.constant(0)), lambda: corrupt_sparse_flow_once(matches, target_density,
+                                                                                                 height, width),
                       lambda: return_identity_one(matches))
 
     sampling_mask = tf.reshape(matches, (height, width))  # sampling_mask of size (h, w)
@@ -479,7 +495,7 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
         exclusive=True)
 
     # Ensure we do not give an empty mask back!
-    matches, sparse_flow = tf.cond(tf.greater(tf.reduce_mean(matches), 0.0),
+    matches, sparse_flow = tf.cond(tf.greater(tf.reduce_sum(matches), 0.0),
                                    lambda: return_identity(matches, sparse_flow),
                                    lambda: return_identity(dm_matches, dm_flow))
 
