@@ -273,6 +273,9 @@ def sample_sparse_invalid_like(gt_flow, target_density=75, height=384, width=512
     matches = tf.Variable(initial_value=ones, dtype=tf.float32, trainable=False)
     # matches = tf.Variable(tf.reshape(matches, [-1]), trainable=False)
     matches = set_range_to_zero(matches, width, rand_offset_h, rand_offset_w, crop_h, crop_w)
+    # (optionally) generate more invalid regions (with while_loop based on a random_value, minimum 1 more)
+    matches = corrupt_sparse_flow_loop(matches, target_density * (2 / 3), height, width)
+
     # Convert back to (height, width)
     matches = tf.reshape(matches, (height, width))
     # matches[rand_offset_h:rand_offset_h + crop_h, rand_offset_w: rand_offset_w + crop_w] = 0
@@ -494,8 +497,10 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
         default=lambda: sample_sparse_uniform(gt_flow, target_density=default_density, height=height, width=width),
         exclusive=True)
 
-    # Ensure we do not give an empty mask back!
-    matches, sparse_flow = tf.cond(tf.greater(tf.reduce_sum(matches), 0.0),
+    # Ensure we do not give an almost empty mask back
+    min_percentage = 0.01
+    matches, sparse_flow = tf.cond(tf.greater(tf.divide(tf.reduce_sum(matches), tf.multiply(height, width)),
+                                              min_percentage),
                                    lambda: return_identity(matches, sparse_flow),
                                    lambda: return_identity(dm_matches, dm_flow))
 
