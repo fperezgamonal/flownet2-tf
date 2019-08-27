@@ -367,7 +367,7 @@ def corrupt_sparse_flow_loop(matches, density, height=384, width=512):
     # Perturbate always once (at least)
     matches = corrupt_sparse_flow_once(matches, density, height, width)
     # Draw a random number within 0, 1. If 1, keep corrupting the sparse flow (matches mask) with holes
-    inputs = [matches, density, height, width]
+    inputs = (matches, density, height, width)
     c = lambda inputs: condition(inputs)
     b = lambda inputs: body(inputs)
     matches = tf.while_loop(c, b, inputs)
