@@ -447,8 +447,9 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
             # tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
             #                tf.equal(sample_dm, tf.constant(False))): lambda: sample_sparse_grid_like(
             #     gt_flow, target_density=density, height=height, width=width),
-            tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
-                           tf.equal(sample_dm, tf.constant(True))): lambda: return_identity(dm_matches, dm_flow),
+            # tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
+            #                tf.equal(sample_dm, tf.constant(True))): lambda: return_identity(dm_matches, dm_flow),
+            tf.equal(distrib_id, tf.constant(0)): lambda: return_identity(dm_matches, dm_flow),
             tf.equal(distrib_id, tf.constant(1)): lambda: sample_sparse_uniform(gt_flow, target_density=density,
                                                                                 height=height, width=width),
             tf.equal(distrib_id, tf.constant(2)): lambda: sample_sparse_invalid_like(gt_flow, target_density=density,
