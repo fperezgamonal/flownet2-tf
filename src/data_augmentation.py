@@ -356,19 +356,20 @@ def set_range_to_zero(matches, width, offset_h, offset_w, crop_h, crop_w):
 
 
 def corrupt_sparse_flow_loop(matches, density, height=384, width=512):
-    def body(matches, density, height, width):  # what to do once the while loop condition is met
+    def body(inputs):  # what to do once the while loop condition is met
+        matches, density, height, width = inputs
         matches = corrupt_sparse_flow_once(matches, density, height, width)
         return matches
 
-    def condition(matches, density, height, width):
+    def condition(inputs):
         return tf.greater(tf.random_uniform([], maxval=2, dtype=tf.int32), tf.constant(0))
 
     # Perturbate always once (at least)
     matches = corrupt_sparse_flow_once(matches, density, height, width)
     # Draw a random number within 0, 1. If 1, keep corrupting the sparse flow (matches mask) with holes
     inputs = [matches, density, height, width]
-    c = lambda matches, density, height, width: condition(matches, density, height, width)
-    b = lambda matches, density, height, width: body(matches, density, height, width)
+    c = lambda inputs: condition(inputs)
+    b = lambda inputs: body(inputs)
     matches = tf.while_loop(c, b, inputs)
 
     return matches
