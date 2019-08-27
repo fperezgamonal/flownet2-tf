@@ -371,9 +371,9 @@ def corrupt_sparse_flow_loop(matches, density, height=384, width=512):
     # inputs = [matches, density, height, width]
     # c = lambda ins: cond(ins)
     # b = lambda ins: body(ins)
-    result = tf.while_loop(cond, body, [matches, density, height, width])
+    matches, density, height, width = tf.while_loop(cond, body, [matches, density, height, width])
     # result is (matches, density, height, width) where all have not been changed but matches
-    matches = result[0]
+    # matches = result[0]
     return matches
 
 
