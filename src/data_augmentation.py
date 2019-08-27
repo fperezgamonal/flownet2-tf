@@ -366,14 +366,21 @@ def cond(matches, density, height, width):
 
 def corrupt_sparse_flow_loop(matches, density, height=384, width=512):
     # Perturbate always once (at least)
-    matches, _, _, _ = corrupt_sparse_flow_once(matches, density, height, width)
+    matches = corrupt_sparse_flow_once(matches, density, height, width)
+    # TODO: the loop does not work with the following error:
+    # TypeError: List of Tensors when single Tensor expected (try in the future)
+    # For now, randomly corrupt a second time (if applies)
     # Draw a random number within 0, 1. If 1, keep corrupting the sparse flow (matches mask) with holes
     # inputs = [matches, density, height, width]
     # c = lambda ins: cond(ins)
     # b = lambda ins: body(ins)
-    matches, density, height, width = tf.while_loop(cond, body, [matches, density, height, width])
+    # matches, density, height, width = tf.while_loop(cond, body, [matches, density, height, width])
     # result is (matches, density, height, width) where all have not been changed but matches
     # matches = result[0]
+    matches = tf.cond(tf.greater(tf.random_uniform([], maxval=2, dtype=tf.int32), 0),
+                      lambda: corrupt_sparse_flow_once(matches, density, height, width),
+                      lambda: return_identity_one(matches))
+
     return matches
 
 
@@ -383,7 +390,7 @@ def corrupt_sparse_flow_once(matches, density, height=384, width=512):
     rand_offset_h, rand_offset_w, crop_h, crop_w = get_random_offset_and_crop((height, width),
                                                                               tf.divide(density, inv_fraction))
     matches = set_range_to_zero(matches, width, rand_offset_h, rand_offset_w, crop_h, crop_w)
-    return matches, density, height, width
+    return matches
 
 
 def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
