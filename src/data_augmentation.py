@@ -512,7 +512,8 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
 
     # Ensure we do not give an almost empty mask back
     min_percentage = 0.01
-    matches, sparse_flow = tf.cond(tf.greater(tf.divide(tf.reduce_sum(matches), tf.multiply(height, width)),
+    matches, sparse_flow = tf.cond(tf.greater(tf.divide(tf.reduce_sum(matches),
+                                                        tf.cast(tf.multiply(height, width), dtype=tf.float32)),
                                               min_percentage),
                                    lambda: return_identity(matches, sparse_flow),
                                    lambda: return_identity(dm_matches, dm_flow))
