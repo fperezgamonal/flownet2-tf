@@ -304,8 +304,6 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
             epe_times_edges = tf.multiply(epe, edges)  # both have shape: (batch, height, width, 1)
             # Sum epe weighted by the edges and 'standard' epe and THEN sum and divide over batch size
             epe_and_edges = tf.add(epe, tf.multiply(lambda_w, epe_times_edges))
-            print("epe.shape: {}\nepe_times_edges.shape: {}\nepe_and_edges.shape: {}".format(epe, epe_times_edges,
-                                                                                             epe_and_edges))
 
             # Sum and divide by batch size
             epe_edges_sum = tf.reduce_sum(epe_and_edges)
