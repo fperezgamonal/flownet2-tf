@@ -355,25 +355,23 @@ def set_range_to_zero(matches, width, offset_h, offset_w, crop_h, crop_w):
     return matches
 
 
+def body(matches, density, height, width):  # what to do once the while loop condition is met
+    matches, density, height, width = corrupt_sparse_flow_once(matches, density, height, width)
+    return matches, density, height, width
+
+
+def cond(matches, density, height, width):
+    return tf.greater(tf.random_uniform([], maxval=2, dtype=tf.int32), 0)
+
+
 def corrupt_sparse_flow_loop(matches, density, height=384, width=512):
-    def body(m, d, h, w):  # what to do once the while loop condition is met
-        # m = ins[0]
-        # d = ins[1]
-        # h = ins[2]
-        # w = ins[3]
-        m = corrupt_sparse_flow_once(m, d, h, w)
-        return m, d, h, w
-
-    def cond(m, d, h, w):
-        return tf.greater(tf.random_uniform([], maxval=2, dtype=tf.int32), 0)
-
     # Perturbate always once (at least)
-    matches = corrupt_sparse_flow_once(matches, density, height, width)
+    matches, _, _, _ = corrupt_sparse_flow_once(matches, density, height, width)
     # Draw a random number within 0, 1. If 1, keep corrupting the sparse flow (matches mask) with holes
     # inputs = [matches, density, height, width]
     # c = lambda ins: cond(ins)
     # b = lambda ins: body(ins)
-    result = tf.while_loop(cond, body, loop_vars=[matches, density, height, width])
+    result = tf.while_loop(cond, body, [matches, density, height, width])
     # result is (matches, density, height, width) where all have not been changed but matches
     matches = result[0]
     return matches
@@ -385,7 +383,7 @@ def corrupt_sparse_flow_once(matches, density, height=384, width=512):
     rand_offset_h, rand_offset_w, crop_h, crop_w = get_random_offset_and_crop((height, width),
                                                                               tf.divide(density, inv_fraction))
     matches = set_range_to_zero(matches, width, rand_offset_h, rand_offset_w, crop_h, crop_w)
-    return matches
+    return matches, density, height, width
 
 
 def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
