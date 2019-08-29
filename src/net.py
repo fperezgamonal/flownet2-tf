@@ -1247,9 +1247,6 @@ class Net(object):
             if valid_iters > 0:
                 summary_validation_loss = tf.summary.scalar('valid/loss', val_loss)
                 summary_validation_delta = tf.summary.scalar("valid/loss_delta", (val_loss - train_loss))
-                # Just to check that val losses are logged separately
-                if log_verbosity > 1:
-                    print("\n >>> validation losses=", tf.losses.get_losses(loss_collection="validation_losses"))
 
                 # Show the generated flow in TensorBoard
                 if 'flow' in val_predictions:
@@ -1265,12 +1262,6 @@ class Net(object):
                 val_true_flow_0 = val_gt_flow[0, :, :, :]
                 val_true_flow_img = tf.py_func(flow_to_image, [val_true_flow_0], tf.uint8)
                 tf.summary.image('valid/true_flow', tf.expand_dims(val_true_flow_img, 0), max_outputs=1)
-
-        # Temporary: check the loss collections only include the multi-scale losses (AEPE is only logged)
-        list_train_losses = tf.losses.get_losses()
-        list_valid_losses = tf.losses.get_losses(loss_collection="validation_losses")
-        print("list_train_losses: {}\nlist_valid_losses: {}".format(list_train_losses, list_valid_losses))
-        print("(should NOT be in the above list)\n AEPE tensor: {}\nval_AEPE tensor: {}".format(AEPE, val_AEPE))
 
         # Log smoothed loss (EMA, see '_add_loss_summaries' for more details)
         if log_smoothed_loss:
