@@ -1258,11 +1258,18 @@ class Net(object):
                     tf.summary.image('valid/pred_flow', tf.expand_dims(val_pred_flow_img, 0), max_outputs=1)
                     # Add AEPE at original scale
                     tf.summary.scalar('valid/AEPE', val_AEPE)
+                    # Add difference between training and validation at the original scale
+                    tf.summary.scalar('valid/AEPE_loss_delta', (val_AEPE - AEPE))
 
                 # Add ground truth flow (VALIDATION)
                 val_true_flow_0 = val_gt_flow[0, :, :, :]
                 val_true_flow_img = tf.py_func(flow_to_image, [val_true_flow_0], tf.uint8)
                 tf.summary.image('valid/true_flow', tf.expand_dims(val_true_flow_img, 0), max_outputs=1)
+
+        # Temporary: check the loss collections only include the multi-scale losses (AEPE is only logged)
+        list_train_losses = tf.losses.get_losses()
+        list_valid_losses = tf.losses.get_losses(loss_collection="validation_losses")
+        print("list_train_losses: {}\nlist_valid_losses: {}".format(list_train_losses, list_valid_losses))
 
         # Log smoothed loss (EMA, see '_add_loss_summaries' for more details)
         if log_smoothed_loss:
