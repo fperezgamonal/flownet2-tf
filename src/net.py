@@ -1270,6 +1270,7 @@ class Net(object):
         list_train_losses = tf.losses.get_losses()
         list_valid_losses = tf.losses.get_losses(loss_collection="validation_losses")
         print("list_train_losses: {}\nlist_valid_losses: {}".format(list_train_losses, list_valid_losses))
+        print("(should NOT be in the above list)\n AEPE tensor: {}\nval_AEPE tensor: {}".format(AEPE, val_AEPE))
 
         # Log smoothed loss (EMA, see '_add_loss_summaries' for more details)
         if log_smoothed_loss:
