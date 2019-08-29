@@ -438,9 +438,9 @@ def sample_sparse_invalid_like(gt_flow, target_density=75, height=384, width=512
 def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
     default_density = 25  # default density to use with default uniform sampling
     height, width, _ = gt_flow.get_shape().as_list()
-    aux_choice = tf.random_uniform([], maxval=2, dtype=tf.int32)  # 0 or 1
-    sample_dm = tf.cond(tf.logical_and(tf.greater(aux_choice, tf.constant(0)),
-                        tf.less_equal(density, tf.constant(1.0))), lambda: tf.constant(True), lambda: tf.constant(False))
+    # aux_choice = tf.random_uniform([], maxval=2, dtype=tf.int32)  # 0 or 1
+    # sample_dm = tf.cond(tf.logical_and(tf.greater(aux_choice, tf.constant(0)),
+    #                     tf.less_equal(density, tf.constant(1.0))), lambda: tf.constant(True), lambda: tf.constant(False))
     # sample_dm = tf.cond(True if (np.random.choice([0, 1]) > 0 and density <= 1) else False
     matches, sparse_flow = tf.case(
         {
@@ -455,7 +455,8 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
             tf.equal(distrib_id, tf.constant(2)): lambda: sample_sparse_invalid_like(gt_flow, target_density=density,
                                                                                      height=height, width=width)
         },
-        default=lambda: sample_sparse_uniform(gt_flow, target_density=default_density, height=height, width=width),
+        # default=lambda: sample_sparse_uniform(gt_flow, target_density=default_density, height=height, width=width),
+        default=lambda: sample_sparse_invalid_like(gt_flow, target_density=default_density, height=height, width=width),
         exclusive=True)
 
     # Ensure we do not give an almost empty mask back
@@ -470,12 +471,6 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
 
 
 def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=(4, 2), num_distrib=3, fast_mode=False):
-    """
-
-    :param dm_matches:
-    :param gt_flow:
-    :return:
-    """
     # apply_with_random_selector does not work for our case (maybe it interferes with tf.slim or something else...)
     # use tf.case instead
     # density = apply_with_random_selector(density, lambda x, ordering: get_sampling_density(x, ordering, fast_mode),
@@ -486,7 +481,7 @@ def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=(4, 2), num_dist
 
     # Select a distribution (random uniform, invalid like or grid like with holes
     distrib_id = tf.random_uniform([], maxval=num_distrib, dtype=tf.int32)  # np.random.choice(range(num_distrib))
-    tf.summary.scalar('debug/distrib_id', distrib_id)
     matches, sparse_flow = sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow)
+    tf.summary.scalar('debug/distrib_id', distrib_id)
 
     return matches, sparse_flow
