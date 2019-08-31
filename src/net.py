@@ -1126,11 +1126,10 @@ class Net(object):
                                 print("Cycle boundaries are: max={}, min={}".format(train_params_dict['max_momentum'],
                                                                                     train_params_dict['min_momentum']))
                             # Use cyclical momentum (only decreasing half-cycle while LR increases)
-                            momentum = _lr_cyclic(g_step_op=global_step_tensor,
-                                                  base_lr=train_params_dict['max_momentum'],
-                                                  max_lr=train_params_dict['min_momentum'],
-                                                  step_size=lr_range_niters,
-                                                  mode='triangular')
+                            momentum = _mom_cyclic(g_step_op=global_step_tensor,
+                                                   base_mom=train_params_dict['min_momentum'],
+                                                   max_mom=train_params_dict['max_momentum'],
+                                                   step_size=lr_range_niters, mode='triangular')
 
                         else:
                             if log_verbosity > 1:
@@ -1140,10 +1139,10 @@ class Net(object):
                                     train_params_dict['gamma'] = 1  # effectively disables (avoids duplicate code)
                                 else:
                                     is_one_cycle = False
+
                             momentum = _mom_cyclic(g_step_op=global_step_tensor,
                                                    base_mom=train_params_dict['min_momentum'],
                                                    max_mom=train_params_dict['max_momentum'],
-                                                   gamma=train_params_dict['gamma'],
                                                    step_size=train_params_dict['clr_stepsize'], mode='triangular',
                                                    one_cycle=is_one_cycle)
                     else:  # Use fixed momentum

@@ -345,7 +345,7 @@ if __name__ == '__main__':
         required=False,
         help="Type of cyclic learning rate: 'triangular', 'triangular2' or 'exponential' (see Leslie N.Smith paper "
              "for more information)",
-        default=5,
+        default='triangular2',
     )
     parser.add_argument(
         '--one_cycle_annealing_factor',

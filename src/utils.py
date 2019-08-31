@@ -88,7 +88,7 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
         max_lr:  Maximum learning rate bound.
         step_size: Number of iterations in half a cycle. The paper suggests 2-8 x training iterations in epoch.
         gamma: Constant in 'exp_range' mode gamma**(global_step)
-        mode: One of {'triangular', 'triangular2', 'exp_range'}. Default 'triangular'.
+        mode: One of {'triangular', 'triangular2', 'exponential'}. Default 'triangular'.
         one_cycle: if true, follow the one cycle policy, annealing the LR at the end
         (see https://arxiv.org/abs/1803.09820)
         annealing_factor: if one_cycle, the annealing factor (e.g.: to what order of magnitude we reduce the base_lr in
@@ -97,7 +97,7 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
     Returns:
         The cyclic learning rate.
     """
-    assert (mode in ['triangular', 'triangular2', 'exp_range'])
+    assert (mode in ['triangular', 'triangular2', 'exponential'])
     one_cycle_target = 2
     lr = tf.convert_to_tensor(base_lr)
     global_step = tf.cast(g_step_op, lr.dtype)
@@ -126,7 +126,7 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
 
     if mode == 'triangular2' and not one_cycle:
         clr = tf.divide(clr, tf.cast(tf.pow(2, tf.cast(cycle - 1, tf.int32)), tf.float32))
-    if mode == 'exp_range' and not one_cycle:
+    if mode == 'exponential' and not one_cycle:
         clr = tf.multiply(tf.pow(gamma, global_step), clr)
 
     new_lr = tf.cond(tf.logical_and(tf.equal(one_cycle_value, tf.constant(True)), tf.equal(cycle, one_cycle_tar)),
@@ -158,13 +158,13 @@ def _mom_cyclic(g_step_op, base_mom=None, max_mom=None, step_size=None, gamma=0.
         max_mom:  Maximum momentum bound.
         step_size: Number of iterations in half a cycle. The paper suggests 2-8 x training iterations in epoch (CLR).
         gamma: Constant in 'exp_range' mode gamma**(global_step)
-        mode: One of {'triangular', 'triangular2', 'exp_range'}. Default 'triangular'.
+        mode: One of {'triangular', 'triangular2', 'exponential'}. Default 'triangular'.
         one_cycle: if true, follow the one cycle policy, keeping the momentum constant at the maximum bound
         op_name: String.  Optional name of the operation.
     Returns:
         The cyclic momentum.
     """
-    assert (mode in ['triangular', 'triangular2', 'exp_range'])
+    assert (mode in ['triangular', 'triangular2', 'exponential'])
     one_cycle_target = 2
     mom = tf.convert_to_tensor(base_mom)
     global_step = tf.cast(g_step_op, mom.dtype)
@@ -192,7 +192,7 @@ def _mom_cyclic(g_step_op, base_mom=None, max_mom=None, step_size=None, gamma=0.
         # Not tested (Leslie does not mention whether CM is used with CLR w. more than 1 cycle or how it is decayed
         if mode == 'triangular2' and not one_cycle:
             cmom = tf.divide(cmom, tf.cast(tf.pow(2, tf.cast(cycle - 1, tf.int32)), tf.float32))
-        if mode == 'exp_range' and not one_cycle:
+        if mode == 'exponential' and not one_cycle:
             cmom = tf.multiply(tf.pow(gamma, global_step), cmom)
 
         return tf.subtract(max_mom, cmom, name=op_name)
