@@ -80,14 +80,14 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
         'triangular': Default, linearly increasing then linearly decreasing the learning rate at each cycle.
         'triangular2': The same as the triangular policy except the learning rate difference is cut in half at the end
         of each cycle. This means the learning rate difference drops after each cycle.
-        'exp_range': The learning rate varies between the minimum and maximum boundaries and each boundary value
+        'exponential': The learning rate varies between the minimum and maximum boundaries and each boundary value
         declines by an exponential factor of: gamma^global_step.
     Args:
         g_step_op: Session global step.
         base_lr: Initial learning rate and minimum bound of the cycle.
         max_lr:  Maximum learning rate bound.
         step_size: Number of iterations in half a cycle. The paper suggests 2-8 x training iterations in epoch.
-        gamma: Constant in 'exp_range' mode gamma**(global_step)
+        gamma: Constant in 'exponential' mode gamma**(global_step)
         mode: One of {'triangular', 'triangular2', 'exponential'}. Default 'triangular'.
         one_cycle: if true, follow the one cycle policy, annealing the LR at the end
         (see https://arxiv.org/abs/1803.09820)
@@ -137,7 +137,7 @@ def _lr_cyclic(g_step_op, base_lr=None, max_lr=None, step_size=None, gamma=0.999
 
 def _mom_cyclic(g_step_op, base_mom=None, max_mom=None, step_size=None, gamma=0.99994, mode='triangular',
                 one_cycle=False, op_name=None):
-    """Computes a cyclic momentum as in https://arxiv.org/abs/1803.09820. Notice we leave triangular2 and exp_range ena-
+    """Computes a cyclic momentum as in https://arxiv.org/abs/1803.09820. Notice we leave triangular2 and exponential ena-
     bled but we do not know if this types of policies help with a cyclical momentum with CLR (not used in 1cycle)
     This code returns the cyclic momentum computed as:
     ```python
@@ -150,14 +150,14 @@ def _mom_cyclic(g_step_op, base_mom=None, max_mom=None, step_size=None, gamma=0.
         viour to the CLR).
         'triangular2': The same as the triangular policy except the momentum difference is cut in half at the end
         of each cycle. This means the momentum difference drops after each cycle.
-        'exp_range': The momentum varies between the minimum and maximum boundaries and each boundary value
+        'exponential': The momentum varies between the minimum and maximum boundaries and each boundary value
         declines by an exponential factor of: gamma^global_step.
     Args:
         g_step_op: Session global step.
         base_mom: Initial momentum and minimum bound of the cycle.
         max_mom:  Maximum momentum bound.
         step_size: Number of iterations in half a cycle. The paper suggests 2-8 x training iterations in epoch (CLR).
-        gamma: Constant in 'exp_range' mode gamma**(global_step)
+        gamma: Constant in 'exponential' mode gamma**(global_step)
         mode: One of {'triangular', 'triangular2', 'exponential'}. Default 'triangular'.
         one_cycle: if true, follow the one cycle policy, keeping the momentum constant at the maximum bound
         op_name: String.  Optional name of the operation.
