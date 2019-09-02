@@ -31,6 +31,7 @@ def main():
         net.test(
             checkpoint=FLAGS.checkpoint,
             input_a_path=FLAGS.input_a,
+            input_b_path=FLAGS.input_b,
             matches_a_path=FLAGS.matches_a,
             out_path=FLAGS.out,
             input_type=FLAGS.input_type,
@@ -71,6 +72,13 @@ if __name__ == '__main__':
         type=str,
         required=False,
         help='Path to first image',
+        default=None,
+    )
+    parser.add_argument(
+        '--input_a',
+        type=str,
+        required=False,
+        help='Path to second image (probably only used for variational refinement in this case...)',
         default=None,
     )
     parser.add_argument(
