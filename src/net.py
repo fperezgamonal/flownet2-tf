@@ -696,6 +696,7 @@ class Net(object):
                     path_input_b = path_inputs[1]
                     matches_0 = None
                     sparse_flow_0 = None
+
                 elif len(path_inputs) == 3 and input_type == 'image_matches':  # image1 + matches mask + sparse_flow
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
@@ -739,6 +740,19 @@ class Net(object):
                     gt_flow_0 = read_flow(path_inputs[2])
                     occ_mask_0 = imread(path_inputs[3])
 
+                # img1 + matches + sparse + gt flow + img2 (for variational_refinement)
+                elif len(path_inputs) == 5 and input_type == 'image_matches' and variational_refinement:
+                    frame_0 = imread(path_inputs[0])
+                    frame_1 = None
+                    path_input_b = path_inputs[-1]
+                    matches_0 = imread(path_inputs[1])
+                    sparse_flow_0 = read_flow(path_inputs[2])
+                    gt_flow_0 = read_flow(path_inputs[3])
+                    if compute_metrics:
+                        # Must define optional masks as None
+                        occ_mask_0 = None
+                        inv_mask_0 = None
+
                 # img1 + img2 + gtflow + occ_mask + inv_mask
                 elif len(path_inputs) == 5 and input_type == 'image_pairs' and compute_metrics:
                     print("img1 + img2 + gtflow + occ_mask + inv_mask")
@@ -761,11 +775,34 @@ class Net(object):
                     gt_flow_0 = read_flow(path_inputs[3])
                     occ_mask_0 = imread(path_inputs[4])
 
+                # img1 + mtch + spflow + gt_flow + occ_mask + img2 (variational_refinement)
+                elif len(path_inputs) == 6 and input_type == 'image_matches' and variational_refinement and\
+                        compute_metrics:
+                    frame_0 = imread(path_inputs[0])
+                    frame_1 = None
+                    path_input_b = path_inputs[-1]
+                    matches_0 = imread(path_inputs[1])
+                    sparse_flow_0 = read_flow(path_inputs[2])
+                    gt_flow_0 = read_flow(path_inputs[3])
+                    occ_mask_0 = imread(path_inputs[4])
+
                 # img1 + mtch + spflow + gt_flow + occ_mask + inv_mask
                 elif len(path_inputs) == 6 and input_type == 'image_matches' and compute_metrics:
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
                     path_input_b = None
+                    matches_0 = imread(path_inputs[1])
+                    sparse_flow_0 = read_flow(path_inputs[2])
+                    gt_flow_0 = read_flow(path_inputs[3])
+                    occ_mask_0 = imread(path_inputs[4])
+                    inv_mask_0 = imread(path_inputs[5])
+
+                # img1 + mtch + spflow + gt_flow + occ_mask + inv_mask + img2 (variational_refinement)
+                elif len(path_inputs) == 7 and input_type == 'image_matches' and variational_refinement and \
+                        compute_metrics:
+                    frame_0 = imread(path_inputs[0])
+                    frame_1 = None
+                    path_input_b = path_inputs[-1]
                     matches_0 = imread(path_inputs[1])
                     sparse_flow_0 = read_flow(path_inputs[2])
                     gt_flow_0 = read_flow(path_inputs[3])
