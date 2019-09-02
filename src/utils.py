@@ -3,6 +3,7 @@ from tensorflow.python.framework import ops
 from tensorflow.python.ops import math_ops
 from tensorflow.python.eager import context
 import argparse
+import os
 import numpy as np
 from math import ceil
 
@@ -513,3 +514,18 @@ def occlusion(flow_fw, flow_bw):
     occ_bw = tf.cast(length_sq(flow_diff_bw) > occ_thresh_bw, tf.float32)
 
     return occ_fw, occ_bw
+
+
+# Variational refinement used in InterpoNet (from EpicFlow)
+def calc_variational_inference_map(imgA_filename, imgB_filename, flo_filename, out_filename, dataset):
+    """
+    Run the post processing variation energy minimization.
+    :param imgA_filename: filename of RGB image A of the image pair.
+    :param imgB_filename: filename of RGB image B of the image pair.
+    :param flo_filename: filename of flow map to set as initialization.
+    :param out_filename: filename for the output flow map.
+    :param dataset: sintel / kitti
+    """
+    shell_command = './SrcVariational/variational_main ' + imgA_filename + ' ' + imgB_filename + ' ' + flo_filename + \
+                    ' ' + out_filename + ' -' + dataset
+    exit_code = os.system(shell_command)

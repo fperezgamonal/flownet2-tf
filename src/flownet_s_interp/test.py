@@ -41,6 +41,7 @@ def main():
             compute_metrics=FLAGS.compute_metrics,
             occ_mask=FLAGS.occ_mask,
             inv_mask=FLAGS.inv_mask,
+            variational_refinement=FLAGS.variational_refinement,
         )
     elif os.path.isfile(FLAGS.input_a) and FLAGS.input_a[-4:] == '.txt':  # txt with image list (batch-like)
         print("Inferring on 'batch' mode...")
@@ -57,6 +58,7 @@ def main():
             width=FLAGS.width,
             height=FLAGS.height,
             new_par_folder=FLAGS.new_par_folder,
+            variational_refinement=FLAGS.variational_refinement,
         )
     else:
         raise ValueError("'input_a' is not valid, should be a path to a folder or a single image")
@@ -191,6 +193,14 @@ if __name__ == '__main__':
         required=False,
         help='Optionally specify the image(s) height',
         default=436
+    )
+    parser.add_argument(
+        '--variational_refinement',
+        type=str2bool,
+        nargs='?',
+        required=False,
+        help='Whether to perform the variational refinement of EpicFlow (InterpoNet too) to the output flow',
+        default=False,
     )
     FLAGS = parser.parse_args()
 

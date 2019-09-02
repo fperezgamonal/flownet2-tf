@@ -435,6 +435,9 @@ def sample_sparse_invalid_like(gt_flow, target_density=75, height=384, width=512
     return matches, sparse_flow
 
 
+# Comments:
+# trying to learn with different distributions mixed (invalid-like and more-or-less sparse ones may be too difficult)
+# Try only less or more dense and then fine-tuned to "holes-like"/invalid-like
 def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
     default_density = 25  # default density to use with default uniform sampling
     height, width, _ = gt_flow.get_shape().as_list()
@@ -455,8 +458,7 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
             tf.equal(distrib_id, tf.constant(2)): lambda: sample_sparse_invalid_like(gt_flow, target_density=density,
                                                                                      height=height, width=width)
         },
-        # default=lambda: sample_sparse_uniform(gt_flow, target_density=default_density, height=height, width=width),
-        default=lambda: sample_sparse_invalid_like(gt_flow, target_density=default_density, height=height, width=width),
+        default=lambda: sample_sparse_uniform(gt_flow, target_density=default_density, height=height, width=width),
         exclusive=True)
 
     # Ensure we do not give an almost empty mask back

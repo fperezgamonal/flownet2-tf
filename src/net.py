@@ -12,7 +12,8 @@ from .flowlib import flow_to_image, write_flow, read_flow, compute_all_metrics, 
 from .training_schedules import LONG_SCHEDULE, FINE_SCHEDULE, SHORT_SCHEDULE, FINETUNE_SINTEL_S1, FINETUNE_SINTEL_S2, \
     FINETUNE_SINTEL_S3, FINETUNE_SINTEL_S4, FINETUNE_SINTEL_S5, FINETUNE_KITTI_S1, FINETUNE_KITTI_S2,\
     FINETUNE_KITTI_S3, FINETUNE_KITTI_S4, FINETUNE_ROB, LR_RANGE_TEST, CLR_SCHEDULE, EXP_DECREASING, ONECYCLE_SCHEDULE
-from .utils import exponentially_increasing_lr, exponentially_decreasing_lr, _lr_cyclic, _mom_cyclic
+from .utils import exponentially_increasing_lr, exponentially_decreasing_lr, _lr_cyclic, _mom_cyclic, \
+    calc_variational_inference_map
 slim = tf.contrib.slim
 
 VAL_INTERVAL = 1000
@@ -482,7 +483,7 @@ class Net(object):
 
     def test(self, checkpoint, input_a_path, input_b_path=None, matches_a_path=None, sparse_flow_path=None,
              out_path='./', input_type='image_pairs', save_image=True, save_flo=True, compute_metrics=True,
-             gt_flow=None, occ_mask=None, inv_mask=None):
+             gt_flow=None, occ_mask=None, inv_mask=None, variational_refinement=False):
         """
 
         :param checkpoint:
@@ -498,6 +499,7 @@ class Net(object):
         :param gt_flow:
         :param occ_mask:
         :param inv_mask:
+        :param variational_refinement:
         :return:
         """
         input_a = imread(input_a_path)
@@ -548,6 +550,17 @@ class Net(object):
                 y_adapt_info = None
             pred_flow = self.postproc_y_hat_test(pred_flow, adapt_info=y_adapt_info)
 
+            # If needed, run variational refinement
+            if variational_refinement and input_b_path is not None:
+                print("Variational post-processing...")
+                if not os.path.isdir('tmp_refinement'):
+                    os.makedirs('tmp_refinement')
+                calc_variational_inference_map(input_a_path, input_b_path, pred_flow,
+                                               'tmp_refinement/out_after_var.flo')
+
+                # Read output flow back in
+                pred_flow = read_flow('tmp_refinement/out_after_var.flo')
+
             # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
             unique_name = os.path.basename(input_a_path)[:-4]
 
@@ -589,7 +602,7 @@ class Net(object):
     # Each line will define a set of inputs. By doing so, we reduce complexity and avoid errors due to "forced" sorting
     def test_batch(self, checkpoint, image_paths, out_path, input_type='image_pairs', save_image=True, save_flo=True,
                    compute_metrics=True, accumulate_metrics=False, log_metrics2file=False, width=1024, height=436,
-                   new_par_folder=None):
+                   new_par_folder=None, variational_refinement=False):
         """
         Run inference on a set of images defined in .txt files
         :param checkpoint: the path to the pre-trained model weights
@@ -604,6 +617,7 @@ class Net(object):
         :param width
         :param height
         :param new_par_folder
+        :param variational_refinement:
         :return:
         """
         # Compute padded size (must be done before running self.model() contrarily to that suggested here:
@@ -679,11 +693,13 @@ class Net(object):
                 if len(path_inputs) == 2 and input_type == 'image_pairs':  # Only image1 + image2 have been provided
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
+                    path_input_b = path_inputs[1]
                     matches_0 = None
                     sparse_flow_0 = None
                 elif len(path_inputs) == 3 and input_type == 'image_matches':  # image1 + matches mask + sparse_flow
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
+                    path_input_b = None
                     matches_0 = imread(path_inputs[1])
                     sparse_flow_0 = read_flow(path_inputs[2])
 
@@ -691,6 +707,7 @@ class Net(object):
                 elif len(path_inputs) == 3 and input_type == 'image_pairs':
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
+                    path_input_b = path_inputs[1]
                     matches_0 = None
                     sparse_flow_0 = None
                     gt_flow_0 = read_flow(path_inputs[2])
@@ -703,6 +720,7 @@ class Net(object):
                 elif len(path_inputs) == 4 and input_type == 'image_matches':
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
+                    path_input_b = None
                     matches_0 = imread(path_inputs[1])
                     sparse_flow_0 = read_flow(path_inputs[2])
                     gt_flow_0 = read_flow(path_inputs[3])
@@ -715,6 +733,7 @@ class Net(object):
                 elif len(path_inputs) == 4 and input_type == 'image_pairs' and compute_metrics:
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
+                    path_input_b = path_inputs[1]
                     matches_0 = None
                     sparse_flow_0 = None
                     gt_flow_0 = read_flow(path_inputs[2])
@@ -725,6 +744,7 @@ class Net(object):
                     print("img1 + img2 + gtflow + occ_mask + inv_mask")
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
+                    path_input_b = path_inputs[1]
                     matches_0 = None
                     sparse_flow_0 = None
                     gt_flow_0 = read_flow(path_inputs[2])
@@ -735,6 +755,7 @@ class Net(object):
                 elif len(path_inputs) == 5 and input_type == 'image_matches' and compute_metrics:
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
+                    path_input_b = None
                     matches_0 = imread(path_inputs[1])
                     sparse_flow_0 = read_flow(path_inputs[2])
                     gt_flow_0 = read_flow(path_inputs[3])
@@ -744,6 +765,7 @@ class Net(object):
                 elif len(path_inputs) == 6 and input_type == 'image_matches' and compute_metrics:
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
+                    path_input_b = None
                     matches_0 = imread(path_inputs[1])
                     sparse_flow_0 = read_flow(path_inputs[2])
                     gt_flow_0 = read_flow(path_inputs[3])
@@ -754,6 +776,7 @@ class Net(object):
                 else:  # path to all inputs (read all and decide what to use based on 'input_type')
                     frame_0 = imread(path_inputs[0])
                     frame_1 = imread(path_inputs[1])
+                    path_input_b = path_inputs[1]
                     matches_0 = imread(path_inputs[2])
                     sparse_flow_0 = read_flow(path_inputs[3])
                     gt_flow_0 = read_flow(path_inputs[4])
@@ -796,6 +819,17 @@ class Net(object):
                     y_adapt_info = None
                 # Crop flow to image original size (before padding)
                 predicted_flow_cropped = self.postproc_y_hat_test(predicted_flow, adapt_info=y_adapt_info)
+
+                # If needed, run variational refinement
+                if variational_refinement and path_input_b is not None:
+                    print("Variational post-processing...")
+                    if not os.path.isdir('tmp_refinement'):
+                        os.makedirs('tmp_refinement')
+                    calc_variational_inference_map(path_inputs[0], path_input_b, predicted_flow_cropped,
+                                                   'tmp_refinement/out_after_var.flo')
+
+                    # Read output flow back in
+                    predicted_flow_cropped = read_flow('tmp_refinement/out_after_var.flo')
 
                 # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
                 # TODO: modify to keep the folder structure (at least parent folder of the image) ==> test!
