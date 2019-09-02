@@ -556,7 +556,7 @@ class Net(object):
                 if not os.path.isdir('tmp_refinement'):
                     os.makedirs('tmp_refinement')
                 calc_variational_inference_map(input_a_path, input_b_path, pred_flow,
-                                               'tmp_refinement/out_after_var.flo', 'sintel'))
+                                               'tmp_refinement/out_after_var.flo', 'sintel')
 
                 # Read output flow back in
                 pred_flow = read_flow('tmp_refinement/out_after_var.flo')
