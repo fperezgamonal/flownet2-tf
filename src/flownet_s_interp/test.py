@@ -75,7 +75,7 @@ if __name__ == '__main__':
         default=None,
     )
     parser.add_argument(
-        '--input_a',
+        '--input_b',
         type=str,
         required=False,
         help='Path to second image (probably only used for variational refinement in this case...)',
