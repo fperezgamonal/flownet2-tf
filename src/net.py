@@ -555,7 +555,9 @@ class Net(object):
                 print("Variational post-processing...")
                 if not os.path.isdir('tmp_refinement'):
                     os.makedirs('tmp_refinement')
-                calc_variational_inference_map(input_a_path, input_b_path, pred_flow,
+                # Write pred_flow to temporal file, so the variational binary can read it
+                write_flow(pred_flow, 'tmp_refinement/out_before_var.flo')
+                calc_variational_inference_map(input_a_path, input_b_path, 'tmp_refinement/out_before_var.flo',
                                                'tmp_refinement/out_after_var.flo', 'sintel')
 
                 # Read output flow back in
@@ -862,7 +864,9 @@ class Net(object):
                     print("Variational post-processing...")
                     if not os.path.isdir('tmp_refinement'):
                         os.makedirs('tmp_refinement')
-                    calc_variational_inference_map(path_inputs[0], path_input_b, predicted_flow_cropped,
+                    # Write pred_flow to temporal file, so the variational binary can read it
+                    write_flow(predicted_flow_cropped, 'tmp_refinement/out_before_var.flo')
+                    calc_variational_inference_map(path_inputs[0], path_input_b, 'tmp_refinement/out_before_var.flo',
                                                    'tmp_refinement/out_after_var.flo', 'sintel')
 
                     # Read output flow back in
