@@ -37,7 +37,7 @@ def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop
     # print("global_step.eval()".format(tf.train.get_global_step(graph=None).eval()))
     # num_distributions = 2  # only uniform or deep matching for now (as mixing invalid-like may be too different and
     # grid-like did not work as expected
-    matches, sparse_flow = sample_sparse_flow(matches, sparse_flow, gt_flow, invalid_like)
+    matches, sparse_flow = sample_sparse_flow(matches, sparse_flow, gt_flow, invalid_like=invalid_like)
     # image, matches, sparse_flow, edges, gt_flow = random_crop([image, matches, sparse_flow, edges, gt_flow], crop_h,
     #                                                           crop_w)
     # Random flip of images and flow
