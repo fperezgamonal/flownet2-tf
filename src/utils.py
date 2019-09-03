@@ -526,8 +526,8 @@ def calc_variational_inference_map(imgA_filename, imgB_filename, flo_filename, o
     :param out_filename: filename for the output flow map.
     :param dataset: sintel / kitti
     """
-    shell_command = '{0} {1} {2} {3} {4} {5}'.format('./SrcVariational/variational_main', imgA_filename, imgB_filename,
-                                                     flo_filename, out_filename, dataset)
+    shell_command = '{0} {1} {2} {3} {4} {5}'.format('./src/SrcVariational/variational_main', imgA_filename,
+                                                     imgB_filename, flo_filename, out_filename, dataset)
     print("cmd: {}".format(shell_command))
     print("cwd: {}".format(os.getcwd()))
     # shell_command = './SrcVariational/variational_main ' + imgA_filename + ' ' + imgB_filename + ' ' + flo_filename + \
