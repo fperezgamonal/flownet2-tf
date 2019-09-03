@@ -100,7 +100,8 @@ def main():
             batch_size=FLAGS.batch_size,
             data_augmentation=FLAGS.data_augmentation,
             add_summary_augmentation=FLAGS.log_tensorboard,
-            global_step=global_step_tensor,)
+            global_step=global_step_tensor,
+            invalid_like=FLAGS.invalid_like,)
         if train_params_dict is not None:
             train_params_dict['eff_batch_size'] = FLAGS.batch_size
 
@@ -166,7 +167,8 @@ def main():
             batch_size=FLAGS.batch_size,
             data_augmentation=FLAGS.data_augmentation,
             add_summary_augmentation=FLAGS.log_tensorboard,
-            global_step=global_step_tensor,)
+            global_step=global_step_tensor,
+            invalid_like=FLAGS.invalid_like, )
         if train_params_dict is not None:
             train_params_dict['eff_batch_size'] = FLAGS.batch_size
 
@@ -475,6 +477,14 @@ if __name__ == '__main__':
         required=False,
         help='Whether to use data augmentation in training ',
         default=True,
+    )
+    parser.add_argument(
+        '--invalid_like',
+        type=str2bool,
+        nargs='?',
+        required=False,
+        help='Whether to use invalid-like sampling of the ground truth flow (i.e.: with rectangular/superpixels holes)',
+        default=False,
     )
 
     # ==== Losses =====

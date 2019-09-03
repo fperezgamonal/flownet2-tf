@@ -328,6 +328,35 @@ def mask_to_sparse_flow(sampling_mask, gt_flow):
     return sparse_flow
 
 
+def perturbate_dm_matches(dm_matches, dm_flow, density):
+    # Pick random num_picks from matches_indices randomly and set them to 0 (and the flow to 0.0)
+    percentage = 10
+    height, width, _ = dm_matches.get_shape().as_list()
+    percentage2perturbate = tf.random_uniform([], minval=percentage - percentage/4, maxval=percentage + percentage/4,
+                                              dtype=tf.float32)
+    percentage_of_density = tf.multiply(tf.divide(percentage2perturbate, 100.0), density)
+    p_zeros = tf.divide(percentage_of_density, 100.0)
+    perturbating_mask = tf.multinomial(tf.log([[p_zeros, 1 - p_zeros]]), height * width, output_dtype=tf.int32)
+    perturbating_mask = tf.reshape(perturbating_mask, (height, width))
+    perturbated_mask = tf.cast(tf.multiply(tf.reshape(dm_matches, (height, width)), perturbating_mask), dtype=tf.int32)
+    matches = tf.cast(tf.expand_dims(perturbated_mask, -1), dtype=tf.float32)
+
+    sparse_flow = mask_to_sparse_flow(sampling_mask=perturbated_mask, gt_flow=dm_flow)
+
+    return matches, sparse_flow
+
+
+def random_perturbation_dm_matches(dm_matches, dm_flow, density):
+    aux_choice = tf.random_uniform([], maxval=2, dtype=tf.int32)  # 0 or 1
+    dm_matches, dm_flow = tf.cond(tf.greater(aux_choice, tf.constant(0)), lambda: perturbate_dm_matches(dm_matches,
+                                                                                                        dm_flow,
+                                                                                                        density),
+                                  lambda: return_identity(dm_matches, dm_flow))
+
+    return dm_matches, dm_flow
+
+
+# TODO: not working at the moment, yielding some weird results (offset grids with multiple, non-regular crossings)
 def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     # Important: matches is already normalised to [0, 1]
     num_samples = tf.multiply(tf.multiply(tf.divide(target_density, 100.0), height), width)
@@ -472,7 +501,7 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
     return matches, sparse_flow
 
 
-def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=(4, 2), num_distrib=3, fast_mode=False):
+def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=(4, 2), num_distrib=2, invalid_like=False):
     # apply_with_random_selector does not work for our case (maybe it interferes with tf.slim or something else...)
     # use tf.case instead
     # density = apply_with_random_selector(density, lambda x, ordering: get_sampling_density(x, ordering, fast_mode),
@@ -481,8 +510,12 @@ def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=(4, 2), num_dist
     density = get_sampling_density(dense_or_sparse, num_ranges=num_ranges)
     tf.summary.scalar('debug/density', density)
 
+    invalid_like_tensor = tf.convert_to_tensor(invalid_like)
     # Select a distribution (random uniform, invalid like or grid like with holes
-    distrib_id = tf.random_uniform([], maxval=num_distrib, dtype=tf.int32)  # np.random.choice(range(num_distrib))
+    distrib_id = tf.cond(tf.equal(invalid_like_tensor, tf.constant(True)), lambda: tf.constant(2),
+                         lambda: tf.random_uniform([], maxval=num_distrib, dtype=tf.int32))
+
+    # distrib_id = tf.random_uniform([], maxval=num_distrib, dtype=tf.int32)  # np.random.choice(range(num_distrib))
     matches, sparse_flow = sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow)
     tf.summary.scalar('debug/distrib_id', distrib_id)
 
