@@ -552,16 +552,17 @@ class Net(object):
 
             # If needed, run variational refinement
             if variational_refinement and input_b_path is not None:
-                print("Variational post-processing...")
-                if not os.path.isdir('tmp_refinement'):
-                    os.makedirs('tmp_refinement')
+                tmp_folder = os.path.join(os.getcwd(), 'tmp_refinement')
+                if not os.path.isdir(tmp_folder):
+                    os.makedirs(tmp_folder)
                 # Write pred_flow to temporal file, so the variational binary can read it
-                write_flow(pred_flow, 'tmp_refinement/out_before_var.flo')
-                calc_variational_inference_map(input_a_path, input_b_path, 'tmp_refinement/out_before_var.flo',
-                                               'tmp_refinement/out_after_var.flo', 'sintel')
+                out_flow_no_var = os.path.join(tmp_folder, 'out_before_var.flo')
+                out_flow_var = os.path.join(tmp_folder, 'out_after_var.flo')
+                write_flow(pred_flow, out_flow_no_var)
+                calc_variational_inference_map(input_a_path, input_b_path, out_flow_no_var, out_flow_var, 'sintel')
 
                 # Read output flow back in
-                pred_flow = read_flow('tmp_refinement/out_after_var.flo')
+                pred_flow = read_flow(out_flow_var)
 
             # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
             unique_name = os.path.basename(input_a_path)[:-4]
@@ -862,15 +863,18 @@ class Net(object):
                 # If needed, run variational refinement
                 if variational_refinement and path_input_b is not None:
                     print("Variational post-processing...")
-                    if not os.path.isdir('tmp_refinement'):
-                        os.makedirs('tmp_refinement')
+                    tmp_folder = os.path.join(os.getcwd(), 'tmp_refinement')
+                    if not os.path.isdir(tmp_folder):
+                        os.makedirs(tmp_folder)
                     # Write pred_flow to temporal file, so the variational binary can read it
-                    write_flow(predicted_flow_cropped, 'tmp_refinement/out_before_var.flo')
-                    calc_variational_inference_map(path_inputs[0], path_input_b, 'tmp_refinement/out_before_var.flo',
-                                                   'tmp_refinement/out_after_var.flo', 'sintel')
+                    out_flow_no_var = os.path.join(tmp_folder, 'out_before_var.flo')
+                    out_flow_var = os.path.join(tmp_folder, 'out_after_var.flo')
+                    write_flow(predicted_flow_cropped, out_flow_no_var)
+                    calc_variational_inference_map(path_inputs[0], path_input_b, out_flow_no_var, out_flow_var,
+                                                   'sintel')
 
                     # Read output flow back in
-                    predicted_flow_cropped = read_flow('tmp_refinement/out_after_var.flo')
+                    predicted_flow_cropped = read_flow(out_flow_var)
 
                 # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
                 # TODO: modify to keep the folder structure (at least parent folder of the image) ==> test!
