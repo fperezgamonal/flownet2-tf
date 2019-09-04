@@ -101,7 +101,8 @@ def main():
             data_augmentation=FLAGS.data_augmentation,
             add_summary_augmentation=FLAGS.log_tensorboard,
             global_step=global_step_tensor,
-            invalid_like=FLAGS.invalid_like,)
+            invalid_like=FLAGS.invalid_like,
+            num_distrib=FLAGS.num_matches_distributions,)
         if train_params_dict is not None:
             train_params_dict['eff_batch_size'] = FLAGS.batch_size
 
@@ -168,7 +169,8 @@ def main():
             data_augmentation=FLAGS.data_augmentation,
             add_summary_augmentation=FLAGS.log_tensorboard,
             global_step=global_step_tensor,
-            invalid_like=FLAGS.invalid_like, )
+            invalid_like=FLAGS.invalid_like,
+            num_distrib=FLAGS.num_matches_distributions, )
         if train_params_dict is not None:
             train_params_dict['eff_batch_size'] = FLAGS.batch_size
 
@@ -485,6 +487,15 @@ if __name__ == '__main__':
         required=False,
         help='Whether to use invalid-like sampling of the ground truth flow (i.e.: with rectangular/superpixels holes)',
         default=False,
+    )
+    parser.add_argument(
+        '--num_matches_distributions',
+        type=int,
+        required=False,
+        help="Number of distributions to sample initial matches and flow. By default, DeepMatching matches (in TFrecord)"
+             "and randomly sampled matches are used. If num_matches_distribtuions=3 and invalid_like is False, additional"
+             "invalid-like matches are used (random holes with bboxes for now, superpixels in the future)",
+        default=2,
     )
 
     # ==== Losses =====

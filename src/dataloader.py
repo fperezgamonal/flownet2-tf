@@ -29,7 +29,7 @@ def augment_image_pair(img1, img2, crop_h, crop_w):
 # This might be too verbose once we known the augmentations work as expected since the train/image_a, etc. are augmented
 # already and shown in TB by default
 def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop_w, add_summary=False, fast_mode=False,
-                       global_step=None, invalid_like=False):
+                       global_step=None, invalid_like=False, num_distrib=2):
     # print_out = tf.cond(tf.equal(global_step, tf.cast(tf.constant(0), tf.int64)),
     #                     lambda: tf.print("global_step: {}".format(global_step)), lambda: tf.print("Not 0"))
     # tf.print("global_step: {}".format(global_step))
@@ -37,7 +37,8 @@ def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop
     # print("global_step.eval()".format(tf.train.get_global_step(graph=None).eval()))
     # num_distributions = 2  # only uniform or deep matching for now (as mixing invalid-like may be too different and
     # grid-like did not work as expected
-    matches, sparse_flow = sample_sparse_flow(matches, sparse_flow, gt_flow, invalid_like=invalid_like)
+    matches, sparse_flow = sample_sparse_flow(matches, sparse_flow, gt_flow, invalid_like=invalid_like,
+                                              num_distrib=num_distrib)
     # image, matches, sparse_flow, edges, gt_flow = random_crop([image, matches, sparse_flow, edges, gt_flow], crop_h,
     #                                                           crop_w)
     # Random flip of images and flow
@@ -357,7 +358,8 @@ def _generate_coeff(param, discount_coeff=tf.constant(1.0), default_value=tf.con
 # TODO: fix bug with data augmentation
 def load_batch(dataset_config_str, split_name, global_step=None, input_type='image_pairs', common_queue_capacity=64,
                common_queue_min=32, capacity_in_batches_train=4, capacity_in_batches_val=1, num_threads=8,
-               batch_size=None, data_augmentation=True, add_summary_augmentation=False, invalid_like=False):
+               batch_size=None, data_augmentation=True, add_summary_augmentation=False, invalid_like=False,
+               num_distrib=2):
 
     if dataset_config_str.lower() == 'flying_things3d':
         dataset_config = FLYING_THINGS_3D_ALL_DATASET_CONFIG
@@ -429,7 +431,8 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                 print("(image_matches) Applying data augmentation...")  # temporally to debug
                 image_a, matches_a, sparse_flow, edges_a, flow = augment_all_interp(
                     image_a, matches_a, sparse_flow, edges_a, flow, crop_h=crop[0], crop_w=crop[1],
-                    add_summary=add_summary_augmentation, fast_mode=False, global_step=global_step)
+                    add_summary=add_summary_augmentation, fast_mode=False, global_step=global_step,
+                    invalid_like=invalid_like, num_distrib=num_distrib)
 
             # Add extra 'batching' dimension
             image_bs = None
