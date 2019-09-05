@@ -384,11 +384,11 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
     else:  # flying_chairs
         dataset_config = FLYING_CHAIRS_ALL_DATASET_CONFIG
 
-    if batch_size is not None:
+    if batch_size is not None and batch_size > 0:
         print("Batch size changed from training_schedules.py default '{}' to '{}'".format(
             dataset_config['BATCH_SIZE'], batch_size))
     else:
-        print("Batch size kept to default value: {}".format(dataset_config['BATCH_SIZE']))
+        print("Batch size kept to dataset default value: {}".format(dataset_config['BATCH_SIZE']))
         batch_size = dataset_config['BATCH_SIZE']
 
     reader_kwargs = {'options': tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.ZLIB)}

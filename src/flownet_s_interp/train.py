@@ -471,7 +471,7 @@ if __name__ == '__main__':
         help='integer that specifies the batch size',
         default=None,
     )
-    # ==== Data augmentation ====
+    # ==== Data augmentation ====batch
     parser.add_argument(
         '--data_augmentation',
         type=str2bool,
@@ -494,7 +494,8 @@ if __name__ == '__main__':
         required=False,
         help="Number of distributions to sample initial matches and flow. By default, DeepMatching matches (in TFrecord)"
              "and randomly sampled matches are used. If num_matches_distribtuions=3 and invalid_like is False, additional"
-             "invalid-like matches are used (random holes with bboxes for now, superpixels in the future)",
+             "invalid-like matches are used (random holes with bboxes for now, superpixels in the future)."
+             "Finally, if one only wants the computed matches in TFrecord, set this value to 1",
         default=2,
     )
 
