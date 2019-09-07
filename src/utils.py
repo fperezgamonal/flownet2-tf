@@ -260,10 +260,10 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
 
     # aepe = ||labels-predictions||2 = 1/N sum(sqrt((labels - predictions)**2)
     # double-checked formulas thanks to: https://github.com/ppliuboy/SelFlow
-    epe = tf.norm(labels - predictions, axis=3, keepdims=True)  # defaults to euclidean norm
+    epe = tf.norm(tf.subtract(labels, predictions), axis=3, keepdims=True)  # defaults to euclidean norm
     epe_sum = tf.reduce_sum(epe)
     # loss_mean = epe_sum / tf.cast(tf.reduce_prod(tf.shape(predictions)[:-1]), tf.float32)
-    aepe = epe_sum / batch_size
+    aepe = tf.divide(epe_sum, batch_size)
 
     # 2. Compute HFEM loss
     if add_hfem:  # add_hfem not empty
@@ -286,17 +286,27 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
             ones = tf.Variable(tf.ones(tf.shape(epe_top_k_idxs)), trainable=False)
             HM_mask = tf.scatter_update(HM_mask, epe_top_k_idxs, ones)
 
+            # 2.3. Create term for "hard" pixels, 0 everywhere but in top_k_idxs and then multiplied by lambda
+            epe_hfem = tf.Variable(tf.zeros(tf.shape(epe_flatten)), trainable=False)
+            lambda_epe = tf.multiply(lambda_w, epe_flatten)
+            lambda_epe_filtered = tf.cast(tf.boolean_mask(lambda_epe, HM_mask), dtype=tf.float32)
+            epe_hfem = tf.scatter_update(epe_hfem, epe_top_k_idxs, lambda_epe_filtered)
+            # 2.4. Add 'standard' AEPE and lambda*AEPE_hfem term
+            epe_and_hfem = tf.add(epe_flatten, epe_hfem)  # lambda already included
+            epe_and_hfem_sum = tf.reduce_sum(epe_and_hfem)
+            # Divide by batch size like 'standard' aepe since we are summing instead of averaging
+            aepe_with_hfem = tf.divide(epe_and_hfem_sum, batch_size)
             # 2.3. Compute AEPE for "hard" pixels (we only miss the tf.reduce_sum(loss)/ num_hard_examples
             # epe_flatten_filtered = epe_flatten[HM_mask == 1]
-            epe_flatten_filtered = tf.cast(tf.boolean_mask(epe_flatten, HM_mask), dtype=tf.float32)
+            # epe_flatten_filtered = tf.cast(tf.boolean_mask(epe_flatten, HM_mask), dtype=tf.float32)
             # aepe_hfem = lambda * sum(EPE[hard_flows]) / len(hard_flows)
             # sum_epe_flatten_filtered = tf.reduce_sum(epe_flatten_filtered)
             # Adding extra cost is like instead of multiplying epe * 1 we multiply it by (1+lambda) ONLY for hard pixels
             # epe_and_hfem = epe_flatten_filtered + lambda * epe_flatten_filtered = (1 + lambda) * epe_flatten_filtered
-            epe_and_hfem = tf.multiply(1 + lambda_w, epe_flatten_filtered)
-            num_hard_pixels = tf.cast(tf.size(epe_flatten_filtered), tf.float32)
-            epe_and_hfem_sum = tf.reduce_sum(epe_and_hfem)
-            aepe_with_hfem = tf.divide(epe_and_hfem_sum, num_hard_pixels)
+            # epe_and_hfem = tf.multiply(tf.add(1, lambda_w), epe_flatten_filtered)
+            # num_hard_pixels = tf.cast(tf.size(epe_flatten_filtered), tf.float32)
+            # epe_and_hfem_sum = tf.reduce_sum(epe_and_hfem)
+            # aepe_with_hfem = tf.divide(epe_and_hfem_sum, num_hard_pixels)
 
             return aepe_with_hfem
         elif add_hfem.lower() == 'edges' and edges is not None:
@@ -308,7 +318,7 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
 
             # Sum and divide by batch size
             epe_edges_sum = tf.reduce_sum(epe_and_edges)
-            aepe_with_edges = epe_edges_sum / batch_size
+            aepe_with_edges = tf.divide(epe_edges_sum, batch_size)
             return aepe_with_edges
         else:
             # Return Average EPE
