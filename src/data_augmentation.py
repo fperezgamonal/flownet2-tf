@@ -518,9 +518,10 @@ def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=(4, 2), num_dist
     density = get_sampling_density(dense_or_sparse, num_ranges=num_ranges)
     tf.summary.scalar('debug/density', density)
 
-    invalid_like_tensor = tf.cond(tf.greater(tf.convert_to_tensor(invalid_like), tf.constant(0)))
+    invalid_like_tensor = tf.cond(tf.greater(tf.convert_to_tensor(invalid_like), tf.constant(0)),
+                                  lambda: tf.constant(True), lambda: tf.constant(False))
     # Select a distribution (random uniform, invalid like or grid like with holes
-    distrib_id = tf.cond(tf.equal(tf.constant(invalid_like_tensor), tf.constant(True)),
+    distrib_id = tf.cond(tf.equal(invalid_like_tensor, tf.constant(True)),
                          # lambda: tf.constant(2),
                          lambda: tf.random_uniform([], minval=2, maxval=3, dtype=tf.int32),  # tf.constant(2)
                          lambda: tf.random_uniform([], maxval=num_distrib, dtype=tf.int32))
