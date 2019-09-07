@@ -44,17 +44,16 @@ def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop
     # grid-like did not work as expected
 
     # If num_distrib = -1, use uniform sampling instead with fixed_density which must be > 0
-    fixed_density_tensor = tf.convert_to_tensor(fixed_density)
-    num_distrib_tensor = tf.convert_to_tensor(num_distrib)
-    height, width, _ = gt_flow.get_shape().as_list()
-    matches, sparse_flow = tf.cond(tf.logical_and(tf.equal(num_distrib_tensor, tf.constant(-1)),
-                                                  tf.greater(fixed_density_tensor, tf.constant(0.0))),
-                                   lambda: sample_sparse_uniform(gt_flow=gt_flow, target_density=fixed_density_tensor,
-                                                                 height=height, width=width),
-                                   lambda: sample_sparse_flow(matches, sparse_flow, gt_flow, invalid_like=invalid_like,
-                                                              num_distrib=num_distrib))
-    # matches, sparse_flow = sample_sparse_flow(matches, sparse_flow, gt_flow, invalid_like=invalid_like,
-    #                                           num_distrib=num_distrib)
+    # fixed_density_tensor = tf.convert_to_tensor(fixed_density)
+    # height, width, _ = gt_flow.get_shape().as_list()
+    # matches, sparse_flow = tf.cond(tf.logical_and(tf.equal(tf.convert_to_tensor(num_distrib), tf.constant(-1)),
+    #                                               tf.greater(fixed_density_tensor, tf.constant(0.0))),
+    #                                lambda: sample_sparse_uniform(gt_flow=gt_flow, target_density=fixed_density_tensor,
+    #                                                              height=height, width=width),
+    #                                lambda: sample_sparse_flow(matches, sparse_flow, gt_flow, invalid_like=invalid_like,
+    #                                                           num_distrib=num_distrib))
+    matches, sparse_flow = sample_sparse_flow(matches, sparse_flow, gt_flow, invalid_like=invalid_like,
+                                              num_distrib=num_distrib, fixed_density=fixed_density)
     # image, matches, sparse_flow, edges, gt_flow = random_crop([image, matches, sparse_flow, edges, gt_flow], crop_h,
     #                                                           crop_w)
     # Random flip of images and flow
