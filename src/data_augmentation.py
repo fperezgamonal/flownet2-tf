@@ -496,10 +496,12 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
                                    lambda: return_identity(matches, sparse_flow),
                                    lambda: return_identity(dm_matches, dm_flow))
 
+    tf.summary.scalar('debug/sampled_percentage', sampled_percentage)
+
     return matches, sparse_flow
 
 
-def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=(4, 2), num_distrib=2, invalid_like=False,
+def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=(4, 2), num_distrib=2, invalid_like=-1,
                        fixed_density=-1):
     # apply_with_random_selector does not work for our case (maybe it interferes with tf.slim or something else...)
     # use tf.case instead
@@ -513,9 +515,9 @@ def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=(4, 2), num_dist
     density = get_sampling_density(dense_or_sparse, num_ranges=num_ranges)
     tf.summary.scalar('debug/density', density)
 
-    invalid_like_tensor = tf.convert_to_tensor(invalid_like)
+    invalid_like_tensor = tf.cond(tf.greater(invalid_like, tf.constant(0)))
     # Select a distribution (random uniform, invalid like or grid like with holes
-    distrib_id = tf.cond(tf.equal(tf.constant(invalid_like), tf.constant(True)), lambda: tf.constant(2),
+    distrib_id = tf.cond(tf.equal(tf.constant(invalid_like_tensor), tf.constant(True)), lambda: tf.constant(2),
                          lambda: tf.random_uniform([], maxval=num_distrib, dtype=tf.int32))
     # distrib_id = tf.case(
     #     {

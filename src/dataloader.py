@@ -34,7 +34,7 @@ def augment_image_pair(img1, img2, crop_h, crop_w):
 # This might be too verbose once we known the augmentations work as expected since the train/image_a, etc. are augmented
 # already and shown in TB by default
 def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop_w, add_summary=False, fast_mode=False,
-                       global_step=None, invalid_like=False, num_distrib=2, fixed_density=-1.0):
+                       global_step=None, invalid_like=-1, num_distrib=2, fixed_density=-1.0):
     # print_out = tf.cond(tf.equal(global_step, tf.cast(tf.constant(0), tf.int64)),
     #                     lambda: tf.print("global_step: {}".format(global_step)), lambda: tf.print("Not 0"))
     # tf.print("global_step: {}".format(global_step))
@@ -373,7 +373,7 @@ def _generate_coeff(param, discount_coeff=tf.constant(1.0), default_value=tf.con
 # TODO: add possibility of using uniform sampling as default matches w/o mixing (did not work with commented changes)
 def load_batch(dataset_config_str, split_name, global_step=None, input_type='image_pairs', common_queue_capacity=64,
                common_queue_min=32, capacity_in_batches_train=4, capacity_in_batches_val=1, num_threads=8,
-               batch_size=None, data_augmentation=True, add_summary_augmentation=False, invalid_like=False,
+               batch_size=None, data_augmentation=True, add_summary_augmentation=False, invalid_like=-1,
                num_distrib=2):
 
     num_distrib_tensor = tf.convert_to_tensor(num_distrib)
@@ -442,23 +442,25 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
 
         if input_type == 'image_matches':
             image_b = None
-            image_a, matches_a, sparse_flow, edges_a, flow = data_provider.get(['image_a', 'matches_a', 'sparse_flow',
-                                                                                'edges_a', 'flow'])
+            image_a_og, matches_a_og, sparse_flow_og, edges_a_og, gt_flow_og = data_provider.get(['image_a', 'matches_a',
+                                                                                                  'sparse_flow',
+                                                                                                  'edges_a', 'flow'])
 
-            image_a, matches_a, edges_a = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a, matches_a, edges_a])
+            image_a_og, matches_a_og, edges_a_og = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a_og, matches_a_og,
+                                                                                                edges_a_og])
         else:
-            matches_a = None
-            sparse_flow = None
-            edges_a = None
-            image_a, image_b, flow = data_provider.get(['image_a', 'image_b', 'flow'])
-            image_a, image_b = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a, image_b])
+            matches_a_og = None
+            sparse_flow_og = None
+            edges_a_og = None
+            image_a_og, image_b_og, gt_flow_og = data_provider.get(['image_a', 'image_b', 'flow'])
+            image_a_og, image_b_og = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a_og, image_b_og])
 
         if dataset_config['PREPROCESS']['scale']:  # if record data has not been scaled, 'scale' should be True
-            image_a = image_a / 255.0
+            image_a_og = image_a_og / 255.0
             if input_type == 'image_matches':  # Note: we assume edges_a to be in the range [0,1] in both cases
-                matches_a = matches_a / 255.0
+                matches_a_og = matches_a_og / 255.0
             else:
-                image_b = image_b / 255.0
+                image_b_og = image_b_og / 255.0
 
         if data_augmentation and split_name == 'train':
             crop = [dataset_config['PREPROCESS']['crop_height'], dataset_config['PREPROCESS']['crop_width']]
@@ -474,8 +476,8 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                     target_density = fc_sparse_perc
 
                 print("(image_matches) Applying data augmentation...")  # temporally to debug
-                image_a, matches_a, sparse_flow, edges_a, flow = augment_all_interp(
-                    image_a, matches_a, sparse_flow, edges_a, flow, crop_h=crop[0], crop_w=crop[1],
+                image_a, matches_a, sparse_flow, edges_a, gt_flow = augment_all_interp(
+                    image_a_og, matches_a_og, sparse_flow_og, edges_a_og, gt_flow_og, crop_h=crop[0], crop_w=crop[1],
                     add_summary=add_summary_augmentation, fast_mode=False, global_step=global_step,
                     invalid_like=invalid_like, num_distrib=num_distrib, fixed_density=target_density)
             else:
@@ -496,99 +498,20 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             # Add extra 'batching' dimension
             image_bs = None
             image_as, matches_as, sparse_flows, edges_as, flows = map(lambda x: tf.expand_dims(x, 0),
-                                                                      [image_a, matches_a, sparse_flow, edges_a, flow])
+                                                                      [image_a, matches_a, sparse_flow, edges_a,
+                                                                       gt_flow])
 
         else:
             if data_augmentation and split_name == 'train':
                 print("(image_pairs) Applying data augmentation...")  # temporally to debug
-                image_a, image_b, flow = augment_all_estimation(image_a, image_b, flow, crop_h=crop[0], crop_w=crop[1],
-                                                                add_summary=add_summary_augmentation, fast_mode=False)
+                image_a, image_b, gt_flow = augment_all_estimation(image_a_og, image_b_og, gt_flow_og, crop_h=crop[0],
+                                                                   crop_w=crop[1], add_summary=add_summary_augmentation,
+                                                                   fast_mode=False)
             matches_as = None
             sparse_flows = None
             edges_as = None
-            image_as, image_bs, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b, flow])
+            image_as, image_bs, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b, gt_flow])
 
-        # config_a = config_to_arrays(dataset_config['PREPROCESS']['image_a']) ==> config for broken D.A.
-        # config_b = config_to_arrays(dataset_config['PREPROCESS']['image_b'])
-        #  ====================== OLD, BROKEN DATA AUGMENTATION ==> REMOVE ONCE THE ABOVE WORKS ========================
-        # Perform data augmentation on GPU  fperezgamonal: typo, it does not work on the GPU, only on the CPU!
-        # TODO: despite not reporting segmentation fault, the process is killed when data_augmentation is added. Test:
-        #   - See if it works in GPU (more memory)
-        #   - Test with more CPUs and/or memory per cpu (harder to get in the queue to test anything!)
-        #   - Play around with queue sizes and num_threads (maybe the queue is still too large (or short?))
-        # with tf.device('/cpu:0'):  # it should work on the gpu according to the test.py (repo root folder)
-        #     image_as, image_bs, transforms_from_a, transforms_from_b = \
-        #         _preprocessing_ops.data_augmentation(image_as,
-        #                                              image_bs,
-        #                                              global_step,
-        #                                              crop,
-        #                                              config_a['name'],
-        #                                              config_a['rand_type'],
-        #                                              config_a['exp'],
-        #                                              config_a['mean'],
-        #                                              config_a['spread'],
-        #                                              config_a['prob'],
-        #                                              config_a['coeff_schedule'],
-        #                                              config_b['name'],
-        #                                              config_b['rand_type'],
-        #                                              config_b['exp'],
-        #                                              config_b['mean'],
-        #                                              config_b['spread'],
-        #                                              config_b['prob'],
-        #                                              config_b['coeff_schedule'])
-        #
-        #     noise_coeff_a = None
-        #     noise_coeff_b = None
-        #
-        #     # Generate and apply noise coeff for A if defined in A params
-        #     if 'noise' in dataset_config['PREPROCESS']['image_a']:
-        #         discount_coeff = tf.constant(1.0)
-        #         if 'coeff_schedule_param' in dataset_config['PREPROCESS']['image_a']:
-        #             initial_coeff = dataset_config['PREPROCESS']['image_a']['coeff_schedule_param']['initial_coeff']
-        #             final_coeff = dataset_config['PREPROCESS']['image_a']['coeff_schedule_param']['final_coeff']
-        #             half_life = dataset_config['PREPROCESS']['image_a']['coeff_schedule_param']['half_life']
-        #             discount_coeff = initial_coeff + \
-        #                 (final_coeff - initial_coeff) * \
-        #                 (2.0 / (1.0 + exp(-1.0986 * global_step / half_life)) - 1.0)
-        #
-        #         noise_coeff_a = _generate_coeff(
-        #             dataset_config['PREPROCESS']['image_a']['noise'], discount_coeff)
-        #         noise_a = tf.random_normal(shape=tf.shape(image_as),
-        #                                    mean=0.0, stddev=noise_coeff_a,
-        #                                    dtype=tf.float32)
-        #         image_as = tf.clip_by_value(image_as + noise_a, 0.0, 1.0)
-        #
-        #     # Generate noise coeff for B if defined in B params
-        #     if 'noise' in dataset_config['PREPROCESS']['image_b']:
-        #         discount_coeff = tf.constant(1.0)
-        #         if 'coeff_schedule_param' in dataset_config['PREPROCESS']['image_b']:
-        #             initial_coeff = dataset_config['PREPROCESS']['image_b']['coeff_schedule_param']['initial_coeff']
-        #             final_coeff = dataset_config['PREPROCESS']['image_b']['coeff_schedule_param']['final_coeff']
-        #             half_life = dataset_config['PREPROCESS']['image_b']['coeff_schedule_param']['half_life']
-        #             discount_coeff = initial_coeff + \
-        #                 (final_coeff - initial_coeff) * \
-        #                 (2.0 / (1.0 + exp(-1.0986 * global_step / half_life)) - 1.0)
-        #         noise_coeff_b = _generate_coeff(
-        #             dataset_config['PREPROCESS']['image_b']['noise'], discount_coeff)
-        #
-        #     # Combine coeff from a with coeff from b
-        #     if noise_coeff_a is not None:
-        #         if noise_coeff_b is not None:
-        #             noise_coeff_b = noise_coeff_a * noise_coeff_b
-        #         else:
-        #             noise_coeff_b = noise_coeff_a
-        #
-        #     # Add noise to B if needed
-        #     if noise_coeff_b is not None:
-        #         noise_b = tf.random_normal(shape=tf.shape(image_bs),
-        #                                    mean=0.0, stddev=noise_coeff_b,
-        #                                    dtype=tf.float32)
-        #         image_bs = tf.clip_by_value(image_bs + noise_b, 0.0, 1.0)
-        #
-        #     # Perform flow augmentation using spatial parameters from data augmentation
-        #     flows = _preprocessing_ops.flow_augmentation(
-        #         flows, transforms_from_a, transforms_from_b, crop)
-        # ==============================================================================================================
 
         if input_type == 'image_matches':
             print("(dataloader.py): input_type is 'image_matches'; split is '{}'".format(split_name))

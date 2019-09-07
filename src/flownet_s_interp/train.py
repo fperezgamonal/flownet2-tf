@@ -482,11 +482,11 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--invalid_like',
-        type=str2bool,
-        nargs='?',
+        type=int,
         required=False,
-        help='Whether to use invalid-like sampling of the ground truth flow (i.e.: with rectangular/superpixels holes)',
-        default=False,
+        help='Whether to use invalid-like (> 0) sampling of the ground truth flow (i.e.: with rectangular/superpixels'
+             ' holes)',
+        default=-1,
     )
     parser.add_argument(
         '--num_matches_distributions',
