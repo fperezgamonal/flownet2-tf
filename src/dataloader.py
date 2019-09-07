@@ -510,7 +510,6 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
             edges_as = None
             image_as, image_bs, flows = map(lambda x: tf.expand_dims(x, 0), [image_a, image_b, gt_flow])
 
-
         if input_type == 'image_matches':
             print("(dataloader.py): input_type is 'image_matches'; split is '{}'".format(split_name))
             if split_name == 'valid':

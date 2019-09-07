@@ -73,13 +73,20 @@ def distort_colour(image, num_permutations=4):
                          'upper_contrast': 1.4}
 
     colour_id = tf.random_uniform([], maxval=num_permutations, dtype=tf.int32)
-    image = tf.case(
-        {tf.equal(colour_id, tf.constant(0)): lambda: distort_colour_zero(image, dist_params=distortion_params),
-         tf.equal(colour_id, tf.constant(1)): lambda: distort_colour_one(image, dist_params=distortion_params),
-         tf.equal(colour_id, tf.constant(2)): lambda: distort_colour_two(image, dist_params=distortion_params),
-         tf.equal(colour_id, tf.constant(3)): lambda: distort_colour_three(image, dist_params=distortion_params),
-         },
-        default=lambda: distort_colour_zero(image, dist_params=distortion_params), exclusive=True)
+    image = tf.switch_case(colour_id, branch_fns={
+        0: lambda: distort_colour_zero(image, dist_params=distortion_params),
+        1: lambda: distort_colour_one(image, dist_params=distortion_params),
+        2: lambda: distort_colour_two(image, dist_params=distortion_params),
+        3: lambda: distort_colour_three(image, dist_params=distortion_params)},
+        default=lambda: distort_colour_zero(image, dist_params=distortion_params))
+
+    # image = tf.case(
+    #     {tf.equal(colour_id, tf.constant(0)): lambda: distort_colour_zero(image, dist_params=distortion_params),
+    #      tf.equal(colour_id, tf.constant(1)): lambda: distort_colour_one(image, dist_params=distortion_params),
+    #      tf.equal(colour_id, tf.constant(2)): lambda: distort_colour_two(image, dist_params=distortion_params),
+    #      tf.equal(colour_id, tf.constant(3)): lambda: distort_colour_three(image, dist_params=distortion_params),
+    #      },
+    #     default=lambda: distort_colour_zero(image, dist_params=distortion_params), exclusive=True)
     # The random_* ops do not necessarily clamp.
     return tf.clip_by_value(image, 0.0, 1.0)
 
@@ -185,23 +192,33 @@ def flow_resize(flow, out_size, is_scale=True, method=0):
 # Auxiliar functions for sampling
 def case_sparse(num_cases=2):
     density_id = tf.random_uniform([], maxval=num_cases, dtype=tf.int32)
-    density = tf.case(
-        {tf.equal(density_id, tf.constant(0)): lambda: tf.random_uniform([], minval=0.01, maxval=1., dtype=tf.float32),
-         tf.equal(density_id, tf.constant(1)): lambda: tf.random_uniform([], minval=1., maxval=10., dtype=tf.float32),
-         },
-        default=lambda: tf.random_uniform([], minval=1., maxval=10., dtype=tf.float32), exclusive=True)
+    density = tf.switch_case(density_id, branch_fns={
+        0: lambda: tf.random_uniform([], minval=0.01, maxval=1., dtype=tf.float32),
+        1: lambda: tf.random_uniform([], minval=1., maxval=10., dtype=tf.float32)
+    }, default=lambda: tf.random_uniform([], minval=1., maxval=10., dtype=tf.float32))
+    # density = tf.case(
+    #     {tf.equal(density_id, tf.constant(0)): lambda: tf.random_uniform([], minval=0.01, maxval=1., dtype=tf.float32),
+    #      tf.equal(density_id, tf.constant(1)): lambda: tf.random_uniform([], minval=1., maxval=10., dtype=tf.float32),
+    #      },
+    #     default=lambda: tf.random_uniform([], minval=1., maxval=10., dtype=tf.float32), exclusive=True)
     return density, density_id
 
 
 def case_dense(num_cases=4):
     density_id = tf.random_uniform([], maxval=num_cases, dtype=tf.int32)
-    density = tf.case(
-        {tf.equal(density_id, tf.constant(0)): lambda: tf.random_uniform([], minval=10., maxval=25., dtype=tf.float32),
-         tf.equal(density_id, tf.constant(1)): lambda: tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32),
-         tf.equal(density_id, tf.constant(2)): lambda: tf.random_uniform([], minval=50., maxval=75., dtype=tf.float32),
-         tf.equal(density_id, tf.constant(3)): lambda: tf.random_uniform([], minval=75., maxval=90., dtype=tf.float32),
-         },
-        default=lambda: tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32), exclusive=True)
+    density = tf.switch_case(density_id, branch_fns={
+        0: lambda: tf.random_uniform([], minval=10., maxval=25., dtype=tf.float32),
+        1: lambda: tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32),
+        2: lambda: tf.random_uniform([], minval=50., maxval=75., dtype=tf.float32),
+        3: lambda: tf.random_uniform([], minval=75., maxval=90., dtype=tf.float32)
+    }, default=lambda: tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32))
+    # density = tf.case(
+    #     {tf.equal(density_id, tf.constant(0)): lambda: tf.random_uniform([], minval=10., maxval=25., dtype=tf.float32),
+    #      tf.equal(density_id, tf.constant(1)): lambda: tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32),
+    #      tf.equal(density_id, tf.constant(2)): lambda: tf.random_uniform([], minval=50., maxval=75., dtype=tf.float32),
+    #      tf.equal(density_id, tf.constant(3)): lambda: tf.random_uniform([], minval=75., maxval=90., dtype=tf.float32),
+    #      },
+    #     default=lambda: tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32), exclusive=True)
     return density, density_id
 
 
@@ -475,31 +492,36 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
     # sample_dm = tf.cond(tf.logical_and(tf.greater(aux_choice, tf.constant(0)),
     #                      tf.less_equal(density, tf.constant(1.0))), lambda: tf.constant(True), lambda: tf.constant(False))
     # sample_dm = tf.cond(True if (np.random.choice([0, 1]) > 0 and density <= 1) else False
-    matches, sparse_flow = tf.case(
-        {
-            # tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
-            #                tf.equal(sample_dm, tf.constant(False))): lambda: sample_sparse_grid_like(
-            #     gt_flow, target_density=density, height=height, width=width),
-            # tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
-            #                tf.equal(sample_dm, tf.constant(True))): lambda: return_identity(dm_matches, dm_flow),
-            tf.equal(distrib_id, tf.constant(0)): lambda: return_identity(dm_matches, dm_flow),
-            tf.equal(distrib_id, tf.constant(1)): lambda: sample_sparse_uniform(gt_flow, target_density=density,
-                                                                                height=height, width=width),
-            tf.equal(distrib_id, tf.constant(2)): lambda: sample_sparse_invalid_like(gt_flow, target_density=density,
-                                                                                     height=height, width=width)
-        },
-        default=lambda: sample_sparse_uniform(gt_flow, target_density=default_density, height=height, width=width),
-        exclusive=True)
+    matches, sparse_flow = tf.switch_case(distrib_id, branch_fns={
+        0: lambda: return_identity(dm_matches, dm_flow),
+        1: lambda: sample_sparse_uniform(gt_flow, target_density=density, height=height, width=width),
+        2: lambda: sample_sparse_invalid_like(gt_flow, target_density=density, height=height, width=width),
+    }, default=lambda: sample_sparse_uniform(gt_flow, target_density=default_density, height=height, width=width))
+    # matches, sparse_flow = tf.case(
+    #     {
+    #         # tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
+    #         #                tf.equal(sample_dm, tf.constant(False))): lambda: sample_sparse_grid_like(
+    #         #     gt_flow, target_density=density, height=height, width=width),
+    #         # tf.logical_and(tf.equal(distrib_id, tf.constant(0)),
+    #         #                tf.equal(sample_dm, tf.constant(True))): lambda: return_identity(dm_matches, dm_flow),
+    #         tf.equal(distrib_id, tf.constant(0)): lambda: return_identity(dm_matches, dm_flow),
+    #         tf.equal(distrib_id, tf.constant(1)): lambda: sample_sparse_uniform(gt_flow, target_density=density,
+    #                                                                             height=height, width=width),
+    #         tf.equal(distrib_id, tf.constant(2)): lambda: sample_sparse_invalid_like(gt_flow, target_density=density,
+    #                                                                                  height=height, width=width)
+    #     },
+    #     default=lambda: sample_sparse_uniform(gt_flow, target_density=default_density, height=height, width=width),
+    #     exclusive=True)
 
     # Ensure we do not give an almost empty mask back
     min_percentage = 0.01
     sampled_percentage = tf.multiply(100.0, tf.divide(tf.reduce_sum(matches), tf.cast(tf.multiply(height, width),
                                                                                       dtype=tf.float32)))
+    tf.summary.scalar('debug/sampled_percentage', sampled_percentage)
+
     matches, sparse_flow = tf.cond(tf.greater_equal(sampled_percentage, min_percentage),
                                    lambda: return_identity(matches, sparse_flow),
                                    lambda: return_identity(dm_matches, dm_flow))
-
-    tf.summary.scalar('debug/sampled_percentage', sampled_percentage)
 
     return matches, sparse_flow
 
