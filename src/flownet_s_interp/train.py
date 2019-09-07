@@ -496,7 +496,8 @@ if __name__ == '__main__':
              "and randomly sampled matches are used. If num_matches_distribtuions=3 and invalid_like is False, additional"
              "invalid-like matches are used (random holes with bboxes for now, superpixels in the future)."
              "Finally, if one only wants the computed matches in TFrecord, set this value to 1"
-             "If set to -1, uniform matches are used by default instead of DeepMatching (with their mean density)",
+             "(TODO, WIP): If set to -1, uniform matches are used by default instead of DeepMatching (with their mean"
+             " density)",
         default=2,
     )
 

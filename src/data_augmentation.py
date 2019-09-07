@@ -506,23 +506,23 @@ def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=(4, 2), num_dist
     # density = apply_with_random_selector(density, lambda x, ordering: get_sampling_density(x, ordering, fast_mode),
     #                                      num_cases=num_ranges)
     dense_or_sparse = tf.random_uniform([], maxval=2, dtype=tf.int32)  # 0 or 1
-    density = tf.cond(tf.logical_and(tf.equal(tf.convert_to_tensor(num_distrib), tf.constant(-1)),
-                                     tf.greater(tf.convert_to_tensor(fixed_density), tf.constant(0.0))),
-                      lambda: tf.convert_to_tensor(fixed_density),
-                      lambda: get_sampling_density(dense_or_sparse, num_ranges=num_ranges))
-    # density = get_sampling_density(dense_or_sparse, num_ranges=num_ranges)
+    # density = tf.cond(tf.logical_and(tf.equal(tf.convert_to_tensor(num_distrib), tf.constant(-1)),
+    #                                  tf.greater(tf.convert_to_tensor(fixed_density), tf.constant(0.0))),
+    #                   lambda: tf.convert_to_tensor(fixed_density),
+    #                   lambda: get_sampling_density(dense_or_sparse, num_ranges=num_ranges))
+    density = get_sampling_density(dense_or_sparse, num_ranges=num_ranges)
     tf.summary.scalar('debug/density', density)
 
     invalid_like_tensor = tf.convert_to_tensor(invalid_like)
     # Select a distribution (random uniform, invalid like or grid like with holes
-    # distrib_id = tf.cond(tf.equal(invalid_like_tensor, tf.constant(True)), lambda: tf.constant(2),
-    #                      lambda: tf.random_uniform([], maxval=num_distrib, dtype=tf.int32))
-    distrib_id = tf.case(
-        {
-            tf.equal(invalid_like_tensor, tf.constant(True)): lambda: tf.constant(2),
-            tf.equal(tf.convert_to_tensor(num_distrib), tf.constant(-1)): lambda: tf.constant(1),
-        },
-        default=lambda: tf.random_uniform([], maxval=num_distrib, dtype=tf.int32), exclusive=True)
+    distrib_id = tf.cond(tf.equal(invalid_like_tensor, tf.constant(True)), lambda: tf.constant(2),
+                         lambda: tf.random_uniform([], maxval=num_distrib, dtype=tf.int32))
+    # distrib_id = tf.case(
+    #     {
+    #         tf.equal(invalid_like_tensor, tf.constant(True)): lambda: tf.constant(2),
+    #         tf.equal(tf.convert_to_tensor(num_distrib), tf.constant(-1)): lambda: tf.constant(1),
+    #     },
+    #     default=lambda: tf.random_uniform([], maxval=num_distrib, dtype=tf.int32), exclusive=True)
 
     # distrib_id = tf.random_uniform([], maxval=num_distrib, dtype=tf.int32)  # np.random.choice(range(num_distrib))
     matches, sparse_flow = sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow)
