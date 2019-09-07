@@ -7,11 +7,7 @@ from tensorflow.python.ops import control_flow_ops
 #   * https://github.com/ppliuboy/SelFlow/blob/master/data_augmentation.py
 #   * https://www.wouterbulten.nl/blog/tech/data-augmentation-using-tensorflow-data-dataset/#code
 #   * https://github.com/tensorflow/models/blob/master/research/slim/preprocessing/inception_preprocessing.py
-# All rights go to its rightful owner(s)
-# TODO: Adapt to fix the Cuda-broken Data Augmentation
-#   * see issues: https://github.com/sampepose/flownet2-tf/issues/14, https://github.com/sampepose/flownet2-tf/issues/30
-# Changes to apply:
-#   - Probably none or almost none (i.e.: test as is and fix any bugs that may occur)
+# All rights go to their rightful owner(s)
 
 
 def apply_with_random_selector(x, func, num_cases):

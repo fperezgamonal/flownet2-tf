@@ -15,6 +15,11 @@ from src.flowlib import flow_to_image
 _preprocessing_ops = tf.load_op_library(
     tf.resource_loader.get_path_to_datafile("./ops/build/preprocessing.so"))
 
+# Mean DeepMatching density for training/validation sets (in percentage % of the num_matches/image_area)
+fc_sparse_perc = 0.267129
+ft3d_sparse_perc = 0.249715
+sintel_sparse_perc = 0.222320
+
 
 # Code modified from the following repos:
 #   * https://github.com/ppliuboy/DDFlow/blob/master/datasets.py
@@ -29,7 +34,7 @@ def augment_image_pair(img1, img2, crop_h, crop_w):
 # This might be too verbose once we known the augmentations work as expected since the train/image_a, etc. are augmented
 # already and shown in TB by default
 def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop_w, add_summary=False, fast_mode=False,
-                       global_step=None, invalid_like=False, num_distrib=2):
+                       global_step=None, invalid_like=False, num_distrib=2, fixed_density=-1.0):
     # print_out = tf.cond(tf.equal(global_step, tf.cast(tf.constant(0), tf.int64)),
     #                     lambda: tf.print("global_step: {}".format(global_step)), lambda: tf.print("Not 0"))
     # tf.print("global_step: {}".format(global_step))
@@ -37,8 +42,19 @@ def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop
     # print("global_step.eval()".format(tf.train.get_global_step(graph=None).eval()))
     # num_distributions = 2  # only uniform or deep matching for now (as mixing invalid-like may be too different and
     # grid-like did not work as expected
-    matches, sparse_flow = sample_sparse_flow(matches, sparse_flow, gt_flow, invalid_like=invalid_like,
-                                              num_distrib=num_distrib)
+
+    # If num_distrib = -1, use uniform sampling instead with fixed_density which must be > 0
+    fixed_density_tensor = tf.convert_to_tensor(fixed_density)
+    num_distrib_tensor = tf.convert_to_tensor(num_distrib)
+    height, width, _ = gt_flow.get_shape().as_list()
+    matches, sparse_flow = tf.cond(tf.logical_and(tf.equal(num_distrib_tensor, tf.constant(-1)),
+                                                  tf.greater(fixed_density_tensor, tf.constant(0.0))),
+                                   lambda: sample_sparse_uniform(gt_flow=gt_flow, target_density=fixed_density_tensor,
+                                                                 height=height, width=width),
+                                   lambda: sample_sparse_flow(matches, sparse_flow, gt_flow, invalid_like=invalid_like,
+                                                              num_distrib=num_distrib))
+    # matches, sparse_flow = sample_sparse_flow(matches, sparse_flow, gt_flow, invalid_like=invalid_like,
+    #                                           num_distrib=num_distrib)
     # image, matches, sparse_flow, edges, gt_flow = random_crop([image, matches, sparse_flow, edges, gt_flow], crop_h,
     #                                                           crop_w)
     # Random flip of images and flow
@@ -361,28 +377,51 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                batch_size=None, data_augmentation=True, add_summary_augmentation=False, invalid_like=False,
                num_distrib=2):
 
+    num_distrib_tensor = tf.convert_to_tensor(num_distrib)
     if dataset_config_str.lower() == 'flying_things3d':
         dataset_config = FLYING_THINGS_3D_ALL_DATASET_CONFIG
+        train_dataset = 'ft3d'
+        val_dataset = 'ft3d'
     elif dataset_config_str.lower() == 'sintel_final':
         dataset_config = SINTEL_FINAL_ALL_DATASET_CONFIG
+        train_dataset = 'sintel'
+        val_dataset = 'sintel'
     elif dataset_config_str.lower() == 'sintel_all':  # clean + final
         dataset_config = SINTEL_ALL_DATASET_CONFIG
+        train_dataset = 'sintel'
+        val_dataset = 'sintel'
     elif dataset_config_str.lower() == 'fc_sintel':  # FC (train) + Sintel (validation)
         dataset_config = FC_TRAIN_SINTEL_VAL_DATASET_CONFIG
+        train_dataset = 'fc'
+        val_dataset = 'sintel'
     elif dataset_config_str.lower() == 'ft3d_sintel':  # FT3D (train) + Sintel (validation)
         dataset_config = FT3D_TRAIN_SINTEL_VAL_DATASET_CONFIG
+        train_dataset = 'ft3d'
+        val_dataset = 'sintel'
     elif dataset_config_str.lower() == 'fc_mini':
         dataset_config = FLYING_CHAIRS_MINI_DATASET_CONFIG
+        train_dataset = 'fc'
+        val_dataset = 'fc'
     elif dataset_config_str.lower() == 'ft3d_mini':
         dataset_config = FLYING_THINGS_3D_MINI_DATASET_CONFIG
+        train_dataset = 'ft3d'
+        val_dataset = 'ft3d'
     elif dataset_config_str.lower() == 'sintel_mini':
         dataset_config = SINTEL_MINI_DATASET_CONFIG
+        train_dataset = 'sintel'
+        val_dataset = 'sintel'
     elif dataset_config_str.lower() == 'fc_sintel_mini':
         dataset_config = FC_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG
+        train_dataset = 'fc'
+        val_dataset = 'sintel'
     elif dataset_config_str.lower() == 'ft3d_sintel_mini':
         dataset_config = FT3D_TRAIN_SINTEL_VAL_MINI_DATASET_CONFIG
+        train_dataset = 'ft3d'
+        val_dataset = 'sintel'
     else:  # flying_chairs
         dataset_config = FLYING_CHAIRS_ALL_DATASET_CONFIG
+        train_dataset = 'fc'
+        val_dataset = 'fc'
 
     if batch_size is not None and batch_size > 0:
         print("Batch size changed from training_schedules.py default '{}' to '{}'".format(
@@ -428,12 +467,33 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
         # Data Augmentation (SelFlow functions work on a 'standard' 3D-array (still not batched) => (h, w, ch)
         if input_type == 'image_matches':
             if data_augmentation and split_name == 'train':
+                if train_dataset.lower() == 'sintel':
+                    target_density = sintel_sparse_perc
+                elif train_dataset.lower() == 'ft3d':
+                    target_density = ft3d_sparse_perc
+                else:  # FC
+                    target_density = fc_sparse_perc
+
                 print("(image_matches) Applying data augmentation...")  # temporally to debug
                 image_a, matches_a, sparse_flow, edges_a, flow = augment_all_interp(
                     image_a, matches_a, sparse_flow, edges_a, flow, crop_h=crop[0], crop_w=crop[1],
                     add_summary=add_summary_augmentation, fast_mode=False, global_step=global_step,
-                    invalid_like=invalid_like, num_distrib=num_distrib)
+                    invalid_like=invalid_like, num_distrib=num_distrib, fixed_density=target_density)
+            else:
+                if val_dataset.lower() == 'fc':
+                    target_density = fc_sparse_perc
+                elif val_dataset.lower() == 'ft3d':
+                    target_density = ft3d_sparse_perc
+                else:  # Sintel
+                    target_density = sintel_sparse_perc
 
+                # If num_distrib=-1, sample uniformly instead of using DM matches
+                height, width, _ = flow.get_shape().as_list()
+                matches_a, sparse_flow = tf.cond(tf.equal(num_distrib_tensor, tf.constant(-1)),
+                                                 lambda: sample_sparse_uniform(gt_flow=flow,
+                                                                               target_density=target_density,
+                                                                               height=height, width=width),
+                                                 lambda: return_identity(matches_a, sparse_flow))
             # Add extra 'batching' dimension
             image_bs = None
             image_as, matches_as, sparse_flows, edges_as, flows = map(lambda x: tf.expand_dims(x, 0),
