@@ -356,6 +356,7 @@ def random_perturbation_dm_matches(dm_matches, dm_flow, density):
 # Careful, TB subsamples images when showing smaller image, click on it to check original size (binary images change
 # drastically
 def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
+    print("sample_sparse_grid_like")
     # Important: matches is already normalised to [0, 1]
     num_samples = tf.multiply(tf.multiply(tf.divide(target_density, 100.0), height), width)
     aspect_ratio = tf.divide(width, height)
@@ -418,6 +419,7 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
 
 
 def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
+    print("sample_sparse_uniform")
     p_fill = tf.divide(target_density, 100.0)
     samples = tf.multinomial(tf.log([[1 - p_fill, p_fill]]), height * width, output_dtype=tf.int32)  # note log-prob
     sampling_mask = tf.reshape(samples, (height, width))
@@ -431,6 +433,7 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
 
 # Functions to sample ground truth flow with different density and probability distribution
 def sample_sparse_invalid_like(gt_flow, target_density=75, height=384, width=512):
+    print("sample_sparse_invalid_like")
     # Important: matches is already normalised to [0, 1], only use those values
     rand_offset_h, rand_offset_w, crop_h, crop_w = get_random_offset_and_crop((height, width), target_density)
 
@@ -515,9 +518,11 @@ def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=(4, 2), num_dist
     density = get_sampling_density(dense_or_sparse, num_ranges=num_ranges)
     tf.summary.scalar('debug/density', density)
 
-    invalid_like_tensor = tf.cond(tf.greater(invalid_like, tf.constant(0)))
+    invalid_like_tensor = tf.cond(tf.greater(tf.convert_to_tensor(invalid_like), tf.constant(0)))
     # Select a distribution (random uniform, invalid like or grid like with holes
-    distrib_id = tf.cond(tf.equal(tf.constant(invalid_like_tensor), tf.constant(True)), lambda: tf.constant(2),
+    distrib_id = tf.cond(tf.equal(tf.constant(invalid_like_tensor), tf.constant(True)),
+                         # lambda: tf.constant(2),
+                         lambda: tf.random_uniform([], minval=2, maxval=3, dtype=tf.int32),  # tf.constant(2)
                          lambda: tf.random_uniform([], maxval=num_distrib, dtype=tf.int32))
     # distrib_id = tf.case(
     #     {
