@@ -72,7 +72,7 @@ def distort_colour(image, num_permutations=4):
                          'lower_contrast': 0.2,  # in flownet is [-0.8, 0.4] for a range of [-1, 1]?
                          'upper_contrast': 1.4}
 
-    # colour_id = tf.random_uniform([], maxval=num_permutations, dtype=tf.int32)
+    colour_id = tf.random_uniform([], maxval=num_permutations, dtype=tf.int32)
     # image = tf.switch_case(colour_id, branch_fns={
     #     0: lambda: distort_colour_zero(image, dist_params=distortion_params),
     #     1: lambda: distort_colour_one(image, dist_params=distortion_params),
