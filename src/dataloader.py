@@ -443,11 +443,9 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
         if input_type == 'image_matches':
             image_b = None
             image_a, matches_a, sparse_flow, edges_a, gt_flow = data_provider.get(['image_a', 'matches_a',
-                                                                                                  'sparse_flow',
-                                                                                                  'edges_a', 'flow'])
+                                                                                   'sparse_flow', 'edges_a', 'flow'])
 
-            image_a_og, matches_a_og, edges_a_og = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a, matches_a,
-                                                                                                edges_a])
+            image_a, matches_a, edges_a = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a, matches_a, edges_a])
         else:
             matches_a = None
             sparse_flow = None
