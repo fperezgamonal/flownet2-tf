@@ -415,7 +415,7 @@ def sample_sparse_grid_like(gt_flow, target_density=75, height=384, width=512):
     # sparse_flow = tf.reshape(sparse_flow, gt_flow.shape)
     sparse_flow = mask_to_sparse_flow(sampling_mask, gt_flow)
 
-    return matches, sparse_flow
+    return tf.cast(matches, dtype=tf.float32), tf.cast(sparse_flow, dtype=tf.float32)
 
 
 def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
@@ -428,7 +428,7 @@ def sample_sparse_uniform(gt_flow, target_density=75, height=384, width=512):
     # Generate sparse flow from sampling mask (matches but without extra dimension and dtype=tf.int32)
     sparse_flow = mask_to_sparse_flow(sampling_mask, gt_flow)
 
-    return matches, sparse_flow
+    return tf.cast(matches, dtype=tf.float32), tf.cast(sparse_flow, dtype=tf.float32)
 
 
 # Functions to sample ground truth flow with different density and probability distribution
@@ -462,7 +462,7 @@ def sample_sparse_invalid_like(gt_flow, target_density=75, height=384, width=512
     # sparse_flow = tf.reshape(sparse_flow, gt_flow.shape)
     sparse_flow = mask_to_sparse_flow(sampling_mask, gt_flow)
 
-    return matches, sparse_flow
+    return tf.cast(matches, dtype=tf.float32), tf.cast(sparse_flow, dtype=tf.float32)
 
 
 # Comments:
