@@ -442,25 +442,25 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
 
         if input_type == 'image_matches':
             image_b = None
-            image_a_og, matches_a_og, sparse_flow_og, edges_a_og, gt_flow_og = data_provider.get(['image_a', 'matches_a',
+            image_a, matches_a, sparse_flow, edges_a, gt_flow = data_provider.get(['image_a', 'matches_a',
                                                                                                   'sparse_flow',
                                                                                                   'edges_a', 'flow'])
 
-            image_a_og, matches_a_og, edges_a_og = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a_og, matches_a_og,
-                                                                                                edges_a_og])
+            image_a_og, matches_a_og, edges_a_og = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a, matches_a,
+                                                                                                edges_a])
         else:
-            matches_a_og = None
-            sparse_flow_og = None
-            edges_a_og = None
-            image_a_og, image_b_og, gt_flow_og = data_provider.get(['image_a', 'image_b', 'flow'])
-            image_a_og, image_b_og = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a_og, image_b_og])
+            matches_a = None
+            sparse_flow = None
+            edges_a = None
+            image_a, image_b, gt_flow = data_provider.get(['image_a', 'image_b', 'flow'])
+            image_a, image_b = map(lambda x: tf.cast(x, dtype=tf.float32), [image_a, image_b])
 
         if dataset_config['PREPROCESS']['scale']:  # if record data has not been scaled, 'scale' should be True
-            image_a_og = image_a_og / 255.0
+            image_a = image_a / 255.0
             if input_type == 'image_matches':  # Note: we assume edges_a to be in the range [0,1] in both cases
-                matches_a_og = matches_a_og / 255.0
+                matches_a = matches_a / 255.0
             else:
-                image_b_og = image_b_og / 255.0
+                image_b = image_b / 255.0
 
         if data_augmentation and split_name == 'train':
             crop = [dataset_config['PREPROCESS']['crop_height'], dataset_config['PREPROCESS']['crop_width']]
@@ -477,7 +477,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
 
                 print("(image_matches) Applying data augmentation...")  # temporally to debug
                 image_a, matches_a, sparse_flow, edges_a, gt_flow = augment_all_interp(
-                    image_a_og, matches_a_og, sparse_flow_og, edges_a_og, gt_flow_og, crop_h=crop[0], crop_w=crop[1],
+                    image_a, matches_a, sparse_flow, edges_a, gt_flow, crop_h=crop[0], crop_w=crop[1],
                     add_summary=add_summary_augmentation, fast_mode=False, global_step=global_step,
                     invalid_like=invalid_like, num_distrib=num_distrib, fixed_density=target_density)
             else:
@@ -504,7 +504,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
         else:
             if data_augmentation and split_name == 'train':
                 print("(image_pairs) Applying data augmentation...")  # temporally to debug
-                image_a, image_b, gt_flow = augment_all_estimation(image_a_og, image_b_og, gt_flow_og, crop_h=crop[0],
+                image_a, image_b, gt_flow = augment_all_estimation(image_a, image_b, gt_flow, crop_h=crop[0],
                                                                    crop_w=crop[1], add_summary=add_summary_augmentation,
                                                                    fast_mode=False)
             matches_as = None
