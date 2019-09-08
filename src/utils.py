@@ -313,7 +313,7 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
             # sum_epe_flatten_filtered = tf.reduce_sum(epe_flatten_filtered)
             # Adding extra cost is like instead of multiplying epe * 1 we multiply it by (1+lambda) ONLY for hard pixels
             # epe_and_hfem = epe_flatten_filtered + lambda * epe_flatten_filtered = (1 + lambda) * epe_flatten_filtered
-            epe_and_hfem = tf.multiply(tf.add(1, lambda_w), epe_flatten_filtered)
+            epe_and_hfem = tf.multiply(tf.add(1.0, lambda_w), epe_flatten_filtered)
             num_hard_pixels = tf.cast(tf.size(epe_flatten_filtered), tf.float32)
             epe_and_hfem_sum = tf.reduce_sum(epe_and_hfem)
             aepe_with_hfem = tf.divide(epe_and_hfem_sum, num_hard_pixels)
