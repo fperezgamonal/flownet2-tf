@@ -538,8 +538,6 @@ def calc_variational_inference_map(imgA_filename, imgB_filename, flo_filename, o
     """
     shell_command = '{0} {1} {2} {3} {4} {5}'.format('./src/SrcVariational/variational_main', imgA_filename,
                                                      imgB_filename, flo_filename, out_filename, dataset)
-    print("cmd: {}".format(shell_command))
-    print("cwd: {}".format(os.getcwd()))
     # shell_command = './SrcVariational/variational_main ' + imgA_filename + ' ' + imgB_filename + ' ' + flo_filename + \
     #                 ' ' + out_filename + ' -' + dataset
     exit_code = os.system(shell_command)
