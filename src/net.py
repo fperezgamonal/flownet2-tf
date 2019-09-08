@@ -860,7 +860,6 @@ class Net(object):
 
                 # If needed, run variational refinement
                 if variational_refinement and path_input_b is not None:
-                    print("Variational post-processing...")
                     tmp_folder = os.path.join(os.getcwd(), 'tmp_refinement')
                     if not os.path.isdir(tmp_folder):
                         os.makedirs(tmp_folder)
