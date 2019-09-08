@@ -744,7 +744,7 @@ class Net(object):
                     occ_mask_0 = imread(path_inputs[3])
 
                 # img1 + matches + sparse + gt flow + img2 (for variational_refinement)
-                elif len(path_inputs) == 5 and input_type == 'image_matches' and variational_refinement:
+                elif len(path_inputs) == 5 and input_type == 'image_matches':
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
                     path_input_b = path_inputs[-1]
@@ -779,8 +779,7 @@ class Net(object):
                     occ_mask_0 = imread(path_inputs[4])
 
                 # img1 + mtch + spflow + gt_flow + occ_mask + img2 (variational_refinement)
-                elif len(path_inputs) == 6 and input_type == 'image_matches' and variational_refinement and\
-                        compute_metrics:
+                elif len(path_inputs) == 6 and input_type == 'image_matches' and compute_metrics:
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
                     path_input_b = path_inputs[-1]
@@ -801,8 +800,7 @@ class Net(object):
                     inv_mask_0 = imread(path_inputs[5])
 
                 # img1 + mtch + spflow + gt_flow + occ_mask + inv_mask + img2 (variational_refinement)
-                elif len(path_inputs) == 7 and input_type == 'image_matches' and variational_refinement and \
-                        compute_metrics:
+                elif len(path_inputs) == 7 and input_type == 'image_matches' and compute_metrics:
                     frame_0 = imread(path_inputs[0])
                     frame_1 = None
                     path_input_b = path_inputs[-1]
