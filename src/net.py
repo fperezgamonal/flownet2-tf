@@ -689,9 +689,9 @@ class Net(object):
                 # Read + pre-process files
                 # Each line is split into a list with N elements (separator: blank space (" "))
                 path_inputs = path_list[img_idx][:-1].split(' ')  # remove \n at the end of the line!
-                assert 2 <= len(path_inputs) <= 6, (
+                assert 2 <= len(path_inputs) <= 7, (
                     'More paths than expected. Expected: I1+I2 (2), I1+MM+SF(3), I1+MM+SF+GTF(4),'
-                    '  I1+MM+SF+GT+OCC_MSK+INVMASK(5 to 6)')
+                    '  I1+MM+SF+GT+OCC_MSK+INVMASK(5 to 6) optionally + 1extra if variational_refinement')
 
                 if len(path_inputs) == 2 and input_type == 'image_pairs':  # Only image1 + image2 have been provided
                     frame_0 = imread(path_inputs[0])
