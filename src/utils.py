@@ -287,8 +287,10 @@ def average_endpoint_error_hfem(labels, predictions, add_hfem='', lambda_w=2., p
             HM_mask = tf.scatter_update(HM_mask, epe_top_k_idxs, ones)
 
             # 2.3. Create term for "hard" pixels, 0 everywhere but in top_k_idxs and then multiplied by lambda
-            epe_hfem = tf.Variable(tf.zeros(tf.shape(epe_flatten)), trainable=False)
+            zeros = lambda: tf.zeros(tf.shape(epe_flatten))
+            epe_hfem = tf.Variable(initial_value=zeros, trainable=False)
             lambda_epe = tf.multiply(lambda_w, epe_flatten)
+
             lambda_epe_filtered = tf.Variable(tf.cast(tf.boolean_mask(lambda_epe, HM_mask), dtype=tf.float32),
                                               trainable=False)
             epe_hfem = tf.scatter_update(epe_hfem, epe_top_k_idxs, lambda_epe_filtered)
