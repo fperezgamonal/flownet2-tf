@@ -483,7 +483,7 @@ class Net(object):
 
     def test(self, checkpoint, input_a_path, input_b_path=None, matches_a_path=None, sparse_flow_path=None,
              out_path='./', input_type='image_pairs', save_image=True, save_flo=True, compute_metrics=True,
-             gt_flow=None, occ_mask=None, inv_mask=None, variational_refinement=False):
+             gt_flow=None, occ_mask=None, inv_mask=None, new_par_folder=None, variational_refinement=False):
         """
 
         :param checkpoint:
@@ -499,6 +499,7 @@ class Net(object):
         :param gt_flow:
         :param occ_mask:
         :param inv_mask:
+        :param new_par_folder:
         :param variational_refinement:
         :return:
         """
@@ -566,6 +567,8 @@ class Net(object):
 
             # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
             unique_name = os.path.basename(input_a_path)[:-4]
+            parent_folder_name = input_a_path.split('/')[-2] if new_par_folder is None else new_par_folder
+            out_path_complete = os.path.join(out_path, parent_folder_name)
 
             if compute_metrics and gt_flow is not None:
                 gt_flow = read_flow(gt_flow)
@@ -576,18 +579,18 @@ class Net(object):
                 max_flow = -1
 
             if save_image or save_flo:
-                if not os.path.isdir(out_path):
-                    os.makedirs(out_path)
+                if not os.path.isdir(out_path_complete):
+                    os.makedirs(out_path_complete)
 
             if save_image:  # save normalised and unormalised versions (awful results may be clipped to some colour)
                 flow_img = flow_to_image(pred_flow)
                 flow_img_norm = flow_to_image(pred_flow, maxflow=max_flow)
-                full_out_path = os.path.join(out_path, unique_name + '_viz.png')
+                full_out_path = os.path.join(out_path_complete, unique_name + '_viz.png')
                 imsave(full_out_path, flow_img)
                 imsave(full_out_path.replace('.png', '_norm_gt_max_motion.png'), flow_img_norm)
 
             if save_flo:
-                full_out_path = os.path.join(out_path, unique_name + '_flow.flo')
+                full_out_path = os.path.join(out_path_complete, unique_name + '_flow.flo')
                 write_flow(pred_flow, full_out_path)
 
             if compute_metrics and gt_flow is not None:
