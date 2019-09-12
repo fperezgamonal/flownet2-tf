@@ -1,3 +1,13 @@
+## FlowNet2 (TensorFlow) adapted for Optical Flow Interpolation
+This fork stems from the work done by @sampepose in [flownet2-tf](https://github.com/sampepose/flownet2-tf), and adapts the FlowNetS architecture for the problem of Optical Flow Interpolation.
+In that regard, several changes have been performed in order to add validation via TF-Slim, new training policies (CLR and One Cycle), new optimisers (AdamW) and other utilities (functions to compute optical flow error metrics, etc.). More details will be provided in the near-future.
+This work has been done in the framework of a MsC in Computer Vision thesis. We will link to the report as soon as it is available to the public.
+
+### TODO: shortly we will update the scripts used for training, testing and learning rate range tests
+These are vert handy to change the parameters in better-structured shell scripts instead of having to type them in the command line for each experiment.
+
+
+What follows is the original repository README.md with instructions on installation and basic usage (*this will be deleted* once we have a detailed README.md that considers the changes briefly mentioned above).
 ## FlowNet2 (TensorFlow)
 
 This repo contains FlowNet2[1] for TensorFlow. It includes FlowNetC, S, CS, CSS, CSS-ft-sd, SD, and 2.
