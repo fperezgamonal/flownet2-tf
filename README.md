@@ -1,3 +1,4 @@
+### TODO: just presented the MsC thesis, link to the thesis and helpful scripts + proper README.md incoming the following weeks!
 ## FlowNet2 (TensorFlow) adapted for Optical Flow Interpolation
 This fork stems from the work done by @sampepose in [flownet2-tf](https://github.com/sampepose/flownet2-tf), and adapts the FlowNetS architecture for the problem of Optical Flow Interpolation.
 In that regard, several changes have been performed in order to add validation via TF-Slim, new training policies (CLR and One Cycle), new optimisers (AdamW) and other utilities (functions to compute optical flow error metrics, etc.). More details will be provided in the near-future.
