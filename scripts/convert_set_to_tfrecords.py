@@ -201,19 +201,19 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                 target_height = 436
                 target_width = 1024
                 pass_dir = 'final'
-                image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i+1))
-                image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i+2))
-                flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i+1))
-                edges_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}_edges.dat'.format(i + 1))
+                image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+1))
+                image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i+2))
+                flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.flo'.format(i+1))
+                edges_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_edges.dat'.format(i + 1))
                 if sparse_from_gt is None:  # use DM/SIFT seeds directly instead of sampling GT flow
                     if matcher == 'sift':
-                        matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}_sift_mask.png'.format(i+1))
+                        matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_sift_mask.png'.format(i+1))
                         sparse_flow_path = os.path.join(data_dir, pass_dir,
-                                                        'frame_{0:05d}_sift_sparse_flow.flo'.format(i+1))
+                                                        'frame_{0:04d}_sift_sparse_flow.flo'.format(i+1))
                     elif matcher == 'deepmatching':
-                        matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}_dm_mask.png'.format(i+1))
+                        matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_dm_mask.png'.format(i+1))
                         sparse_flow_path = os.path.join(data_dir, pass_dir,
-                                                        'frame_{0:05d}_dm_sparse_flow.flo'.format(i+1))
+                                                        'frame_{0:04d}_dm_sparse_flow.flo'.format(i+1))
                     else:
                         raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
                 else:
@@ -247,21 +247,21 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     target_height = 436
                     target_width = 1024
                     pass_dir = 'final'
-                    image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 1))
-                    image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 2))
-                    flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i + 1))
-                    edges_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}_edges.dat'.format(i + 1))
+                    image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i + 1))
+                    image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i + 2))
+                    flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.flo'.format(i + 1))
+                    edges_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_edges.dat'.format(i + 1))
                     if sparse_from_gt is None:  # use DM/SIFT seeds directly instead of sampling GT flow
                         if matcher == 'sift':
                             matches_a_path = os.path.join(data_dir, pass_dir,
-                                                          'frame_{0:05d}_sift_mask.png'.format(i + 1))
+                                                          'frame_{0:04d}_sift_mask.png'.format(i + 1))
                             sparse_flow_path = os.path.join(data_dir, pass_dir,
-                                                            'frame_{0:05d}_sift_sparse_flow.flo'.format(i + 1))
+                                                            'frame_{0:04d}_sift_sparse_flow.flo'.format(i + 1))
                         elif matcher == 'deepmatching':
                             matches_a_path = os.path.join(data_dir, pass_dir,
-                                                          'frame_{0:05d}_dm_mask.png'.format(i + 1))
+                                                          'frame_{0:04d}_dm_mask.png'.format(i + 1))
                             sparse_flow_path = os.path.join(data_dir, pass_dir,
-                                                            'frame_{0:05d}_dm_sparse_flow.flo'.format(i + 1))
+                                                            'frame_{0:04d}_dm_sparse_flow.flo'.format(i + 1))
                         else:
                             raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
                     else:
@@ -296,21 +296,21 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     target_height = 436
                     target_width = 1024
                     pass_dir = 'final'
-                    image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 1))
-                    image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.png'.format(i + 2))
-                    flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}.flo'.format(i + 1))
-                    edges_path = os.path.join(data_dir, pass_dir, 'frame_{0:05d}_edges.dat'.format(i + 1))
+                    image_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i + 1))
+                    image_b_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.png'.format(i + 2))
+                    flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}.flo'.format(i + 1))
+                    edges_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_edges.dat'.format(i + 1))
                     if sparse_from_gt is None:  # use DM/SIFT seeds directly instead of sampling GT flow
                         if matcher == 'sift':
                             matches_a_path = os.path.join(data_dir, pass_dir,
-                                                          'frame_{0:05d}_sift_mask.png'.format(i + 1))
+                                                          'frame_{0:04d}_sift_mask.png'.format(i + 1))
                             sparse_flow_path = os.path.join(data_dir, pass_dir,
-                                                            'frame_{0:05d}_sift_sparse_flow.flo'.format(i + 1))
+                                                            'frame_{0:04d}_sift_sparse_flow.flo'.format(i + 1))
                         elif matcher == 'deepmatching':
                             matches_a_path = os.path.join(data_dir, pass_dir,
-                                                          'frame_{0:05d}_dm_mask.png'.format(i + 1))
+                                                          'frame_{0:04d}_dm_mask.png'.format(i + 1))
                             sparse_flow_path = os.path.join(data_dir, pass_dir,
-                                                            'frame_{0:05d}_dm_sparse_flow.flo'.format(i + 1))
+                                                            'frame_{0:04d}_dm_sparse_flow.flo'.format(i + 1))
                         else:
                             raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
                     else:
@@ -569,6 +569,11 @@ def main():
         train_name = 'sintel_train_all'
         val_name = 'sintel_val_all'
         set_name = 'sintel_all'
+    elif FLAGS.dataset.lower() == 'sintel_all_perturbated':
+        print("Chosen dataset is 'MPI-Sintel (final + clean pass) - perturbed (train + val)'")
+        train_name = 'sintel_train_perturbated_all'
+        val_name = 'sintel_val_perturbated_all'
+        set_name = 'sintel_all_perturbated'
     elif FLAGS.dataset.lower() == 'fc_sintel':
         print("Chosen dataset is 'Flying Chairs (train) + MPI-Sintel (Validation)'")
         train_name = 'fc_sintel_train'
