@@ -540,7 +540,7 @@ SINTEL_ALL_DATASET_CONFIG = {
         'flow': 'A 2-channel optical flow field.',
     },
     'SIZES': {
-        'train': 1815,
+        'train': 1816,
         'valid': 266,
     },
     'BATCH_SIZE': 4,
