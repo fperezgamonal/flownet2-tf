@@ -777,6 +777,7 @@ class Net(object):
                     sparse_flow_0 = read_flow(path_inputs[2])
                     gt_flow_0 = read_flow(path_inputs[3])
                     occ_mask_0 = imread(path_inputs[4])
+                    inv_mask_0 = None
 
                 # img1 + mtch + spflow + gt_flow + occ_mask + img2 (variational_refinement)
                 elif len(path_inputs) == 6 and input_type == 'image_matches' and compute_metrics:
@@ -787,6 +788,7 @@ class Net(object):
                     sparse_flow_0 = read_flow(path_inputs[2])
                     gt_flow_0 = read_flow(path_inputs[3])
                     occ_mask_0 = imread(path_inputs[4])
+                    inv_mask_0 = None
 
                 # img1 + mtch + spflow + gt_flow + occ_mask + inv_mask
                 elif len(path_inputs) == 6 and input_type == 'image_matches' and compute_metrics:
