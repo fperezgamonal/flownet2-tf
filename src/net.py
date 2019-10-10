@@ -542,12 +542,16 @@ class Net(object):
         predictions = self.model(inputs, training_schedule, trainable=False, is_training=False)
         pred_flow = predictions['flow']
 
+        # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
+        parent_folder_name = input_a_path[0].split('/')[-2] if new_par_folder is None else new_par_folder
+        unique_name = os.path.basename(input_a_path)[:-4]
+        out_path_complete = os.path.join(out_path, parent_folder_name)
+
         # Create and open logfile (if requested)
         if log_metrics2file:
             basefile = os.path.basename(input_a_path)
             logfile = basefile.replace('.txt', '_metrics.log')
-            logfile_full = os.path.join(out_path, logfile) if new_par_folder is None else os.path.join(
-                out_path, new_par_folder, logfile)
+            logfile_full = os.path.join(out_path_complete, logfile)
             if not os.path.isdir(os.path.dirname(logfile_full)):
                 os.makedirs(os.path.dirname(logfile_full))
             # Open file (once)
@@ -585,11 +589,6 @@ class Net(object):
                 # Read output flow back in
                 pred_flow = read_flow(out_flow_var)
 
-            # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
-            parent_folder_name = input_a_path[0].split('/')[-2] if new_par_folder is None else new_par_folder
-            unique_name = os.path.basename(input_a_path)[:-4]
-            out_path_complete = os.path.join(out_path, parent_folder_name)
-
             if compute_metrics and gt_flow is not None:
                 gt_flow = read_flow(gt_flow)
                 # Normalise predicted flow image by the maximum of the gt_flow so they can easily be compared
@@ -624,6 +623,8 @@ class Net(object):
                 final_str_formated = get_metrics(metrics, flow_fname=unique_name)
                 if log_metrics2file:
                     logfile.write(final_str_formated)
+                    # Close logfile after writting to it
+                    logfile.close()
                 else:  # print to stdout
                     print(final_str_formated)
 
