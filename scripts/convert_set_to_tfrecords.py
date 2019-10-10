@@ -16,9 +16,9 @@ VAL = 2
 DEBUG = False  # used to deal with "corrupted" TFrecords (see commit #607542f comments for related issues)
 
 # DM sparsness (in % of not 0 pixels in sparse mask) computed in FC, FT3D and Sintel (training parts)
-fc_sparse_perc = 0.267129
-ft3d_sparse_perc = 0.249715
-sintel_sparse_perc = 0.222320
+fc_sparse_perc = 0.3151703147714727  # 0.267129
+ft3d_sparse_perc = 0.261954700612108  # 0.249715
+sintel_sparse_perc = 0.34161269749336826  # 0.222320
 
 
 # TODO: this is very, very slow for big datasets, try using shards instead to divide work among all threads
