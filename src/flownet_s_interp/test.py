@@ -43,6 +43,8 @@ def main():
             occ_mask=FLAGS.occ_mask,
             inv_mask=FLAGS.inv_mask,
             variational_refinement=FLAGS.variational_refinement,
+            log_metrics2file=FLAGS.log_metrics2file,
+            new_par_folder=FLAGS.new_par_folder,
         )
     elif os.path.isfile(FLAGS.input_a) and FLAGS.input_a[-4:] == '.txt':  # txt with image list (batch-like)
         print("Inferring on 'batch' mode...")
