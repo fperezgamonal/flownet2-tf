@@ -483,7 +483,8 @@ class Net(object):
 
     def test(self, checkpoint, input_a_path, input_b_path=None, matches_a_path=None, sparse_flow_path=None,
              out_path='./', input_type='image_pairs', save_image=True, save_flo=True, compute_metrics=True,
-             gt_flow=None, occ_mask=None, inv_mask=None, variational_refinement=False):
+             gt_flow=None, occ_mask=None, inv_mask=None, variational_refinement=False, new_par_folder=None,
+             log_metrics2file=False):
         """
 
         :param checkpoint:
@@ -500,6 +501,8 @@ class Net(object):
         :param occ_mask:
         :param inv_mask:
         :param variational_refinement:
+        :param new_par_folder:
+        :param log_metrics2file:
         :return:
         """
         input_a = imread(input_a_path)
@@ -518,7 +521,7 @@ class Net(object):
                                                                               matches_a, sparse_flow)
 
         # TODO: This is a hack, we should get rid of this
-        # the author probably means that it should be chosen as an input parameter not hardcoded!
+        # the author probably means that it should be chosen as an input parameter, not hardcoded!
         training_schedule = LONG_SCHEDULE
 
         if sparse_flow_path is None:
@@ -538,6 +541,24 @@ class Net(object):
             }
         predictions = self.model(inputs, training_schedule, trainable=False, is_training=False)
         pred_flow = predictions['flow']
+
+        # Create and open logfile (if requested)
+        if log_metrics2file:
+            basefile = os.path.basename(input_a_path)
+            logfile = basefile.replace('.txt', '_metrics.log')
+            logfile_full = os.path.join(out_path, logfile) if new_par_folder is None else os.path.join(
+                out_path, new_par_folder, logfile)
+            if not os.path.isdir(os.path.dirname(logfile_full)):
+                os.makedirs(os.path.dirname(logfile_full))
+            # Open file (once)
+            logfile = open(logfile_full, 'w')
+            if new_par_folder is not None:
+                now = datetime.datetime.now()
+                date_now = now.strftime('%d-%m-%y_%H-%M-%S')
+                # Record header for the file detailing 'experiment' string (new_par_folder)
+                header_str = "Today is {}\nOpening and logging experiment '{}'\n Written to file: '{}'\n".format(
+                    date_now, new_par_folder, logfile_full)
+                logfile.write(header_str)
 
         saver = tf.train.Saver()
 
@@ -565,7 +586,9 @@ class Net(object):
                 pred_flow = read_flow(out_flow_var)
 
             # unique_name = 'flow-' + str(uuid.uuid4())  completely random and not useful to evaluate metrics after!
+            parent_folder_name = input_a_path[0].split('/')[-2] if new_par_folder is None else new_par_folder
             unique_name = os.path.basename(input_a_path)[:-4]
+            out_path_complete = os.path.join(out_path, parent_folder_name)
 
             if compute_metrics and gt_flow is not None:
                 gt_flow = read_flow(gt_flow)
@@ -582,12 +605,12 @@ class Net(object):
             if save_image:  # save normalised and unormalised versions (awful results may be clipped to some colour)
                 flow_img = flow_to_image(pred_flow)
                 flow_img_norm = flow_to_image(pred_flow, maxflow=max_flow)
-                full_out_path = os.path.join(out_path, unique_name + '_viz.png')
+                full_out_path = os.path.join(out_path_complete, unique_name + '_viz.png')
                 imsave(full_out_path, flow_img)
                 imsave(full_out_path.replace('.png', '_norm_gt_max_motion.png'), flow_img_norm)
 
             if save_flo:
-                full_out_path = os.path.join(out_path, unique_name + '_flow.flo')
+                full_out_path = os.path.join(out_path_complete, unique_name + '_flow.flo')
                 write_flow(pred_flow, full_out_path)
 
             if compute_metrics and gt_flow is not None:
@@ -599,12 +622,15 @@ class Net(object):
                 # Compute all metrics
                 metrics, _, _, _, _ = compute_all_metrics(pred_flow, gt_flow, occ_mask=occ_mask, inv_mask=inv_mask)
                 final_str_formated = get_metrics(metrics, flow_fname=unique_name)
-                print(final_str_formated)
+                if log_metrics2file:
+                    logfile.write(final_str_formated)
+                else:  # print to stdout
+                    print(final_str_formated)
 
     # TODO: double-check the number of columns of the txt file to ensure it is properly formatted
     # Each line will define a set of inputs. By doing so, we reduce complexity and avoid errors due to "forced" sorting
     def test_batch(self, checkpoint, image_paths, out_path, input_type='image_pairs', save_image=True, save_flo=True,
-                   compute_metrics=True, accumulate_metrics=False, log_metrics2file=False, width=1024, height=436,
+                   compute_metrics=True, accumulate_metrics=False, log_metrics2file=True, width=1024, height=436,
                    new_par_folder=None, variational_refinement=False):
         """
         Run inference on a set of images defined in .txt files
