@@ -599,8 +599,8 @@ class Net(object):
                 max_flow = -1
 
             if save_image or save_flo:
-                if not os.path.isdir(out_path):
-                    os.makedirs(out_path)
+                if not os.path.isdir(out_path_complete):
+                    os.makedirs(out_path_complete)
 
             if save_image:  # save normalised and unormalised versions (awful results may be clipped to some colour)
                 flow_img = flow_to_image(pred_flow)
