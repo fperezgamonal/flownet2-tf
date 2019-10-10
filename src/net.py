@@ -546,12 +546,13 @@ class Net(object):
         parent_folder_name = input_a_path[0].split('/')[-2] if new_par_folder is None else new_par_folder
         unique_name = os.path.basename(input_a_path)[:-4]
         out_path_complete = os.path.join(out_path, parent_folder_name)
-
+        print("out_path_complete: '{}'".format(out_path_complete))
         # Create and open logfile (if requested)
         if log_metrics2file:
             basefile = os.path.basename(input_a_path)
             logfile = basefile.replace('.txt', '_metrics.log')
             logfile_full = os.path.join(out_path_complete, logfile)
+            print("logfile_full: '{}'".format(logfile_full))
             if not os.path.isdir(os.path.dirname(logfile_full)):
                 os.makedirs(os.path.dirname(logfile_full))
             # Open file (once)
