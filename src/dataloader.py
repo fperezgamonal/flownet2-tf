@@ -15,9 +15,9 @@ _preprocessing_ops = tf.load_op_library(
     tf.resource_loader.get_path_to_datafile("./ops/build/preprocessing.so"))
 
 # Mean DeepMatching density for training/validation sets (in percentage % of the num_matches/image_area)
-fc_sparse_perc = 0.267129
-ft3d_sparse_perc = 0.249715
-sintel_sparse_perc = 0.222320
+fc_sparse_perc = 0.3151703147714727  # 0.267129
+ft3d_sparse_perc = 0.261954700612108  # 0.249715
+sintel_sparse_perc = 0.34161269749336826  # 0.222320
 
 
 # Code modified from the following repos:
@@ -33,7 +33,7 @@ def augment_image_pair(img1, img2, crop_h, crop_w):
 # This might be too verbose once we known the augmentations work as expected since the train/image_a, etc. are augmented
 # already and shown in TB by default
 def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop_w, add_summary=False, fast_mode=False,
-                       global_step=None, invalid_like=-1, num_distrib=2, fixed_density=-1.0):
+                       global_step=None, invalid_like=-1, num_distrib=2, fixed_density=-1.0, min_val=0):
     # print_out = tf.cond(tf.equal(global_step, tf.cast(tf.constant(0), tf.int64)),
     #                     lambda: tf.print("global_step: {}".format(global_step)), lambda: tf.print("Not 0"))
     # tf.print("global_step: {}".format(global_step))
@@ -52,7 +52,7 @@ def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop
     #                                lambda: sample_sparse_flow(matches, sparse_flow, gt_flow, invalid_like=invalid_like,
     #                                                           num_distrib=num_distrib))
     matches, sparse_flow = sample_sparse_flow(matches, sparse_flow, gt_flow, invalid_like=invalid_like,
-                                              num_distrib=num_distrib, fixed_density=fixed_density)
+                                              num_distrib=num_distrib, fixed_density=fixed_density, min_val=min_val)
     # image, matches, sparse_flow, edges, gt_flow = random_crop([image, matches, sparse_flow, edges, gt_flow], crop_h,
     #                                                           crop_w)
     # Random flip of images and flow
@@ -75,6 +75,15 @@ def augment_all_interp(image, matches, sparse_flow, edges, gt_flow, crop_h, crop
         # Flow to RGB representation
         gt_flow_img = tf.py_func(flow_to_image, [gt_flow], tf.uint8)
         tf.summary.image('data_augmentation/true_flow', tf.expand_dims(gt_flow_img, 0), max_outputs=1)
+
+    return image, matches, sparse_flow, edges, gt_flow
+
+
+def augment_all_interp_validation(image, matches, sparse_flow, edges, gt_flow, crop_h, crop_w, add_summary=False,
+                                  fast_mode=False, global_step=None, invalid_like=1, num_distrib=2, fixed_density=-1.0,
+                                  min_val=1):
+    matches, sparse_flow = sample_sparse_flow(matches, sparse_flow, gt_flow, invalid_like=invalid_like,
+                                              num_distrib=num_distrib, fixed_density=fixed_density, min_val=min_val)
 
     return image, matches, sparse_flow, edges, gt_flow
 
@@ -373,7 +382,7 @@ def _generate_coeff(param, discount_coeff=tf.constant(1.0), default_value=tf.con
 def load_batch(dataset_config_str, split_name, global_step=None, input_type='image_pairs', common_queue_capacity=64,
                common_queue_min=32, capacity_in_batches_train=4, capacity_in_batches_val=1, num_threads=8,
                batch_size=None, data_augmentation=True, add_summary_augmentation=False, invalid_like=-1,
-               num_distrib=2):
+               num_distrib=2, min_val=0):
 
     num_distrib_tensor = tf.convert_to_tensor(num_distrib)
     if dataset_config_str.lower() == 'flying_things3d':
@@ -464,19 +473,29 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
 
         # Data Augmentation (SelFlow functions work on a 'standard' 3D-array (still not batched) => (h, w, ch)
         if input_type == 'image_matches':
-            if data_augmentation and split_name == 'train':
-                if train_dataset.lower() == 'sintel':
+            if data_augmentation:
+                if split_name == 'train':
+                    if train_dataset.lower() == 'sintel':
+                        target_density = sintel_sparse_perc
+                    elif train_dataset.lower() == 'ft3d':
+                        target_density = ft3d_sparse_perc
+                    else:  # FC
+                        target_density = fc_sparse_perc
+                    print("(image_matches) Applying data augmentation...")  # temporally to debug
+                    image_a, matches_a, sparse_flow, edges_a, gt_flow = augment_all_interp(
+                        image_a, matches_a, sparse_flow, edges_a, gt_flow, crop_h=crop[0], crop_w=crop[1],
+                        add_summary=add_summary_augmentation, fast_mode=False, global_step=global_step,
+                        invalid_like=invalid_like, num_distrib=num_distrib, fixed_density=target_density,
+                        min_val=min_val)
+                else:
                     target_density = sintel_sparse_perc
-                elif train_dataset.lower() == 'ft3d':
-                    target_density = ft3d_sparse_perc
-                else:  # FC
-                    target_density = fc_sparse_perc
+                    print("(image_matches) Applying data augmentation (validation)...")  # temporally to debug
+                    image_a, matches_a, sparse_flow, edges_a, gt_flow = augment_all_interp_validation(
+                        image_a, matches_a, sparse_flow, edges_a, gt_flow, crop_h=crop[0], crop_w=crop[1],
+                        add_summary=add_summary_augmentation, fast_mode=False, global_step=global_step,
+                        invalid_like=invalid_like, num_distrib=num_distrib, fixed_density=target_density,
+                        min_val=min_val)
 
-                print("(image_matches) Applying data augmentation...")  # temporally to debug
-                image_a, matches_a, sparse_flow, edges_a, gt_flow = augment_all_interp(
-                    image_a, matches_a, sparse_flow, edges_a, gt_flow, crop_h=crop[0], crop_w=crop[1],
-                    add_summary=add_summary_augmentation, fast_mode=False, global_step=global_step,
-                    invalid_like=invalid_like, num_distrib=num_distrib, fixed_density=target_density)
             else:
                 if val_dataset.lower() == 'fc':
                     target_density = fc_sparse_perc
@@ -504,6 +523,7 @@ def load_batch(dataset_config_str, split_name, global_step=None, input_type='ima
                 image_a, image_b, gt_flow = augment_all_estimation(image_a, image_b, gt_flow, crop_h=crop[0],
                                                                    crop_w=crop[1], add_summary=add_summary_augmentation,
                                                                    fast_mode=False)
+
             matches_as = None
             sparse_flows = None
             edges_as = None

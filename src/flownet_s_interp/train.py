@@ -102,7 +102,8 @@ def main():
             add_summary_augmentation=FLAGS.log_tensorboard,
             global_step=global_step_tensor,
             invalid_like=FLAGS.invalid_like,
-            num_distrib=FLAGS.num_matches_distributions,)
+            num_distrib=FLAGS.num_matches_distributions,
+            min_val=FLAGS.min_val_dense)
         if train_params_dict is not None:
             train_params_dict['eff_batch_size'] = FLAGS.batch_size
 
@@ -117,7 +118,8 @@ def main():
                 capacity_in_batches_train=FLAGS.capacity_in_batches_train,
                 capacity_in_batches_val=FLAGS.capacity_in_batches_val,
                 batch_size=FLAGS.batch_size,
-                data_augmentation=False,)  # just in case as we already filter by split_name
+                data_augmentation=False,
+                min_val=FLAGS.min_val_dense)  # just in case as we already filter by split_name
 
         else:
             val_input_a = None
@@ -170,7 +172,9 @@ def main():
             add_summary_augmentation=FLAGS.log_tensorboard,
             global_step=global_step_tensor,
             invalid_like=FLAGS.invalid_like,
-            num_distrib=FLAGS.num_matches_distributions, )
+            num_distrib=FLAGS.num_matches_distributions,
+            min_val=FLAGS.min_val_dense
+        )
         if train_params_dict is not None:
             train_params_dict['eff_batch_size'] = FLAGS.batch_size
 
@@ -184,8 +188,9 @@ def main():
                 capacity_in_batches_train=FLAGS.capacity_in_batches_train,
                 capacity_in_batches_val=FLAGS.capacity_in_batches_val,
                 batch_size=FLAGS.batch_size,
-                data_augmentation=False,
-                global_step=global_step_tensor,)  # just in case as we already filter by split_name
+                data_augmentation=FLAGS.same_density_validation,
+                global_step=global_step_tensor,
+                min_val=FLAGS.min_val_dense)  # just in case as we already filter by split_name
 
         else:
             val_input_a = None
@@ -481,12 +486,28 @@ if __name__ == '__main__':
         default=True,
     )
     parser.add_argument(
+        '--same_density_validation',
+        type=str2bool,
+        nargs='?',
+        required=False,
+        help='Whether to use the same sampling density as training for validation (not including other augmentations)',
+        default=False,
+    )
+    parser.add_argument(
         '--invalid_like',
         type=int,
         required=False,
         help='Whether to use invalid-like (> 0) sampling of the ground truth flow (i.e.: with rectangular/superpixels'
              ' holes)',
         default=-1,
+    )
+    parser.add_argument(
+        '--min_val_dense',
+        type=int,
+        required=False,
+        help='Minimum value to choose sparse or dense, if left to 0, we choose sparse and dense ranges, otherwise'
+             ' set it to 1 to only use sparse matches (i.e.: combined with invalid_like)',
+        default=0,
     )
     parser.add_argument(
         '--num_matches_distributions',

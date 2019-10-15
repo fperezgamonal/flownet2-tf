@@ -527,12 +527,12 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
 
 
 def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=(4, 2), num_distrib=2, invalid_like=-1,
-                       fixed_density=-1):
+                       fixed_density=-1, min_val=0):
     # apply_with_random_selector does not work for our case (maybe it interferes with tf.slim or something else...)
     # use tf.case instead
     # density = apply_with_random_selector(density, lambda x, ordering: get_sampling_density(x, ordering, fast_mode),
     #                                      num_cases=num_ranges)
-    dense_or_sparse = tf.random_uniform([], maxval=2, dtype=tf.int32)  # 0 or 1
+    dense_or_sparse = tf.random_uniform([], minval=min_val, maxval=2, dtype=tf.int32)  # 0 or 1
     # density = tf.cond(tf.logical_and(tf.equal(tf.convert_to_tensor(num_distrib), tf.constant(-1)),
     #                                  tf.greater(tf.convert_to_tensor(fixed_density), tf.constant(0.0))),
     #                   lambda: tf.convert_to_tensor(fixed_density),
