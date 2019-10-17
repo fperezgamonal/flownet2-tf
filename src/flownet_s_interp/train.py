@@ -103,7 +103,8 @@ def main():
             global_step=global_step_tensor,
             invalid_like=FLAGS.invalid_like,
             num_distrib=FLAGS.num_matches_distributions,
-            min_val=FLAGS.min_val_dense)
+            min_val=FLAGS.min_val_dense,
+            ff_like=FLAGS.ff_like,)
         if train_params_dict is not None:
             train_params_dict['eff_batch_size'] = FLAGS.batch_size
 
@@ -119,7 +120,8 @@ def main():
                 capacity_in_batches_val=FLAGS.capacity_in_batches_val,
                 batch_size=FLAGS.batch_size,
                 data_augmentation=False,
-                min_val=FLAGS.min_val_dense)  # just in case as we already filter by split_name
+                min_val=FLAGS.min_val_dense,
+                ff_like=FLAGS.ff_like,)  # just in case as we already filter by split_name
 
         else:
             val_input_a = None
@@ -173,7 +175,8 @@ def main():
             global_step=global_step_tensor,
             invalid_like=FLAGS.invalid_like,
             num_distrib=FLAGS.num_matches_distributions,
-            min_val=FLAGS.min_val_dense
+            min_val=FLAGS.min_val_dense,
+            ff_like=FLAGS.ff_like,
         )
         if train_params_dict is not None:
             train_params_dict['eff_batch_size'] = FLAGS.batch_size
@@ -190,7 +193,8 @@ def main():
                 batch_size=FLAGS.batch_size,
                 data_augmentation=FLAGS.same_density_validation,
                 global_step=global_step_tensor,
-                min_val=FLAGS.min_val_dense)  # just in case as we already filter by split_name
+                min_val=FLAGS.min_val_dense,
+                ff_like=FLAGS.ff_like,)  # just in case as we already filter by split_name
 
         else:
             val_input_a = None
@@ -520,6 +524,14 @@ if __name__ == '__main__':
              "(TODO, WIP): If set to -1, uniform matches are used by default instead of DeepMatching (with their mean"
              " density)",
         default=2,
+    )
+    parser.add_argument(
+        '--ff_like',
+        type=int,
+        required=False,
+        help='Whether to sample from a more limited matches density range (65% to 85%) to avoid big holes (similar to'
+             ' FlowFields seeds)',
+        default=-1,
     )
 
     # ==== Losses =====

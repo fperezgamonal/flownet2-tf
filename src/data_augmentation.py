@@ -192,10 +192,6 @@ def flow_resize(flow, out_size, is_scale=True, method=0):
 # Auxiliar functions for sampling
 def case_sparse(num_cases=2):
     density_id = tf.random_uniform([], maxval=num_cases, dtype=tf.int32)
-    # density = tf.switch_case(density_id, branch_fns={
-    #     0: lambda: tf.random_uniform([], minval=0.01, maxval=1., dtype=tf.float32),
-    #     1: lambda: tf.random_uniform([], minval=1., maxval=10., dtype=tf.float32)
-    # }, default=lambda: tf.random_uniform([], minval=1., maxval=10., dtype=tf.float32))
     density = tf.case(
         {tf.equal(density_id, tf.constant(0)): lambda: tf.random_uniform([], minval=0.01, maxval=1., dtype=tf.float32),
          tf.equal(density_id, tf.constant(1)): lambda: tf.random_uniform([], minval=1., maxval=10., dtype=tf.float32),
@@ -204,29 +200,30 @@ def case_sparse(num_cases=2):
     return density, density_id
 
 
-def case_dense(num_cases=4):
+def case_dense(num_cases=4, ff_like=-1):
     density_id = tf.random_uniform([], maxval=num_cases, dtype=tf.int32)
-    # density = tf.switch_case(density_id, branch_fns={
-    #     0: lambda: tf.random_uniform([], minval=10., maxval=25., dtype=tf.float32),
-    #     1: lambda: tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32),
-    #     2: lambda: tf.random_uniform([], minval=50., maxval=75., dtype=tf.float32),
-    #     3: lambda: tf.random_uniform([], minval=75., maxval=90., dtype=tf.float32)
-    # }, default=lambda: tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32))
+    ff_like_bool = tf.cond(tf.greater(tf.convert_to_tensor(ff_like), tf.constant(0)),
+                           lambda: tf.constant(True), lambda: tf.constant(False))
     density = tf.case(
-        {tf.equal(density_id, tf.constant(0)): lambda: tf.random_uniform([], minval=10., maxval=25., dtype=tf.float32),
-         tf.equal(density_id, tf.constant(1)): lambda: tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32),
-         tf.equal(density_id, tf.constant(2)): lambda: tf.random_uniform([], minval=50., maxval=75., dtype=tf.float32),
-         tf.equal(density_id, tf.constant(3)): lambda: tf.random_uniform([], minval=75., maxval=90., dtype=tf.float32),
+        {tf.logical_and(tf.equal(density_id, tf.constant(0), tf.equal(ff_like_bool, tf.constant(False)))):
+             lambda: tf.random_uniform([], minval=10., maxval=25., dtype=tf.float32),
+         tf.logical_and(tf.equal(density_id, tf.constant(1), tf.equal(ff_like_bool, tf.constant(False)))):
+             lambda: tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32),
+         tf.logical_and(tf.equal(density_id, tf.constant(2), tf.equal(ff_like_bool, tf.constant(False)))):
+             lambda: tf.random_uniform([], minval=50., maxval=75., dtype=tf.float32),
+         tf.logical_and(tf.equal(density_id, tf.constant(3), tf.equal(ff_like_bool, tf.constant(False)))):
+             lambda: tf.random_uniform([], minval=75., maxval=90., dtype=tf.float32),
+         tf.equal(ff_like_bool, tf.constant(True)): lambda: tf.random_uniform([], minval=65., maxval=85.,
+                                                                              dtype=tf.float32),
          },
         default=lambda: tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32), exclusive=True)
     return density, density_id
 
 
-def get_sampling_density(dense_or_sparse, num_ranges=(4, 2)):
+def get_sampling_density(dense_or_sparse, num_ranges=(4, 2), ff_like=-1):
     density, density_id = tf.cond(tf.greater(dense_or_sparse, tf.constant(0)),
-                                  lambda: case_dense(num_cases=num_ranges[0]),
+                                  lambda: case_dense(num_cases=num_ranges[0], ff_like=ff_like),
                                   lambda: case_sparse(num_cases=num_ranges[1]))
-
     tf.summary.scalar('debug/density_id', density_id)
     return density
 
@@ -527,7 +524,7 @@ def sample_from_distribution(distrib_id, density, dm_matches, dm_flow, gt_flow):
 
 
 def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=(4, 2), num_distrib=2, invalid_like=-1,
-                       fixed_density=-1, min_val=0):
+                       fixed_density=-1, min_val=0, ff_like=-1):
     # apply_with_random_selector does not work for our case (maybe it interferes with tf.slim or something else...)
     # use tf.case instead
     # density = apply_with_random_selector(density, lambda x, ordering: get_sampling_density(x, ordering, fast_mode),
@@ -537,7 +534,7 @@ def sample_sparse_flow(dm_matches, dm_flow, gt_flow, num_ranges=(4, 2), num_dist
     #                                  tf.greater(tf.convert_to_tensor(fixed_density), tf.constant(0.0))),
     #                   lambda: tf.convert_to_tensor(fixed_density),
     #                   lambda: get_sampling_density(dense_or_sparse, num_ranges=num_ranges))
-    density = get_sampling_density(dense_or_sparse, num_ranges=num_ranges)
+    density = get_sampling_density(dense_or_sparse, num_ranges=num_ranges, ff_like=ff_like)
     tf.summary.scalar('debug/density', density)
 
     invalid_like_tensor = tf.cond(tf.greater(tf.convert_to_tensor(invalid_like), tf.constant(0)),
