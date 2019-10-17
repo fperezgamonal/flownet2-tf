@@ -205,13 +205,13 @@ def case_dense(num_cases=4, ff_like=-1):
     ff_like_bool = tf.cond(tf.greater(tf.convert_to_tensor(ff_like), tf.constant(0)),
                            lambda: tf.constant(True), lambda: tf.constant(False))
     density = tf.case(
-        {tf.logical_and(tf.equal(density_id, tf.constant(0), tf.equal(ff_like_bool, tf.constant(False)))):
+        {tf.logical_and(tf.equal(density_id, tf.constant(0)), tf.equal(ff_like_bool, tf.constant(False))):
              lambda: tf.random_uniform([], minval=10., maxval=25., dtype=tf.float32),
-         tf.logical_and(tf.equal(density_id, tf.constant(1), tf.equal(ff_like_bool, tf.constant(False)))):
+         tf.logical_and(tf.equal(density_id, tf.constant(1)), tf.equal(ff_like_bool, tf.constant(False))):
              lambda: tf.random_uniform([], minval=25., maxval=50., dtype=tf.float32),
-         tf.logical_and(tf.equal(density_id, tf.constant(2), tf.equal(ff_like_bool, tf.constant(False)))):
+         tf.logical_and(tf.equal(density_id, tf.constant(2)), tf.equal(ff_like_bool, tf.constant(False))):
              lambda: tf.random_uniform([], minval=50., maxval=75., dtype=tf.float32),
-         tf.logical_and(tf.equal(density_id, tf.constant(3), tf.equal(ff_like_bool, tf.constant(False)))):
+         tf.logical_and(tf.equal(density_id, tf.constant(3)), tf.equal(ff_like_bool, tf.constant(False))):
              lambda: tf.random_uniform([], minval=75., maxval=90., dtype=tf.float32),
          tf.equal(ff_like_bool, tf.constant(True)): lambda: tf.random_uniform([], minval=65., maxval=85.,
                                                                               dtype=tf.float32),
