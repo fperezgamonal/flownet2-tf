@@ -117,9 +117,12 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     elif matcher == 'deepmatching':
                         matches_a_path = os.path.join(data_dir, '{0:05d}_img1_dm_mask.png'.format(i + 1))
                         sparse_flow_path = os.path.join(data_dir, '{0:05d}_img1_dm_sparse_flow.flo'.format(i + 1))
+                    elif matcher == 'flowfields':
+                        matches_a_path = os.path.join(data_dir, '{0:05d}_img1_ff_matches_mask.png'.format(i + 1))
+                        sparse_flow_path = os.path.join(data_dir, '{0:05d}_img1_ff_sparse_flow.flo'.format(i + 1))
                     # add more matchers if need be (more elif's)
                     else:
-                        raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                        raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift', 'flowfields')")
                 else:
                     matches_a_path = None
                     sparse_flow_path = None
@@ -144,9 +147,12 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                     elif matcher == 'deepmatching':
                         matches_a_path = os.path.join(data_dir, '{0:07d}_dm_mask.png'.format(i))
                         sparse_flow_path = os.path.join(data_dir, '{0:07d}_dm_sparse_flow.flo'.format(i))
+                    elif matcher == 'flowfields':
+                        matches_a_path = os.path.join(data_dir, '{0:07d}_ff_matches_mask.png'.format(i))
+                        sparse_flow_path = os.path.join(data_dir, '{0:07d}_ff_sparse_flow.flo'.format(i))
                     # add more matchers if need be (more elif's)
                     else:
-                        raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                        raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift', 'flowfields')")
                 else:
                     matches_a_path = None
                     sparse_flow_path = None
@@ -168,8 +174,13 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                         matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_dm_mask.png'.format(i+1))
                         sparse_flow_path = os.path.join(data_dir, pass_dir,
                                                         'frame_{0:04d}_dm_sparse_flow.flo'.format(i+1))
+                    elif matcher == 'flowfields':
+                        matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_ff_matches_mask.png'.
+                                                      format(i + 1))
+                        sparse_flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_ff_sparse_flow.flo'.
+                                                        format(i + 1))
                     else:
-                        raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                        raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift', 'flowfields')")
                 else:
                     matches_a_path = None
                     sparse_flow_path = None
@@ -191,8 +202,13 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                         matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_dm_mask.png'.format(i+1))
                         sparse_flow_path = os.path.join(data_dir, pass_dir,
                                                         'frame_{0:04d}_dm_sparse_flow.flo'.format(i+1))
+                    elif matcher == 'flowfields':
+                        matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_ff_matches_mask.png'.
+                                                      format(i + 1))
+                        sparse_flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_ff_sparse_flow.flo'.
+                                                        format(i + 1))
                     else:
-                        raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                        raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift', 'flowfields')")
                 else:
                     matches_a_path = None
                     sparse_flow_path = None
@@ -214,8 +230,13 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                         matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_dm_mask.png'.format(i+1))
                         sparse_flow_path = os.path.join(data_dir, pass_dir,
                                                         'frame_{0:04d}_dm_sparse_flow.flo'.format(i+1))
+                    elif matcher == 'flowfields':
+                        matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_ff_matches_mask.png'.
+                                                      format(i + 1))
+                        sparse_flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_ff_sparse_flow.flo'.
+                                                        format(i + 1))
                     else:
-                        raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                        raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift', 'flowfields')")
                 else:
                     matches_a_path = None
                     sparse_flow_path = None
@@ -236,9 +257,13 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                         elif matcher == 'deepmatching':
                             matches_a_path = os.path.join(data_dir, '{0:05d}_img1_dm_mask.png'.format(i + 1))
                             sparse_flow_path = os.path.join(data_dir, '{0:05d}_img1_dm_sparse_flow.flo'.format(i + 1))
+
+                        elif matcher == 'flowfields':
+                            matches_a_path = os.path.join(data_dir, '{0:05d}_img1_ff_matches_mask.png'.format(i + 1))
+                            sparse_flow_path = os.path.join(data_dir, '{0:05d}_img1_ff_sparse_flow.flo'.format(i + 1))
                         # add more matchers if need be (more elif's)
                         else:
-                            raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                            raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift', 'flowfields')")
                     else:
                         matches_a_path = None
                         sparse_flow_path = None
@@ -262,8 +287,13 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                                                           'frame_{0:04d}_dm_mask.png'.format(i + 1))
                             sparse_flow_path = os.path.join(data_dir, pass_dir,
                                                             'frame_{0:04d}_dm_sparse_flow.flo'.format(i + 1))
+                        elif matcher == 'flowfields':
+                            matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_ff_matches_mask.png'.
+                                                          format(i + 1))
+                            sparse_flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_ff_sparse_flow.flo'.
+                                                            format(i + 1))
                         else:
-                            raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                            raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift', 'flowfields')")
                     else:
                         matches_a_path = None
                         sparse_flow_path = None
@@ -282,12 +312,17 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                         if matcher == 'sift':
                             matches_a_path = os.path.join(data_dir, '{0:07d}_sift_mask.png'.format(i))
                             sparse_flow_path = os.path.join(data_dir, '{0:07d}_sift_sparse_flow.flo'.format(i))
+
                         elif matcher == 'deepmatching':
                             matches_a_path = os.path.join(data_dir, '{0:07d}_dm_mask.png'.format(i))
                             sparse_flow_path = os.path.join(data_dir, '{0:07d}_dm_sparse_flow.flo'.format(i))
+
+                        elif matcher == 'flowfields':
+                            matches_a_path = os.path.join(data_dir, '{0:07d}_ff_matches_mask.png'.format(i))
+                            sparse_flow_path = os.path.join(data_dir, '{0:07d}_ff_sparse_flow.flo'.format(i))
                         # add more matchers if need be (more elif's)
                         else:
-                            raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                            raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift', 'flowfields')")
                     else:
                         matches_a_path = None
                         sparse_flow_path = None
@@ -311,8 +346,15 @@ def convert_dataset(indices, split_name, matcher='deepmatching', dataset='flying
                                                           'frame_{0:04d}_dm_mask.png'.format(i + 1))
                             sparse_flow_path = os.path.join(data_dir, pass_dir,
                                                             'frame_{0:04d}_dm_sparse_flow.flo'.format(i + 1))
+
+                        elif matcher == 'flowfields':
+                            matches_a_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_ff_matches_mask.png'.
+                                                          format(i + 1))
+                            sparse_flow_path = os.path.join(data_dir, pass_dir, 'frame_{0:04d}_ff_sparse_flow.flo'.
+                                                            format(i + 1))
+
                         else:
-                            raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift')")
+                            raise ValueError("Invalid matcher name. Available: ('deepmatching', 'sift', 'flowfields')")
                     else:
                         matches_a_path = None
                         sparse_flow_path = None
@@ -660,7 +702,7 @@ if __name__ == '__main__':
         '--matcher',
         type=str,
         required=False,
-        help='Default matcher selected (deepmatching)',
+        help='Default matcher selected (deepmatching, sift or flowfields)',
         default='deepmatching'
     )
     parser.add_argument(
